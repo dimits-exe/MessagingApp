@@ -9,22 +9,22 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author user
  *
  */
-class Conversation {
+class Topic {
 	private final String name;
 	private final long id;
 	private final Stack<RawData> posts;
-	
+
 	/**
 	 * Create a new conversation.
 	 * @param name the name displayed when viewing the conversation.
 	 */
-	public Conversation(String name) {
+	public Topic(String name) {
 		super();
 		this.name = name;
 		this.id = ThreadLocalRandom.current().nextLong();
 		this.posts = new Stack<RawData>();
 	}
-	
+
 	/**
 	 * Get the name of the conversation.
 	 * @return the name of the conversation.
@@ -32,7 +32,7 @@ class Conversation {
 	public String getName() {
 		return name;
 	}
-	
+
 	/**
 	 * Get a unique identifier for the conversation.
 	 * @return a long int identifier
@@ -40,7 +40,7 @@ class Conversation {
 	public long getId() {
 		return id;
 	}
-	
+
 	/**
 	 * Get a stack containing the posts currently in the conversation.
 	 * @return the posts in raw data form
@@ -50,7 +50,7 @@ class Conversation {
 		newStack.addAll(posts);
 		return newStack;
 	}
-	
+
 	/**
 	 * Add a new post to the conversation.
 	 * @param postData a RawData object containing the post's data.
