@@ -1,5 +1,7 @@
 package eventDeliverySystem;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * An object holding information about a posts's data, its
  * poster and its type.
@@ -7,14 +9,16 @@ package eventDeliverySystem;
  */
 class RawData {
 	
-	private final String posterName;
+	private final Profile poster;
 	private final byte[] data;
 	private final DataType type;
+	private final long postID;
 	
-	public RawData(byte[] data, DataType type, String posterName) {
+	public RawData(byte[] data, DataType type, Profile poster) {
 		this.data = data;
 		this.type = type;
-		this.posterName = posterName;
+		this.poster = poster;
+		this.postID = ThreadLocalRandom.current().nextLong();
 	}
 	
 	public byte[] getData() {
@@ -25,8 +29,16 @@ class RawData {
 		return type;
 	}
 	
-	public String getPosterName() {
-		return posterName;
+	public Profile getPosterName() {
+		return poster;
+	}
+
+	public Profile getPoster() {
+		return poster;
+	}
+
+	public long getPostID() {
+		return postID;
 	}
 }
 

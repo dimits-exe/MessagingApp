@@ -1,5 +1,10 @@
 package eventDeliverySystem;
 
+import java.util.EmptyStackException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -42,13 +47,27 @@ class Topic {
 	}
 
 	/**
-	 * Get a stack containing the posts currently in the conversation.
-	 * @return the posts in raw data form
+	 * Get a list containing posts posted after the provided postId.
+	 * @param lastPostId the id of the last post saved in the conversation
+	 * @return the new posts sorted last-to-first posted
+	 * @throws NoSuchElementException if the lastPostId doesn't correspond to 
+	 * a post in the topic
 	 */
-	public Stack<RawData> getPosts() {
+	public List<RawData> getPostsSince(long lastPostId) throws NoSuchElementException {
 		Stack<RawData> newStack = new Stack<RawData>();
 		newStack.addAll(posts);
-		return newStack;
+		
+		LinkedList<RawData> newPosts = new LinkedList<RawData>();
+		try {
+			
+			do {
+				newPosts.add(newStack.pop());
+			} while(newStack.peek().getPostID() != lastPostId);
+			
+		} catch(EmptyStackException e) {
+			throw new NoSuchElementException("There is no post with this idlol wtf"); //maybe just send all posts anyway
+		}
+		return newPosts;
 	}
 
 	/**
@@ -57,5 +76,22 @@ class Topic {
 	 */
 	public void post(RawData postData) {
 		posts.add(postData);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Topic other = (Topic) obj;
+		return id == other.id;
 	}
 }
