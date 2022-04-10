@@ -17,9 +17,8 @@ class Conversation {
 	/**
 	 * Create a new conversation.
 	 * @param name the name displayed when viewing the conversation.
-	 * @param id
 	 */
-	public Conversation(String name, int id) {
+	public Conversation(String name) {
 		super();
 		this.name = name;
 		this.id = ThreadLocalRandom.current().nextLong();
