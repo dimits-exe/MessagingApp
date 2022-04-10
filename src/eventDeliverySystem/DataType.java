@@ -1,5 +1,5 @@
 package eventDeliverySystem;
 
 enum DataType {
-TEXT, VIDEO, IMAGE
+TEXT, VIDEO, IMAGE, INFO
 }

@@ -4,20 +4,20 @@ import java.io.Serializable;
 
 /**
  * A class holding binary data for to-be-transmitted files and text.
+ * To be used only in TCP connections.
  */
 class Packet implements Serializable {
-	private static final int PACKET_SIZE = 1000000; // 1 MB Chunk size
+	private static final int PACKET_SIZE = 521000; // 521kb Chunk size
 	private static final long serialVersionUID = -3948707845170731230L;
 	
 	/**
 	 * Turn a file or text to a series of packets.
-	 * @param data the binary data of the file
-	 * @param type the type of the file
+	 * @param data the data of the file
 	 * @param fileExtension the extension of the file
 	 * @return an array of packet objects holding the file's data
 	 */
-	public static Packet[] bytesToPackets(byte[] data, DataType type, String fileExtension) {
-		Packet[] packets = new Packet[(int) Math.ceil(data.length/PACKET_SIZE)];
+	public static Packet[] dataToPackets(RawData data, String fileExtension) {
+		Packet[] packets = new Packet[(int) Math.ceil(data.getData().length/PACKET_SIZE)];
 		//fill the array with packets lol
 		return packets;
 	}
@@ -25,19 +25,20 @@ class Packet implements Serializable {
 	/**
 	 * Turn a string of text to a series of packets.
 	 * @param text the text to be packaged
+	 * @param username the name of the user that sent the text
 	 * @return an array of packet objects holding the text
 	 */
-	public static Packet[] textToPackets(String text) {
-		return Packet.bytesToPackets(null, DataType.TEXT, null);
+	public static Packet[] textToPackets(String username, String text) {
+		return Packet.dataToPackets(new RawData(null, DataType.TEXT, username), null);
 	}
 	
 	/**
-	 * Combine the contents of many packets to a single byte array.
+	 * Extract the data of the packets into a single RawData object.
 	 * @param packets an array with packets holding the entire contents of the file
 	 * @return the packets' contents
 	 * @throws IllegalStateException if there is any error with the contents of the packets
 	 */
-	public static byte[] packetsToBytes(Packet[] packets) throws IllegalStateException {
+	public static RawData packetsToData(Packet[] packets) throws IllegalStateException {
 		return null;
 	}
 	
@@ -45,15 +46,14 @@ class Packet implements Serializable {
 	private final boolean isFinal;
 	private final byte[] payload;
 	private final String fileExtension;
+	private final String posterName;
 	private final DataType type;
-	private final int errorDetectionCode;
-	//private final int order; should be unused because of TCP guaranteeing correct order
 	
-	private Packet(int id, boolean isFinal, byte[] payload, int errorDetectionCode ,DataType type, String fileExtension) {
+	private Packet(int id, boolean isFinal, byte[] payload,DataType type, String fileExtension, String posterName) {
 		this.id = id;
 		this.isFinal = isFinal;
 		this.payload = payload;
-		this.errorDetectionCode = errorDetectionCode;
+		this.posterName = posterName;
 		this.type = type;
 		this.fileExtension = fileExtension;
 	}
@@ -83,6 +83,14 @@ class Packet implements Serializable {
 	}
 	
 	/**
+	 * Get the username of the poster.
+	 * @return the username of the poster
+	 */
+	public String getPosterName() {
+		return posterName;
+	}
+	
+	/**
 	 * Get the file extension of the file.
 	 * @return the file extension
 	 * @throws IllegalArgumentException if the contents of the packet are of the DataType "TEXT"
@@ -90,6 +98,7 @@ class Packet implements Serializable {
 	public String getFileExtension() throws IllegalArgumentException {
 		if(type == DataType.TEXT)
 			throw new IllegalArgumentException("The data of the packet is a string object, not a file.");
+		
 		return fileExtension;
 	}
 
@@ -100,14 +109,5 @@ class Packet implements Serializable {
 	public DataType getType() {
 		return type;
 	}
-
-	/**
-	 * Get a hashcode of the original file to be compared after the file is reconstructed.
-	 * @return the hashcode of the original file
-	 */
-	public int getErrorDetectionCode() {
-		return errorDetectionCode;
-	}
-	
 	
 }
