@@ -6,3 +6,4 @@ class Profile {
 	private final String name;
 	private final Set<Conversation> subscribedConversations;
 }
+
