@@ -33,8 +33,8 @@ class Publisher implements Runnable {
 		
 	}
 	
-	public void push(String topic, byte[] data, DataType type) {
-		Packet[] packets = Packet.dataToPackets(new RawData(data, type), topic);
+	public void push(Topic topic, RawData post, String fileExtension) {
+		Packet[] packets = Packet.dataToPackets(post, fileExtension);
 		//send packets through clientSocket
 	}
 	

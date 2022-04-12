@@ -25,11 +25,11 @@ class Packet implements Serializable {
 	/**
 	 * Turn a string of text to a series of packets.
 	 * @param text the text to be packaged
-	 * @param username the name of the user that sent the text
+	 * @param poster the profile of the user that sent the text
 	 * @return an array of packet objects holding the text
 	 */
-	public static Packet[] textToPackets(String username, String text) {
-		return Packet.dataToPackets(new RawData(null, DataType.TEXT, username), null);
+	public static Packet[] textToPackets(String username, Profile poster) {
+		return Packet.dataToPackets(new RawData(null, DataType.TEXT, poster), null);
 	}
 	
 	/**
