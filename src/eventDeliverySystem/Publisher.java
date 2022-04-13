@@ -77,14 +77,16 @@ class Publisher implements Runnable, AutoCloseable {
 
 			try (Socket socket = new Socket(actualBrokerIP, Broker.PUBLIC_SERVER_PORT)) {
 
-				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-				PushThread pushThread = new PushThread(packets, oos);
-				pushThread.start();
+				PushThread pushThread;
+				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
 
-				try {
-					pushThread.join();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+					pushThread = new PushThread(packets, oos);
+					pushThread.start();
+					try {
+						pushThread.join();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
 
 				success = pushThread.success();
@@ -236,10 +238,9 @@ class Publisher implements Runnable, AutoCloseable {
 			boolean ipForTopicBrokerException;
 			do {
 				ipForTopicBrokerException = false;
-				try (Socket socket = getSocketToDefaultBroker()) {
-
-					ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-					ObjectInputStream  ois = new ObjectInputStream(socket.getInputStream());
+				try (Socket socket = getSocketToDefaultBroker();
+				        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
 
 					oos.writeObject(topic);
 
@@ -261,10 +262,9 @@ class Publisher implements Runnable, AutoCloseable {
 					boolean ipForNewDefaultBrokerException;
 					do {
 						ipForNewDefaultBrokerException = false;
-						try (Socket socket1 = serverSocket.accept()) {
-
-							ObjectInputStream ois1 = new ObjectInputStream(
-							        socket1.getInputStream());
+						try (Socket socket1 = serverSocket.accept();
+						        ObjectInputStream ois1 = new ObjectInputStream(
+						                socket1.getInputStream())) {
 
 							try {
 								defaultBrokerIP = (InetAddress) ois1.readObject();
