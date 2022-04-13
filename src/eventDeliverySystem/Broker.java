@@ -3,6 +3,7 @@ package eventDeliverySystem;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,9 +29,16 @@ class Broker implements Runnable {
 	 */
 	private static final int PRIVATE_SERVER_PORT = 49673;
 	
+	private static final int MAX_CONNECTIONS = 64;
+	
+	private final Set<Socket> clientConnections; //replace with set<InetAddress>?
 	private final Set<Socket> brokerConnections;
 	private final Map<Topic, LinkedList<RawData>> postsPerTopic;
 	private final Map<Topic, LinkedList<RawData>> postsBackup;
+	
+	
+	private ServerSocket clientRequestSocket;
+	private ServerSocket brokerRequestSocket;
 	private boolean isLeader;
 	
 	/**
@@ -49,6 +57,7 @@ class Broker implements Runnable {
 	 * distributed server.
 	 */
 	public Broker() {
+		this.clientConnections = new HashSet<Socket>();
 		this.brokerConnections = new HashSet<Socket>();
 		this.postsPerTopic = new HashMap<Topic, LinkedList<RawData>>();
 		this.postsBackup= new HashMap<Topic, LinkedList<RawData>>();
@@ -57,8 +66,46 @@ class Broker implements Runnable {
 	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-		
+		try {
+			clientRequestSocket = new ServerSocket(PUBLIC_SERVER_PORT, MAX_CONNECTIONS);
+			brokerRequestSocket = new ServerSocket(PRIVATE_SERVER_PORT, MAX_CONNECTIONS);
+			
+			Runnable clientRequestThread = new Runnable() {
+
+				@Override
+				public void run() {
+					while(true) {
+						try {
+							clientConnections.add(clientRequestSocket.accept());
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				
+			}; //clientRequestThread
+			
+			Runnable brokerRequestThread = new Runnable() {
+
+				@Override
+				public void run() {
+					while(true) {
+						try {
+							brokerConnections.add(brokerRequestSocket.accept());
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				
+			}; //brokerRequestThread
+			
+			new Thread(clientRequestThread).run();
+			new Thread(brokerRequestThread).run();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -80,6 +127,9 @@ class Broker implements Runnable {
 	 * @param topic the topic
 	 */
 	private void deferToActualBroker(Topic topic) {
+		if(!isLeader) {
+			throw new IllegalStateException("Non-leader broker asked to redirect to other broker");
+		}
 		
 	}
 	
