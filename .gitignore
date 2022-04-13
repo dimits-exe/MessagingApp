@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-/eventDeliverySystem/
-/module-info.class
 # Compiled class file
 *.class
 
@@ -20,24 +17,4 @@
 *.classpath
 *.project
 *.prefs
-=======
-# Compiled class file
-*.class
 
-# Log file
-*.log
-
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-
-# Eclipse config files
-*.classpath
-*.project
-*.prefs
->>>>>>> branch 'init' of https://github.com/dimits-exe/MessagingApp
