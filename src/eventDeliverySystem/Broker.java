@@ -19,16 +19,7 @@ import java.util.LinkedList;
  */
 class Broker implements Runnable {
 	
-	/**
-	 * The port used by Publishers and Consumers to communicate with the Broker.
-	 */
-	public static final int PUBLIC_SERVER_PORT = 49672;
-	
-	/**
-	 * The port used exclusively for inter-Broker communication.
-	 */
-	private static final int PRIVATE_SERVER_PORT = 49673;
-	
+	private static final PortManager portManager = new PortManager();
 	private static final int MAX_CONNECTIONS = 64;
 	
 	private final Set<Socket> clientConnections; //replace with set<InetAddress>?
@@ -67,8 +58,8 @@ class Broker implements Runnable {
 	@Override
 	public void run() {
 		try {
-			clientRequestSocket = new ServerSocket(PUBLIC_SERVER_PORT, MAX_CONNECTIONS);
-			brokerRequestSocket = new ServerSocket(PRIVATE_SERVER_PORT, MAX_CONNECTIONS);
+			clientRequestSocket = new ServerSocket(portManager.getPort(), MAX_CONNECTIONS);
+			brokerRequestSocket = new ServerSocket(portManager.getPort(), MAX_CONNECTIONS);
 			
 			Runnable clientRequestThread = new Runnable() {
 
@@ -114,7 +105,7 @@ class Broker implements Runnable {
 	 */
 	private void subscribeToNewBroker(InetAddress newBrokerIP) {
 		try {
-			brokerConnections.add(new Socket(newBrokerIP, PRIVATE_SERVER_PORT));
+			brokerConnections.add(new Socket(newBrokerIP, portManager.getPort()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

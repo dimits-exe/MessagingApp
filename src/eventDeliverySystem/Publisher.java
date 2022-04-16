@@ -18,8 +18,7 @@ import java.util.Map;
  */
 class Publisher implements Runnable, AutoCloseable {
 
-	/** The port used by Brokers to communicate with Publishers. */
-	static final int PUBLIC_SERVER_PORT = 49674;
+	static final PortManager portManager = new PortManager();
 
 	private final IPManager topicIPManager;
 
@@ -27,7 +26,8 @@ class Publisher implements Runnable, AutoCloseable {
 	 * Constructs a Publisher that will connect to a specific default broker.
 	 *
 	 * @param defaultServerIP the IP of the default broker, interpreted as
-	 *                        {@link InetAddress#getByName(String)}.
+	 *                        {@link ConnectionInfo#getByName(String)}.
+	 * @param defaultServerPort the port of the default broker
 	 *
 	 * @throws UnknownHostException if no IP address for the host could be found, or
 	 *                              if a scope_id was specified for a global IPv6
@@ -35,22 +35,25 @@ class Publisher implements Runnable, AutoCloseable {
 	 * @throws IOException          if an I/O error occurs when opening the
 	 *                              Publisher's Server Socket.
 	 */
-	public Publisher(String defaultServerIP) throws IOException {
-		topicIPManager = new IPManager(InetAddress.getByName(defaultServerIP));
+	public Publisher(String defaultServerIP, int defaultServerPort) throws IOException {
+		topicIPManager = new IPManager(new ConnectionInfo(
+				InetAddress.getByName(defaultServerIP), defaultServerPort));
 	}
 
 	/**
 	 * Constructs a Publisher that will connect to a specific default broker.
 	 *
 	 * @param defaultServerIP the IP of the default broker, interpreted as
-	 *                        {@link InetAddress#getByAddress(byte[])}.
+	 *                        {@link ConnectionInfo#getByAddress(byte[])}.
+	 * @param defaultServerPort the port of the default broker
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 * @throws IOException          if an I/O error occurs when opening the
 	 *                              Publisher's Server Socket.
 	 */
-	public Publisher(byte[] defaultServerIP) throws IOException {
-		topicIPManager = new IPManager(InetAddress.getByAddress(defaultServerIP));
+	public Publisher(byte[] defaultServerIP, int defaultServerPort) throws IOException {
+		topicIPManager = new IPManager(new ConnectionInfo(
+				InetAddress.getByAddress(defaultServerIP), defaultServerPort));
 	}
 
 	@Override
@@ -73,9 +76,9 @@ class Publisher implements Runnable, AutoCloseable {
 		boolean success;
 
 		do {
-			InetAddress actualBrokerIP = topicIPManager.getIPForTopic(topic);
+			ConnectionInfo actualBrokerIP = topicIPManager.getIPForTopic(topic);
 
-			try (Socket socket = new Socket(actualBrokerIP, Broker.PUBLIC_SERVER_PORT)) {
+			try (Socket socket = new Socket(actualBrokerIP.getAddress(), actualBrokerIP.getPort())) {
 
 				PushThread pushThread;
 				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
@@ -171,45 +174,45 @@ class Publisher implements Runnable, AutoCloseable {
 
 	/**
 	 * Wrapper for a cache that communicates with the default broker to store,
-	 * update and invalidate the InetAddresses for Topics. A ServerSocket is also
+	 * update and invalidate the ConnectionInfoes for Topics. A ServerSocket is also
 	 * opened for receiving messages from brokers, which is closed by calling the
 	 * {@code close()} method.
 	 *
 	 * @author Alex Mandelias
 	 */
 	private class IPManager implements AutoCloseable {
-		private final Map<Topic, InetAddress> map = new HashMap<>();
-		private InetAddress                   defaultBrokerIP;
-		private final ServerSocket            serverSocket;
+		private final Map<Topic, ConnectionInfo> map = new HashMap<>();
+		private ConnectionInfo                	defaultBrokerInfo;
+		private final ServerSocket            	serverSocket;
 
 		/**
-		 * Constructs the IPManager given the InetAddress to the default broker. The
+		 * Constructs the IPManager given the ConnectionInfo to the default broker. The
 		 * IPManager's server socket is also opened.
 		 *
-		 * @param defaultBrokerIP the IP of the default broker to connect to
+		 * @param defaultBrokerInfo the IP of the default broker to connect to
 		 *
 		 * @throws IOException if an I/O error occurs when opening this IP Manager's
 		 *                     Server Socket.
 		 */
-		public IPManager(InetAddress defaultBrokerIP) throws IOException {
-			this.defaultBrokerIP = defaultBrokerIP;
-			serverSocket = new ServerSocket(PUBLIC_SERVER_PORT);
+		public IPManager(ConnectionInfo defaultBrokerInfo) throws IOException {
+			this.defaultBrokerInfo = defaultBrokerInfo;
+			serverSocket = new ServerSocket(portManager.getPort());
 		}
 
 		/**
-		 * Communicates with the default broker to fetch the InetAddress associated with
+		 * Communicates with the default broker to fetch the ConnectionInfo associated with
 		 * a Topic, which is then cached. Future requests for it will use the
-		 * InetAddress found in the cache.
+		 * ConnectionInfo found in the cache.
 		 * <p>
 		 * To invalidate the cache and request that the default broker provide a new
-		 * InetAddress, the {@link #invalidate(Topic)} method may be used.
+		 * ConnectionInfo, the {@link #invalidate(Topic)} method may be used.
 		 *
-		 * @param topic the Topic for which to get the InetAddress
+		 * @param topic the Topic for which to get the ConnectionInfo
 		 *
-		 * @return the InetAddress for that Topic
+		 * @return the ConnectionInfo for that Topic
 		 */
-		public InetAddress getIPForTopic(Topic topic) {
-			InetAddress address = map.get(topic);
+		public ConnectionInfo getIPForTopic(Topic topic) {
+			ConnectionInfo address = map.get(topic);
 
 			if (address != null)
 				return address;
@@ -219,11 +222,11 @@ class Publisher implements Runnable, AutoCloseable {
 		}
 
 		/**
-		 * Invalidates the InetAddress associated with a Topic. The next time the
-		 * InetAddress for said Topic is requested, the default broker will be asked
+		 * Invalidates the ConnectionInfo associated with a Topic. The next time the
+		 * ConnectionInfo for said Topic is requested, the default broker will be asked
 		 * will be requested to provide it.
 		 *
-		 * @param topic the Topic for which to invalidate the InetAddress
+		 * @param topic the Topic for which to invalidate the ConnectionInfo
 		 */
 		public void invalidate(Topic topic) {
 			map.remove(topic);
@@ -244,9 +247,9 @@ class Publisher implements Runnable, AutoCloseable {
 
 					oos.writeObject(topic);
 
-					InetAddress actualBrokerIPForTopic;
+					ConnectionInfo actualBrokerIPForTopic;
 					try {
-						actualBrokerIPForTopic = (InetAddress) ois.readObject();
+						actualBrokerIPForTopic = (ConnectionInfo) ois.readObject();
 					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
 						return;
@@ -267,7 +270,7 @@ class Publisher implements Runnable, AutoCloseable {
 						                socket1.getInputStream())) {
 
 							try {
-								defaultBrokerIP = (InetAddress) ois1.readObject();
+								defaultBrokerInfo = (ConnectionInfo) ois1.readObject();
 							} catch (ClassNotFoundException e1) {
 								e1.printStackTrace();
 								return;
@@ -277,7 +280,7 @@ class Publisher implements Runnable, AutoCloseable {
 							ipForNewDefaultBrokerException = true;
 
 							System.err.printf(
-							        "IOException while getting new InetAddress for default broker%n");
+							        "IOException while getting new ConnectionInfo for default broker%n");
 						}
 					} while (ipForNewDefaultBrokerException);
 				}
@@ -285,7 +288,7 @@ class Publisher implements Runnable, AutoCloseable {
 		}
 
 		private Socket getSocketToDefaultBroker() throws IOException {
-			return new Socket(defaultBrokerIP, Broker.PUBLIC_SERVER_PORT);
+			return new Socket(defaultBrokerInfo.getAddress(), defaultBrokerInfo.getPort());
 		}
 	}
 }

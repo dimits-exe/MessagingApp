@@ -37,12 +37,12 @@ class Message implements Serializable {
 	enum MessageType{
 		/**
 		 * Change the connecting IP to a new one.
-		 * The value is a InetAddress object.
+		 * The value is a ConnectionInfo object.
 		 */
 		REDIRECT, 
 		/**
 		 * An error has occurred while trying to reach a certain process.
-		 * The value is a InetAddress object.
+		 * The value is a ConnectionInfo object.
 		 */
 		ERROR,
 		/**
@@ -52,7 +52,7 @@ class Message implements Serializable {
 		DATA,
 		/**
 		 * A new IP has been connected to the system.
-		 * The value is a InetAddress object.
+		 * The value is a ConnectionInfo object.
 		 */
 		DISCOVER
 	}

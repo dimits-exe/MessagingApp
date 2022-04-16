@@ -2,6 +2,8 @@ package eventDeliverySystem;
 
 import java.io.Serializable;
 
+import eventDeliverySystem.RawData.DataType;
+
 /**
  * A class holding binary data for to-be-transmitted files and text.
  * To be used only in TCP connections.
@@ -49,7 +51,7 @@ class Packet implements Serializable {
 	private final String posterName;
 	private final DataType type;
 	
-	private Packet(int id, boolean isFinal, byte[] payload,DataType type, String fileExtension, String posterName) {
+	private Packet(int id, boolean isFinal, byte[] payload, DataType type, String fileExtension, String posterName) {
 		this.id = id;
 		this.isFinal = isFinal;
 		this.payload = payload;

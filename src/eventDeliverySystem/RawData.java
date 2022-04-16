@@ -40,5 +40,10 @@ class RawData {
 	public long getPostID() {
 		return postID;
 	}
+	
+	public enum DataType {
+		TEXT, VIDEO, IMAGE
+	}
+
 }
 
