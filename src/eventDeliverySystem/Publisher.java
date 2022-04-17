@@ -18,15 +18,13 @@ import java.util.Map;
  */
 class Publisher implements Runnable, AutoCloseable {
 
-	static final PortManager portManager = new PortManager();
-
-	private final IPManager topicIPManager;
+	private final CIManager topicCIManager;
 
 	/**
 	 * Constructs a Publisher that will connect to a specific default broker.
 	 *
-	 * @param defaultServerIP the IP of the default broker, interpreted as
-	 *                        {@link ConnectionInfo#getByName(String)}.
+	 * @param defaultServerIP   the IP of the default broker, interpreted as
+	 *                          {@link InetAddress#getByName(String)}.
 	 * @param defaultServerPort the port of the default broker
 	 *
 	 * @throws UnknownHostException if no IP address for the host could be found, or
@@ -36,15 +34,14 @@ class Publisher implements Runnable, AutoCloseable {
 	 *                              Publisher's Server Socket.
 	 */
 	public Publisher(String defaultServerIP, int defaultServerPort) throws IOException {
-		topicIPManager = new IPManager(new ConnectionInfo(
-				InetAddress.getByName(defaultServerIP), defaultServerPort));
+		this(InetAddress.getByName(defaultServerIP), defaultServerPort);
 	}
 
 	/**
 	 * Constructs a Publisher that will connect to a specific default broker.
 	 *
-	 * @param defaultServerIP the IP of the default broker, interpreted as
-	 *                        {@link ConnectionInfo#getByAddress(byte[])}.
+	 * @param defaultServerIP   the IP of the default broker, interpreted as
+	 *                          {@link InetAddress#getByAddress(byte[])}.
 	 * @param defaultServerPort the port of the default broker
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
@@ -52,8 +49,11 @@ class Publisher implements Runnable, AutoCloseable {
 	 *                              Publisher's Server Socket.
 	 */
 	public Publisher(byte[] defaultServerIP, int defaultServerPort) throws IOException {
-		topicIPManager = new IPManager(new ConnectionInfo(
-				InetAddress.getByAddress(defaultServerIP), defaultServerPort));
+		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort);
+	}
+
+	private Publisher(InetAddress ip, int port) throws IOException {
+		topicCIManager = new CIManager(new ConnectionInfo(ip, port));
 	}
 
 	@Override
@@ -76,9 +76,9 @@ class Publisher implements Runnable, AutoCloseable {
 		boolean success;
 
 		do {
-			ConnectionInfo actualBrokerIP = topicIPManager.getIPForTopic(topic);
+			ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topic);
 
-			try (Socket socket = new Socket(actualBrokerIP.getAddress(), actualBrokerIP.getPort())) {
+			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
 
 				PushThread pushThread;
 				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
@@ -93,19 +93,20 @@ class Publisher implements Runnable, AutoCloseable {
 				}
 
 				success = pushThread.success();
+
 			} catch (IOException e) {
 
 				System.err.printf("IOException while connecting to actual broker%n");
 
 				success = false;
-				topicIPManager.invalidate(topic);
+				topicCIManager.invalidate(topic);
 			}
 		} while (!success);
 	}
 
 	@Override
 	public void close() throws IOException {
-		topicIPManager.close();
+		topicCIManager.close();
 	}
 
 	/**
@@ -117,8 +118,7 @@ class Publisher implements Runnable, AutoCloseable {
 
 		private final Packet[]           data;
 		private final ObjectOutputStream stream;
-		private boolean                  success;
-		private boolean                  start, end;
+		private boolean                  success, start, end;
 
 		/**
 		 * Constructs the Thread that, when run, will write the data to the stream
@@ -129,8 +129,7 @@ class Publisher implements Runnable, AutoCloseable {
 		public PushThread(Packet[] data, ObjectOutputStream stream) {
 			this.data = data;
 			this.stream = stream;
-			success = false;
-			start = end = false;
+			success = start = end = false;
 		}
 
 		@Override
@@ -180,23 +179,27 @@ class Publisher implements Runnable, AutoCloseable {
 	 *
 	 * @author Alex Mandelias
 	 */
-	private class IPManager implements AutoCloseable {
-		private final Map<Topic, ConnectionInfo> map = new HashMap<>();
-		private ConnectionInfo                	defaultBrokerInfo;
-		private final ServerSocket            	serverSocket;
+	private static class CIManager implements AutoCloseable {
+
+		private static final PortManager PORT_MANAGER = new PortManager();
+
+		private final Map<Topic, ConnectionInfo> map;
+		private ConnectionInfo                   defaultBrokerCI;
+		private final ServerSocket               serverSocket;
 
 		/**
-		 * Constructs the IPManager given the ConnectionInfo to the default broker. The
-		 * IPManager's server socket is also opened.
+		 * Constructs the CIManager given the ConnectionInfo to the default broker. The
+		 * CIManager's server socket is also opened.
 		 *
-		 * @param defaultBrokerInfo the IP of the default broker to connect to
+		 * @param defaultBrokerConnectionInfo the IP of the default broker to connect to
 		 *
 		 * @throws IOException if an I/O error occurs when opening this IP Manager's
 		 *                     Server Socket.
 		 */
-		public IPManager(ConnectionInfo defaultBrokerInfo) throws IOException {
-			this.defaultBrokerInfo = defaultBrokerInfo;
-			serverSocket = new ServerSocket(portManager.getNewAvailablePort());
+		public CIManager(ConnectionInfo defaultBrokerConnectionInfo) throws IOException {
+			map = new HashMap<>();
+			defaultBrokerCI = defaultBrokerConnectionInfo;
+			serverSocket = new ServerSocket(PORT_MANAGER.getNewAvailablePort());
 		}
 
 		/**
@@ -211,13 +214,13 @@ class Publisher implements Runnable, AutoCloseable {
 		 *
 		 * @return the ConnectionInfo for that Topic
 		 */
-		public ConnectionInfo getIPForTopic(Topic topic) {
+		public ConnectionInfo getConnectionInfoForTopic(Topic topic) {
 			ConnectionInfo address = map.get(topic);
 
 			if (address != null)
 				return address;
 
-			updateIPForTopic(topic);
+			updateCIForTopic(topic);
 			return map.get(topic);
 		}
 
@@ -237,40 +240,43 @@ class Publisher implements Runnable, AutoCloseable {
 			serverSocket.close();
 		}
 
-		private void updateIPForTopic(Topic topic) {
+		private void updateCIForTopic(Topic topic) {
 			boolean ipForTopicBrokerException;
 			do {
 				ipForTopicBrokerException = false;
+
 				try (Socket socket = getSocketToDefaultBroker();
 				        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
 
 					oos.writeObject(topic);
 
-					ConnectionInfo actualBrokerIPForTopic;
+					ConnectionInfo actualBrokerCIForTopic;
 					try {
-						actualBrokerIPForTopic = (ConnectionInfo) ois.readObject();
+						actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
 					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
 						return;
 					}
 
-					map.put(topic, actualBrokerIPForTopic);
+					map.put(topic, actualBrokerCIForTopic);
+
 				} catch (IOException e) {
 					ipForTopicBrokerException = true;
 
 					System.err
-					        .printf("IOException while getting IP for Topic from default broker%n");
+					        .printf("IOException while getting ConnectionInfo for Topic from default broker%n");
 
 					boolean ipForNewDefaultBrokerException;
 					do {
 						ipForNewDefaultBrokerException = false;
+
 						try (Socket socket1 = serverSocket.accept();
 						        ObjectInputStream ois1 = new ObjectInputStream(
 						                socket1.getInputStream())) {
 
 							try {
-								defaultBrokerInfo = (ConnectionInfo) ois1.readObject();
+								defaultBrokerCI = (ConnectionInfo) ois1.readObject();
 							} catch (ClassNotFoundException e1) {
 								e1.printStackTrace();
 								return;
@@ -288,7 +294,7 @@ class Publisher implements Runnable, AutoCloseable {
 		}
 
 		private Socket getSocketToDefaultBroker() throws IOException {
-			return new Socket(defaultBrokerInfo.getAddress(), defaultBrokerInfo.getPort());
+			return new Socket(defaultBrokerCI.getAddress(), defaultBrokerCI.getPort());
 		}
 	}
 }
