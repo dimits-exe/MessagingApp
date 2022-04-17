@@ -22,7 +22,7 @@ final class PortManager {
 	 *
 	 * @return a new available port
 	 */
-	public synchronized int getPort() {
+	public synchronized int getNewAvailablePort() {
 		int port;
 		do {
 			port = ThreadLocalRandom.current().nextInt(LOWEST_PORT, HIGHEST_PORT);

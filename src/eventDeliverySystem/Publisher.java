@@ -196,7 +196,7 @@ class Publisher implements Runnable, AutoCloseable {
 		 */
 		public IPManager(ConnectionInfo defaultBrokerInfo) throws IOException {
 			this.defaultBrokerInfo = defaultBrokerInfo;
-			serverSocket = new ServerSocket(portManager.getPort());
+			serverSocket = new ServerSocket(portManager.getNewAvailablePort());
 		}
 
 		/**

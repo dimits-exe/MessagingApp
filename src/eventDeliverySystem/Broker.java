@@ -58,8 +58,8 @@ class Broker implements Runnable {
 	@Override
 	public void run() {
 		try {
-			clientRequestSocket = new ServerSocket(portManager.getPort(), MAX_CONNECTIONS);
-			brokerRequestSocket = new ServerSocket(portManager.getPort(), MAX_CONNECTIONS);
+			clientRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
+			brokerRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
 			
 			Runnable clientRequestThread = new Runnable() {
 
@@ -105,7 +105,7 @@ class Broker implements Runnable {
 	 */
 	private void subscribeToNewBroker(InetAddress newBrokerIP) {
 		try {
-			brokerConnections.add(new Socket(newBrokerIP, portManager.getPort()));
+			brokerConnections.add(new Socket(newBrokerIP, portManager.getNewAvailablePort()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
