@@ -6,7 +6,6 @@ import java.util.stream.Stream;
 
 import eventDeliverySystem.RawData.DataType;
 
-
 /**
  * Provides utility methods to facilitate the transmission of RawData objects by
  * breaking them into packets and then reassembling them.
@@ -28,6 +27,7 @@ class Packet implements Serializable {
 	 */
 	public static Packet[] dataToPackets(RawData data, String fileExtension) {
 		final byte[] src = data.getData();
+		int          ptr = 0;
 
 		final int      packetCount = (int) Math.ceil(src.length / (double) Packet.PACKET_SIZE);
 		final Packet[] packets     = new Packet[packetCount];
@@ -38,15 +38,11 @@ class Packet implements Serializable {
 			final byte[]   payload = new byte[Packet.PACKET_SIZE];
 			final DataType type    = data.getType();
 			final Profile  poster  = data.getPoster();
+			final int      length  = Math.min(Packet.PACKET_SIZE, src.length - ptr);
 
-			if (!isFinal)
-				System.arraycopy(src, i * Packet.PACKET_SIZE, payload, 0, Packet.PACKET_SIZE);
-			else
-				System.arraycopy(src, i * Packet.PACKET_SIZE, payload, 0,
-				        src.length - (i * Packet.PACKET_SIZE));
+			System.arraycopy(src, (ptr += length) - length, payload, 0, length);
 
-			final Packet packet = new Packet(id, isFinal, payload, type, fileExtension, poster);
-			packets[i] = packet;
+			packets[i] = new Packet(id, isFinal, payload, type, fileExtension, poster);
 		}
 
 		return packets;
@@ -91,12 +87,12 @@ class Packet implements Serializable {
 
 			if (curr.id != idOfFirst)
 				throw new IllegalStateException(String.format(
-				        "Tried to packet with id %d with packet with id %d", idOfFirst, curr.id));
+				        "Tried to combine packet with id %d with packet with id %d", idOfFirst,
+				        curr.id));
 
 			final byte[] payload = curr.payload;
 			final int    length  = payload.length;
-			System.arraycopy(payload, 0, data, ptr, length);
-			ptr += length;
+			System.arraycopy(payload, 0, data, (ptr += length) - length, length);
 		}
 
 		return new RawData(data, packets[0].type, packets[0].poster,
