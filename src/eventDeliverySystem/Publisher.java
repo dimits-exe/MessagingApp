@@ -1,5 +1,8 @@
 package eventDeliverySystem;
 
+import static eventDeliverySystem.Message.MessageType.DATA_PACKET;
+import static eventDeliverySystem.Message.MessageType.DISCOVER;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -81,6 +84,8 @@ class Publisher implements Runnable, AutoCloseable {
 
 				PushThread pushThread;
 				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+
+					oos.writeObject(new Message(DATA_PACKET));
 
 					pushThread = new PushThread(packets, oos);
 					pushThread.start();
@@ -307,7 +312,7 @@ class Publisher implements Runnable, AutoCloseable {
 				        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
 
-					oos.writeObject(topic);
+					oos.writeObject(new Message(DISCOVER, topic));
 
 					ConnectionInfo actualBrokerCIForTopic;
 					try {
