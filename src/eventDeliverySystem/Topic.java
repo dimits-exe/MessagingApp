@@ -17,7 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
 class Topic {
 	private final String name;
 	private final long id;
-	private final Stack<RawData> posts;
+	private final Stack<Post> posts;
 
 	/**
 	 * Create a new conversation.
@@ -27,7 +27,7 @@ class Topic {
 		super();
 		this.name = name;
 		this.id = ThreadLocalRandom.current().nextLong();
-		this.posts = new Stack<RawData>();
+		this.posts = new Stack<>();
 	}
 
 	/**
@@ -50,20 +50,20 @@ class Topic {
 	 * Get a list containing posts posted after the provided postId.
 	 * @param lastPostId the id of the last post saved in the conversation
 	 * @return the new posts sorted last-to-first posted
-	 * @throws NoSuchElementException if the lastPostId doesn't correspond to 
+	 * @throws NoSuchElementException if the lastPostId doesn't correspond to
 	 * a post in the topic
 	 */
-	public List<RawData> getPostsSince(long lastPostId) throws NoSuchElementException {
-		Stack<RawData> newStack = new Stack<RawData>();
+	public List<Post> getPostsSince(long lastPostId) throws NoSuchElementException {
+		Stack<Post> newStack = new Stack<>();
 		newStack.addAll(posts);
-		
-		LinkedList<RawData> newPosts = new LinkedList<RawData>();
+
+		LinkedList<Post> newPosts = new LinkedList<>();
 		try {
-			
+
 			do {
 				newPosts.add(newStack.pop());
-			} while(newStack.peek().getPostID() != lastPostId);
-			
+			} while (newStack.peek().getPostInfo().getId() != lastPostId);
+
 		} catch(EmptyStackException e) {
 			throw new NoSuchElementException("There is no post with this idlol wtf"); //maybe just send all posts anyway
 		}
@@ -72,9 +72,10 @@ class Topic {
 
 	/**
 	 * Add a new post to the conversation.
-	 * @param postData a RawData object containing the post's data.
+	 *
+	 * @param postData a Post object containing the post's data.
 	 */
-	public void post(RawData postData) {
+	public void post(Post postData) {
 		posts.add(postData);
 	}
 

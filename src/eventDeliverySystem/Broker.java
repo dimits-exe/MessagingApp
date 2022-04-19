@@ -7,31 +7,31 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.LinkedList;
 
 /**
  * A remote component that forms the backbone of the EventDeliverySystem.
- * Brokers act as part of a distributed server that services 
+ * Brokers act as part of a distributed server that services
  * Publishers and Consumers.
  *
  */
 class Broker implements Runnable {
-	
+
 	private static final PortManager portManager = new PortManager();
 	private static final int MAX_CONNECTIONS = 64;
-	
+
 	private final Set<Socket> clientConnections; //replace with set<InetAddress>?
 	private final Set<Socket> brokerConnections;
-	private final Map<Topic, LinkedList<RawData>> postsPerTopic;
-	private final Map<Topic, LinkedList<RawData>> postsBackup;
-	
-	
+	private final Map<Topic, LinkedList<Post>> postsPerTopic;
+	private final Map<Topic, LinkedList<Post>> postsBackup;
+
+
 	private ServerSocket clientRequestSocket;
 	private ServerSocket brokerRequestSocket;
 	private boolean isLeader;
-	
+
 	/**
 	 * Create a new broker and add it to the already existing
 	 * distributed server system.
@@ -42,25 +42,36 @@ class Broker implements Runnable {
 		subscribeToNewBroker(leaderIP);
 		isLeader = false;
 	}
-	
+
 	/**
 	 * Create a new broker that will act as the Leader of the
 	 * distributed server.
 	 */
 	public Broker() {
-		this.clientConnections = new HashSet<Socket>();
-		this.brokerConnections = new HashSet<Socket>();
-		this.postsPerTopic = new HashMap<Topic, LinkedList<RawData>>();
-		this.postsBackup= new HashMap<Topic, LinkedList<RawData>>();
+		this.clientConnections = new HashSet<>();
+		this.brokerConnections = new HashSet<>();
+		this.postsPerTopic = new HashMap<>();
+		this.postsBackup = new HashMap<>();
 		isLeader = true;
 	}
-	
+
+	/*
+	@foff
+
+	1. basikh roh: stelnei aplo mhnyma ston topic broker
+	2. publisher stelnei mhnyma
+
+
+
+	@fon
+	 */
+
 	@Override
 	public void run() {
 		try {
 			clientRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
 			brokerRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
-			
+
 			Runnable clientRequestThread = new Runnable() {
 
 				@Override
@@ -73,9 +84,9 @@ class Broker implements Runnable {
 						}
 					}
 				}
-				
+
 			}; //clientRequestThread
-			
+
 			Runnable brokerRequestThread = new Runnable() {
 
 				@Override
@@ -88,17 +99,17 @@ class Broker implements Runnable {
 						}
 					}
 				}
-				
+
 			}; //brokerRequestThread
-			
-			new Thread(clientRequestThread).run();
-			new Thread(brokerRequestThread).run();
-			
+
+			new Thread(clientRequestThread).start();
+			new Thread(brokerRequestThread).start();
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Add a connection from and to the new broker.
 	 * @param newBrokerIP the IP of the new broker
@@ -110,20 +121,20 @@ class Broker implements Runnable {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Send a {@link Message} redirecting the client to the
 	 * broker assigned to the topic.
-	 * 
+	 *
 	 * @param topic the topic
 	 */
 	private void deferToActualBroker(Topic topic) {
 		if(!isLeader) {
 			throw new IllegalStateException("Non-leader broker asked to redirect to other broker");
 		}
-		
+
 	}
-	
+
 	/**
 	 * Sends a message to all brokers.
 	 * @param m the messsage
@@ -138,7 +149,7 @@ class Broker implements Runnable {
 			System.err.println("Message transmission failed: " + ioe.toString());
 		}
 	}
-	
+
 	/**
 	 * Sends a post to all brokers to be saved remotely.
 	 * @param postPackets the packets of the post
@@ -147,16 +158,16 @@ class Broker implements Runnable {
 		try {
 			for(Socket connection : brokerConnections) {
 				ObjectOutputStream out = new ObjectOutputStream(connection.getOutputStream());
-				
+
 				for(Packet p: postPackets) {
 					out.writeObject(p);
 				}
-				
+
 			}
 		} catch (IOException ioe) {
 			System.err.println("Backup failed: " + ioe.toString());
 		}
 	}
-	
+
 
 }

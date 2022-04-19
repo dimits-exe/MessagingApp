@@ -65,13 +65,12 @@ class Publisher implements Runnable, AutoCloseable {
 	/**
 	 * Pushes some Data to a Topic as a specific File Type.
 	 *
-	 * @param topic         the Topic to send the data to
 	 * @param post          the data
-	 * @param fileExtension the file type
 	 */
-	public void push(Topic topic, RawData post, String fileExtension) {
+	public void push(Post post) {
 
-		Packet[] packets = Packet.fromRawData(post, fileExtension);
+		final Packet[] packets = Packet.fromPost(post);
+		final Topic    topic   = post.getPostInfo().getTopic();
 
 		boolean success;
 

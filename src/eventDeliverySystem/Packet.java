@@ -2,7 +2,7 @@ package eventDeliverySystem;
 
 import java.io.Serializable;
 
-import eventDeliverySystem.RawData.DataType;
+import eventDeliverySystem.Post.DataType;
 
 /**
  * Provides utility methods to facilitate the transmission of RawData objects by
@@ -24,24 +24,22 @@ class Packet implements Serializable {
 	 *
 	 * @return an array of packet objects holding the file's data
 	 */
-	public static Packet[] fromRawData(RawData data, String fileExtension) {
+	public static Packet[] fromPost(Post data) {
 		final byte[] src = data.getData();
 		int          ptr = 0;
 
 		final int      packetCount = (int) Math.ceil(src.length / (double) Packet.PACKET_SIZE);
 		final Packet[] packets     = new Packet[packetCount];
-		final long     id          = data.getPostID(); // same for packets of the same RawData
+		final PostInfo postInfo    = data.getPostInfo();
 
 		for (int i = 0; i < packetCount; i++) {
 			final boolean  isFinal = i == (packetCount - 1);
 			final byte[]   payload = new byte[Packet.PACKET_SIZE];
-			final DataType type    = data.getType();
-			final Profile  poster  = data.getPoster();
-			final int      length  = Math.min(Packet.PACKET_SIZE, src.length - ptr);
 
+			final int length = Math.min(Packet.PACKET_SIZE, src.length - ptr);
 			System.arraycopy(src, (ptr += length) - length, payload, 0, length);
 
-			packets[i] = new Packet(id, isFinal, payload, type, fileExtension, poster);
+			packets[i] = new Packet(isFinal, payload, postInfo);
 		}
 
 		return packets;
@@ -52,38 +50,23 @@ class Packet implements Serializable {
 	 *
 	 * @param text   the text
 	 * @param poster the profile of the user that sent the text
+	 * @param topic  the
 	 *
 	 * @return an array of packet objects holding the text
 	 */
-	public static Packet[] fromText(String text, Profile poster) {
-		final RawData rawData = new RawData(text.getBytes(), DataType.TEXT, poster, null);
-		return Packet.fromRawData(rawData, null);
+	public static Packet[] fromText(String text, Profile poster, Topic topic) {
+		final Post rawData = new Post(text.getBytes(), DataType.TEXT, poster, null, topic);
+		return Packet.fromPost(rawData);
 	}
 
-	private final long     id;
 	private final boolean  isFinal;
 	private final byte[]   payload;
-	private final String   fileExtension;
-	private final Profile  poster;
-	private final DataType type;
+	private final PostInfo postInfo;
 
-	private Packet(long id, boolean isFinal, byte[] payload, DataType type, String fileExtension,
-	        Profile poster) {
-		this.id = id;
+	private Packet(boolean isFinal, byte[] payload, PostInfo postInfo) {
 		this.isFinal = isFinal;
 		this.payload = payload;
-		this.poster = poster;
-		this.type = type;
-		this.fileExtension = fileExtension;
-	}
-
-	/**
-	 * Returns this Packet's ID.
-	 *
-	 * @return the ID
-	 */
-	public long getId() {
-		return id;
+		this.postInfo = postInfo;
 	}
 
 	/**
@@ -106,29 +89,11 @@ class Packet implements Serializable {
 	}
 
 	/**
-	 * Returns this Packet's fileExtension.
+	 * Returns this Packet's postInfo.
 	 *
-	 * @return the fileExtension
+	 * @return the postInfo
 	 */
-	public String getFileExtension() {
-		return fileExtension;
-	}
-
-	/**
-	 * Returns this Packet's poster.
-	 *
-	 * @return the poster
-	 */
-	public Profile getPoster() {
-		return poster;
-	}
-
-	/**
-	 * Returns this Packet's type.
-	 *
-	 * @return the type
-	 */
-	public DataType getType() {
-		return type;
+	public PostInfo getPostInfo() {
+		return postInfo;
 	}
 }
