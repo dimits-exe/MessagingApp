@@ -120,10 +120,10 @@ class Publisher implements Runnable, AutoCloseable {
 		private boolean                  success, start, end;
 
 		/**
-		 * Constructs the Thread that, when run, will write the data to the stream
+		 * Constructs the Thread that, when run, will write the data to the stream.
 		 *
-		 * @param data   the data to send
-		 * @param stream the output stream to which to send the data
+		 * @param data   the data to write
+		 * @param stream the output stream to which to write the data
 		 */
 		public PushThread(Packet[] data, ObjectOutputStream stream) {
 			this.data = data;
@@ -184,11 +184,70 @@ class Publisher implements Runnable, AutoCloseable {
 
 		private final Map<Topic, ConnectionInfo> map;
 		private ConnectionInfo                   defaultBrokerCI;
-		private final ServerSocket               serverSocket;
+		private final ServerThread               serverThread;
+
+		private class ServerThread extends Thread implements AutoCloseable {
+
+			private final ServerSocket serverSocket;
+
+			/**
+			 * Constructs a new ServerThread by opening this CIManager's ServerSocket.
+			 *
+			 * @throws IOException if an I/O error occurs when opening this CIManager's
+			 *                     Server Socket.
+			 */
+			public ServerThread() throws IOException {
+				serverSocket = new ServerSocket(PORT_MANAGER.getNewAvailablePort());
+			}
+
+			@Override
+			public void run() {
+				while (true) {
+					boolean ipForNewDefaultBrokerException;
+
+					do {
+						ipForNewDefaultBrokerException = false;
+
+						try (Socket socket1 = serverSocket.accept()) {
+							try (ObjectInputStream ois1 = new ObjectInputStream(
+							        socket1.getInputStream())) {
+								try {
+									defaultBrokerCI = (ConnectionInfo) ois1.readObject();
+								} catch (ClassNotFoundException e1) {
+									e1.printStackTrace();
+									return;
+								} finally {
+									ois1.close();
+								}
+							} catch (IOException e1) {
+								// io exception while getting streams, keep trying
+								ipForNewDefaultBrokerException = true;
+								System.err.printf(
+								        "IOException while getting new ConnectionInfo for default broker%n");
+							}
+						} catch (IOException e2) {
+							// server socket was closed (presumably by calling close()), stop this thread's execution
+							System.err.printf(
+							        "IOException while waiting for connection for new default broker%n");
+
+							return;
+						}
+					} while (ipForNewDefaultBrokerException);
+
+					CIManager.this.notify(); // notify
+				}
+			}
+
+			@Override
+			public void close() throws IOException {
+				serverSocket.close();
+			}
+		}
 
 		/**
 		 * Constructs the CIManager given the ConnectionInfo to the default broker. The
-		 * CIManager's server socket is also opened.
+		 * CIManager's server socket is also opened and begins listening for connections
+		 * to update its connection information for the default broker.
 		 *
 		 * @param defaultBrokerConnectionInfo the IP of the default broker to connect to
 		 *
@@ -198,7 +257,7 @@ class Publisher implements Runnable, AutoCloseable {
 		public CIManager(ConnectionInfo defaultBrokerConnectionInfo) throws IOException {
 			map = new HashMap<>();
 			defaultBrokerCI = defaultBrokerConnectionInfo;
-			serverSocket = new ServerSocket(PORT_MANAGER.getNewAvailablePort());
+			serverThread = new ServerThread();
 		}
 
 		/**
@@ -236,7 +295,7 @@ class Publisher implements Runnable, AutoCloseable {
 
 		@Override
 		public void close() throws IOException {
-			serverSocket.close();
+			serverThread.close();
 		}
 
 		private void updateCIForTopic(Topic topic) {
@@ -266,28 +325,13 @@ class Publisher implements Runnable, AutoCloseable {
 					System.err
 					        .printf("IOException while getting ConnectionInfo for Topic from default broker%n");
 
-					boolean ipForNewDefaultBrokerException;
-					do {
-						ipForNewDefaultBrokerException = false;
-
-						try (Socket socket1 = serverSocket.accept();
-						        ObjectInputStream ois1 = new ObjectInputStream(
-						                socket1.getInputStream())) {
-
-							try {
-								defaultBrokerCI = (ConnectionInfo) ois1.readObject();
-							} catch (ClassNotFoundException e1) {
-								e1.printStackTrace();
-								return;
-							}
-
-						} catch (IOException e1) {
-							ipForNewDefaultBrokerException = true;
-
-							System.err.printf(
-							        "IOException while getting new ConnectionInfo for default broker%n");
-						}
-					} while (ipForNewDefaultBrokerException);
+					try {
+						// wait until notified by server thread that the default broker has been changed
+						wait();
+					} catch (InterruptedException e1) {
+						System.err
+						        .printf("Interrupted after IOException while getting ConnectionInfo for Topic from default broker%n");
+					}
 				}
 			} while (ipForTopicBrokerException);
 		}
