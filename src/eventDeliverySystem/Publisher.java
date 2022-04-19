@@ -71,7 +71,7 @@ class Publisher implements Runnable, AutoCloseable {
 	 */
 	public void push(Topic topic, RawData post, String fileExtension) {
 
-		Packet[] packets = Packet.dataToPackets(post, fileExtension);
+		Packet[] packets = Packet.fromRawData(post, fileExtension);
 
 		boolean success;
 

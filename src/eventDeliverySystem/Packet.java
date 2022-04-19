@@ -1,8 +1,6 @@
 package eventDeliverySystem;
 
 import java.io.Serializable;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Stream;
 
 import eventDeliverySystem.RawData.DataType;
 
@@ -14,24 +12,25 @@ import eventDeliverySystem.RawData.DataType;
  * @author Dimitris Tsirmpas
  */
 class Packet implements Serializable {
+
 	private static final int  PACKET_SIZE      = (int) (512 * Math.pow(2, 10));
-	private static final long serialVersionUID = 1;
+	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Turn a file or text to a series of packets.
+	 * Turn a file to a series of packets.
 	 *
 	 * @param data          the data of the file
 	 * @param fileExtension the extension of the file
 	 *
 	 * @return an array of packet objects holding the file's data
 	 */
-	public static Packet[] dataToPackets(RawData data, String fileExtension) {
+	public static Packet[] fromRawData(RawData data, String fileExtension) {
 		final byte[] src = data.getData();
 		int          ptr = 0;
 
 		final int      packetCount = (int) Math.ceil(src.length / (double) Packet.PACKET_SIZE);
 		final Packet[] packets     = new Packet[packetCount];
-		final long     id          = Packet.getRandomID(); // same for packets of the same RawData
+		final long     id          = data.getPostID(); // same for packets of the same RawData
 
 		for (int i = 0; i < packetCount; i++) {
 			final boolean  isFinal = i == (packetCount - 1);
@@ -51,56 +50,14 @@ class Packet implements Serializable {
 	/**
 	 * Turn a string of text to a series of packets.
 	 *
-	 * @param text   the text to be packaged
+	 * @param text   the text
 	 * @param poster the profile of the user that sent the text
 	 *
 	 * @return an array of packet objects holding the text
 	 */
-	public static Packet[] textToPackets(String text, Profile poster) {
+	public static Packet[] fromText(String text, Profile poster) {
 		final RawData rawData = new RawData(text.getBytes(), DataType.TEXT, poster, null);
-		return Packet.dataToPackets(rawData, null);
-	}
-
-	/**
-	 * Extracts the data of some Packets into a single RawData object.
-	 *
-	 * @param packets an array of packets that stores the entire contents of a
-	 *                RawData object
-	 *
-	 * @return the packets' contents as a RawData object
-	 *
-	 * @throws IllegalArgumentException if the packet array has length 0
-	 * @throws IllegalStateException    if packets with different ID are found in
-	 *                                  the array
-	 */
-	public static RawData packetsToData(Packet[] packets) {
-		if (packets.length == 0)
-			throw new IllegalArgumentException("Tried to create a RawData object with no data");
-
-		final byte[] data = new byte[Stream.of(packets).mapToInt(p -> p.payload.length).sum()];
-		int          ptr  = 0;
-
-		final long idOfFirst = packets[0].id;
-
-		for (int i = 0, count = packets.length; i < count; i++) {
-			final Packet curr = packets[i];
-
-			if (curr.id != idOfFirst)
-				throw new IllegalStateException(String.format(
-				        "Tried to combine packet with id %d with packet with id %d", idOfFirst,
-				        curr.id));
-
-			final byte[] payload = curr.payload;
-			final int    length  = payload.length;
-			System.arraycopy(payload, 0, data, (ptr += length) - length, length);
-		}
-
-		return new RawData(data, packets[0].type, packets[0].poster,
-		        packets[0].fileExtension);
-	}
-
-	private static long getRandomID() {
-		return ThreadLocalRandom.current().nextLong();
+		return Packet.fromRawData(rawData, null);
 	}
 
 	private final long     id;
@@ -137,5 +94,41 @@ class Packet implements Serializable {
 	 */
 	public boolean isFinal() {
 		return isFinal;
+	}
+
+	/**
+	 * Returns this Packet's payload.
+	 *
+	 * @return the payload
+	 */
+	public byte[] getPayload() {
+		return payload;
+	}
+
+	/**
+	 * Returns this Packet's fileExtension.
+	 *
+	 * @return the fileExtension
+	 */
+	public String getFileExtension() {
+		return fileExtension;
+	}
+
+	/**
+	 * Returns this Packet's poster.
+	 *
+	 * @return the poster
+	 */
+	public Profile getPoster() {
+		return poster;
+	}
+
+	/**
+	 * Returns this Packet's type.
+	 *
+	 * @return the type
+	 */
+	public DataType getType() {
+		return type;
 	}
 }
