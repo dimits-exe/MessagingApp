@@ -3,57 +3,71 @@ package eventDeliverySystem;
 import java.io.Serializable;
 
 /**
- * A wrapper holding an object and specifying its type using an enum used for Internet transportation.
- * Used to facilitate uniform communication between all remote components of the system.
+ * A wrapper holding an object and specifying its type using an enum used for
+ * Internet transportation. Used to facilitate uniform communication between all
+ * remote components of the system.
+ *
+ * @author Alex Mandelias
+ * @author Dimitris Tsirmpas
  */
 class Message implements Serializable {
-	private static final long serialVersionUID = 8083163797545703062L;
-	
+	private static final long serialVersionUID = 1L;
+
 	private final MessageType type;
-	private final Object value;
-	
-	
+	private final Object      value;
+
 	/**
-	 * Construct a message with the given {@link MessageType} type and address.
+	 * Constructs an empty Message with the given {@link MessageType type}. The
+	 * value is set to {@code new Object()} in order to allow for serialisation.
+	 *
 	 * @param type the type of the message
-	 * @param address the IP address the message is referring to
+	 */
+	public Message(MessageType type) {
+		this(type, new Object());
+	}
+
+	/**
+	 * Constructs a Message with the given {@link MessageType type} and value.
+	 *
+	 * @param type  the type of the message
+	 * @param value the value of the message
 	 */
 	public Message(MessageType type, Object value) {
 		this.type = type;
 		this.value = value;
 	}
 
+	/**
+	 * Returns this Message's type.
+	 *
+	 * @return the type
+	 */
 	public MessageType getType() {
 		return type;
 	}
 
+	/**
+	 * Returns this Message's value.
+	 *
+	 * @return the value
+	 */
 	public Object getValue() {
 		return value;
 	}
-	
+
 	/**
-	 * Specifies the purpose and type of payload of the message.
+	 * Specifies the purpose of a Message, thereby indirectly indicating the type of
+	 * its value.
+	 *
+	 * @author Alex Mandelias
+	 * @author Dimitris Tsirmpas
 	 */
 	enum MessageType{
-		/**
-		 * Change the connecting IP to a new one.
-		 * The value is a ConnectionInfo object.
-		 */
-		REDIRECT, 
-		/**
-		 * An error has occurred while trying to reach a certain process.
-		 * The value is a ConnectionInfo object.
-		 */
-		ERROR,
-		/**
-		 * A simple data message.
-		 * The value is a Packet object.
-		 */
-		DATA,
-		/**
-		 * A new IP has been connected to the system.
-		 * The value is a ConnectionInfo object.
-		 */
+
+		/** Indicates the start of a data message. The value is ignored */
+		DATA_PACKET,
+
+		/** Requests the actual broker for a Topic. The value is the Topic */
 		DISCOVER
 	}
 }
