@@ -4,9 +4,11 @@ import java.util.EmptyStackException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Stack;
 import java.util.concurrent.ThreadLocalRandom;
+import java.security.DigestException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * A data structure holding the contents of a conversation/topic between users.
@@ -81,7 +83,17 @@ class Topic {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id);
+		int hash = 0;
+		try {
+			hash = MessageDigest.getInstance("md5").digest(name.getBytes(), 0, 0);
+		} catch (DigestException e) {
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		
+		// if this actually returns 0 I dont fucking care
+		return hash;
 	}
 
 	@Override
@@ -93,6 +105,6 @@ class Topic {
 		if (getClass() != obj.getClass())
 			return false;
 		Topic other = (Topic) obj;
-		return id == other.id;
+		return name.equals(other.getName());
 	}
 }
