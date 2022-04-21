@@ -29,31 +29,29 @@ class Post {
 	 * @throws IllegalStateException    if packets with different ID are found in
 	 *                                  the array
 	 */
-	public static Post fromPackets(Packet[] packets) {
+	public static Post fromPackets(Packet[] packets, PostInfo postInfo) {
 		if (packets.length == 0)
 			throw new IllegalArgumentException("Tried to create a RawData object with no data");
 
 		final byte[] data = new byte[Stream.of(packets).mapToInt(p -> p.getPayload().length).sum()];
 		int          ptr  = 0;
 
-		final long idOfFirst = packets[0].getPostInfo().getId();
+		final long idOfFirst = packets[0].getPostId();
 
 		for (int i = 0, count = packets.length; i < count; i++) {
 			final Packet curr = packets[i];
 
-			if (curr.getPostInfo().getId() != idOfFirst)
+			if (curr.getPostId() != idOfFirst)
 				throw new IllegalStateException(String.format(
 				        "Tried to combine packet with id %d with packet with id %d", idOfFirst,
-				        curr.getPostInfo().getId()));
+				        curr.getPostId()));
 
 			final byte[] payload = curr.getPayload();
 			final int    length  = payload.length;
 			System.arraycopy(payload, 0, data, (ptr += length) - length, length);
 		}
 
-		final PostInfo p = packets[0].getPostInfo();
-		return new Post(data, p.getType(), p.getPoster(), p.getFileExtension(), p.getTopic(),
-		        p.getId());
+		return new Post(data, postInfo);
 	}
 
 	private final byte[]   data;
@@ -71,6 +69,17 @@ class Post {
 	 */
 	public Post(byte[] data, DataType type, Profile poster, String fileExtension, Topic topic) {
 		this(data, type, poster, fileExtension, topic, ThreadLocalRandom.current().nextLong());
+	}
+	
+	/**
+	 * Constructs a new Post with the specified info.
+	 * 
+	 * @param data the contents of the post
+	 * @param postInfo the info of the post
+	 */
+	public Post(byte[] data, PostInfo postInfo) {
+		this(data, postInfo.getType(), postInfo.getPoster(), postInfo.getFileExtension(), postInfo.getTopic(),
+				postInfo.getId());
 	}
 
 	/**

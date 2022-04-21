@@ -39,7 +39,7 @@ class Packet implements Serializable {
 			final int length = Math.min(Packet.PACKET_SIZE, src.length - ptr);
 			System.arraycopy(src, (ptr += length) - length, payload, 0, length);
 
-			packets[i] = new Packet(isFinal, payload, postInfo);
+			packets[i] = new Packet(isFinal, payload, postInfo.getId());
 		}
 
 		return packets;
@@ -61,12 +61,12 @@ class Packet implements Serializable {
 
 	private final boolean  isFinal;
 	private final byte[]   payload;
-	private final PostInfo postInfo;
+	private final long postId;
 
-	private Packet(boolean isFinal, byte[] payload, PostInfo postInfo) {
+	private Packet(boolean isFinal, byte[] payload, long postId) {
 		this.isFinal = isFinal;
 		this.payload = payload;
-		this.postInfo = postInfo;
+		this.postId = postId;
 	}
 
 	/**
@@ -89,11 +89,11 @@ class Packet implements Serializable {
 	}
 
 	/**
-	 * Returns this Packet's postInfo.
+	 * Returns this Packet's id.
 	 *
-	 * @return the postInfo
+	 * @return the id that corresponds to the post being sent
 	 */
-	public PostInfo getPostInfo() {
-		return postInfo;
+	public long getPostId() {
+		return postId;
 	}
 }
