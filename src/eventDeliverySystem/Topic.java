@@ -105,6 +105,6 @@ class Topic {
 		if (getClass() != obj.getClass())
 			return false;
 		Topic other = (Topic) obj;
-		return name.equals(other.getName());
+		return name.equals(other.name);
 	}
 }
