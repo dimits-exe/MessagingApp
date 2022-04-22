@@ -65,20 +65,21 @@ class Post {
 	 * @param poster        the Poster of the Post
 	 * @param fileExtension the file extension associated with the data of the Post.
 	 *                      Must be {@code null} if {@code type == DataType.TEXT}.
-	 * @param topic         the Topic of the Post
+	 * @param topicName     the Topic of the Post
 	 */
-	public Post(byte[] data, DataType type, Profile poster, String fileExtension, Topic topic) {
-		this(data, type, poster, fileExtension, topic, ThreadLocalRandom.current().nextLong());
+	public Post(byte[] data, DataType type, Profile poster, String fileExtension,
+	        String topicName) {
+		this(data, type, poster, fileExtension, topicName, ThreadLocalRandom.current().nextLong());
 	}
-	
+
 	/**
 	 * Constructs a new Post with the specified info.
-	 * 
+	 *
 	 * @param data the contents of the post
 	 * @param postInfo the info of the post
 	 */
 	public Post(byte[] data, PostInfo postInfo) {
-		this(data, postInfo.getType(), postInfo.getPoster(), postInfo.getFileExtension(), postInfo.getTopic(),
+		this(data, postInfo.getType(), postInfo.getPoster(), postInfo.getFileExtension(), postInfo.getTopicName(),
 				postInfo.getId());
 	}
 
@@ -90,16 +91,16 @@ class Post {
 	 * @param poster        the Poster of the Post
 	 * @param fileExtension the file extension associated with the data of the Post.
 	 *                      Must be {@code null} if {@code type == DataType.TEXT}.
-	 * @param topic         the Topic of the Post
+	 * @param topicName     the Topic of the Post
 	 * @param postID        the id of the Post
 	 */
-	private Post(byte[] data, DataType type, Profile poster, String fileExtension, Topic topic,
+	private Post(byte[] data, DataType type, Profile poster, String fileExtension, String topicName,
 	        long postID) {
 		if ((type == DataType.TEXT) && (fileExtension != null))
 			throw new IllegalArgumentException("DataType TEXT requires 'null' file extension");
 
 		this.data = data;
-		this.postInfo = new PostInfo(type, poster, fileExtension, topic, postID);
+		this.postInfo = new PostInfo(type, poster, fileExtension, topicName, postID);
 	}
 
 	/**

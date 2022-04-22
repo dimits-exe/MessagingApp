@@ -267,7 +267,7 @@ class Broker implements Runnable {
 
 				final Packet[] packets = postFragments.toArray(new Packet[postFragments.size()]);
 				final Post     post    = Post.fromPackets(packets, this.postInfo);
-				postsPerTopic.get(post.getPostInfo().getTopic()).add(post);
+				postsPerTopic.get(post.getPostInfo().getTopicName()).add(post);
 
 				// TODO: multicast this post to every broker
 

@@ -33,8 +33,9 @@ class Topic {
 	}
 
 	/**
-	 * Get the name of the conversation.
-	 * @return the name of the conversation.
+	 * Returns this Topic's name.
+	 *
+	 * @return the name
 	 */
 	public String getName() {
 		return name;

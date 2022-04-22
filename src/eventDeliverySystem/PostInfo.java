@@ -13,7 +13,7 @@ class PostInfo {
 	private final DataType type;
 	private final Profile  poster;
 	private final String   fileExtension;
-	private final Topic    topic;
+	private final String   topicName;
 	private final long     id;
 
 	/**
@@ -24,10 +24,10 @@ class PostInfo {
 	 * @param fileExtension the file extension associated with the data of the
 	 *                      PostInfo. Must be {@code null} if
 	 *                      {@code type == DataType.TEXT}.
-	 * @param topic         the Topic of the PostInfo
+	 * @param topicName     the name of the PostInfo
 	 * @param id            the id of the PostInfo
 	 */
-	public PostInfo(DataType type, Profile poster, String fileExtension, Topic topic,
+	public PostInfo(DataType type, Profile poster, String fileExtension, String topicName,
 	        long id) {
 		if ((type == DataType.TEXT) && (fileExtension != null))
 			throw new IllegalArgumentException("DataType TEXT requires 'null' file extension");
@@ -35,7 +35,7 @@ class PostInfo {
 		this.type = type;
 		this.poster = poster;
 		this.fileExtension = fileExtension;
-		this.topic = topic;
+		this.topicName = topicName;
 		this.id = id;
 	}
 
@@ -68,12 +68,12 @@ class PostInfo {
 	}
 
 	/**
-	 * Returns this RawData's topic.
+	 * Returns the topicName.
 	 *
-	 * @return the topic
+	 * @return the topicName
 	 */
-	public Topic getTopic() {
-		return topic;
+	public String getTopicName() {
+		return topicName;
 	}
 
 	/**

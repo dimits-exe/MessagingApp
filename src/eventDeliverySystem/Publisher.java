@@ -72,13 +72,15 @@ class Publisher implements Runnable, AutoCloseable {
 	 */
 	public void push(Post post) {
 
-		final Packet[] packets = Packet.fromPost(post);
-		final Topic    topic   = post.getPostInfo().getTopic();
+		final Packet[] packets   = Packet.fromPost(post);
+		final PostInfo postInfo  = post.getPostInfo();
+		final String   topicName = postInfo.getTopicName();
 
 		boolean success;
 
 		do {
-			ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topic);
+			ConnectionInfo actualBrokerCI = topicCIManager
+			        .getConnectionInfoForTopic(topicName);
 
 			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
 
@@ -103,7 +105,7 @@ class Publisher implements Runnable, AutoCloseable {
 				System.err.printf("IOException while connecting to actual broker%n");
 
 				success = false;
-				topicCIManager.invalidate(topic);
+				topicCIManager.invalidate(topicName);
 			}
 		} while (!success);
 	}
