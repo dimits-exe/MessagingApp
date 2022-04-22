@@ -117,7 +117,7 @@ class Broker implements Runnable {
 	
 	private Thread threadFactory(Message message, Socket connection) throws IOException {
 		switch(message.getType()) {
-		case DATA_PACKET:
+		case DATA_PACKET_SEND:
 			PostInfo pi = (PostInfo) message.getValue();
 			return new PullThread(new ObjectInputStream(connection.getInputStream()), pi);
 

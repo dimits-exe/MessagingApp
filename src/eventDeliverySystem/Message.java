@@ -17,16 +17,6 @@ class Message implements Serializable {
 	private final Object      value;
 
 	/**
-	 * Constructs an empty Message with the given {@link MessageType type}. The
-	 * value is set to {@code new Object()} in order to allow for serialisation.
-	 *
-	 * @param type the type of the message
-	 */
-	public Message(MessageType type) {
-		this(type, new Object());
-	}
-
-	/**
 	 * Constructs a Message with the given {@link MessageType type} and value.
 	 *
 	 * @param type  the type of the message
@@ -64,8 +54,13 @@ class Message implements Serializable {
 	 */
 	enum MessageType{
 
-		/** Indicates the start of a data message. The value is a PostInfo object. */
-		DATA_PACKET,
+		/**
+		 * Indicates the start of a data send message. The value is a PostInfo object.
+		 */
+		DATA_PACKET_SEND,
+
+		/** Indicates the start of a data receive message. The value is a Topic */
+		DATA_PACKET_RECEIVE,
 
 		/** Requests the actual broker for a Topic. The value is the Topic */
 		DISCOVER
