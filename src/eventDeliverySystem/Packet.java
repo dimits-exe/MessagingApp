@@ -19,8 +19,7 @@ class Packet implements Serializable {
 	/**
 	 * Turn a file to a series of packets.
 	 *
-	 * @param data          the data of the file
-	 * @param fileExtension the extension of the file
+	 * @param data the data of the file
 	 *
 	 * @return an array of packet objects holding the file's data
 	 */

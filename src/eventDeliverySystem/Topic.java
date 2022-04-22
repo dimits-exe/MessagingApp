@@ -1,6 +1,6 @@
 package eventDeliverySystem;
 
-import java.security.DigestException;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.EmptyStackException;
@@ -17,7 +17,7 @@ import java.util.Stack;
  * @author Dimitris Tsirmpas
  */
 class Topic {
-	private static final int special = -1;
+	private static final int FETCH_ALL_POSTS = -1;
 
 	private final String name;
 	private final Stack<Post> posts;
@@ -65,7 +65,7 @@ class Topic {
 		Stack<Post> postsClone = new Stack<>();
 		postsClone.addAll(posts);
 
-		if (lastPostId == Topic.special) {
+		if (lastPostId == Topic.FETCH_ALL_POSTS) {
 			return new LinkedList<>(postsClone);
 		}
 
@@ -77,7 +77,8 @@ class Topic {
 			} while (postsClone.peek().getPostInfo().getId() != lastPostId);
 
 		} catch(EmptyStackException e) {
-			throw new NoSuchElementException("There is no post with this idlol wtf");
+			throw new NoSuchElementException(
+			        "No post with id " + lastPostId + " found in the stack");
 		}
 
 		return newPosts;
@@ -86,8 +87,22 @@ class Topic {
 	@Override
 	public int hashCode() {
 		try {
-			return MessageDigest.getInstance("md5").digest(name.getBytes(), 0, 0);
-		} catch (DigestException | NoSuchAlgorithmException e) {
+			MessageDigest a = MessageDigest.getInstance("md5");
+			byte[]        b = a.digest(name.getBytes());
+
+			// big brain stuff
+			final int FOUR = 4;
+			int       c    = FOUR;
+			int       d    = b.length / c;
+			byte[]    e    = new byte[c];
+			for (int f = 0; f < e.length; f++)
+				for (int g = 0; g < d; g++)
+					e[f] ^= (b[(d * f) + g]);
+
+			BigInteger h = new BigInteger(e);
+			return h.intValueExact();
+
+		} catch (NoSuchAlgorithmException | ArithmeticException e) {
 			throw new RuntimeException(e);
 		}
 	}

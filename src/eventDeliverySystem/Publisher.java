@@ -3,14 +3,10 @@ package eventDeliverySystem;
 import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A process that initializes connections to brokers to send data.
@@ -142,8 +138,9 @@ class Publisher implements Runnable, AutoCloseable {
 			start = true;
 
 			try {
-				for (int i = 0; i < data.length; i++)
+				for (int i = 0; i < data.length; i++) {
 					stream.writeObject(data[i]);
+				}
 
 				success = true;
 
