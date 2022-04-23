@@ -7,8 +7,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,52 +16,42 @@ import java.util.Map;
  * by connecting to a remote server.
  * 
  */
-class Consumer implements Runnable, AutoCloseable {
+class Consumer extends ClientNode {
 
-	private final CIManager topicCIManager;
-
-	// TODO: use this shit or change it to something else idk
+	// Local saved posts
 	private final Map<String, Topic> topics;
+	private final Profile user;
 	
-	//TODO: add Profile to constructor
 	//TODO: implement getting a list of sockets from broker
 	//TODO: keep said sockets connected and choose between them (no CIManager ?)
-
+	
 	/**
-	 * Constructs a Publisher that will connect to a specific default broker.
-	 *
-	 * @param defaultServerIP   the IP of the default broker, interpreted as
-	 *                          {@link InetAddress#getByName(String)}.
-	 * @param defaultServerPort the port of the default broker
-	 *
-	 * @throws UnknownHostException if no IP address for the host could be found, or
-	 *                              if a scope_id was specified for a global IPv6
-	 *                              address while resolving the defaultServerIP.
-	 * @throws IOException          if an I/O error occurs when opening the
-	 *                              Publisher's Server Socket.
+	 * Constructs a Consumer that will connect to a specific default broker.
+	 * 
+	 * @see {@link ClientNode#UserNode(String, int)}
 	 */
-	public Consumer(String defaultServerIP, int defaultServerPort) throws IOException {
-		this(InetAddress.getByName(defaultServerIP), defaultServerPort);
+	public Consumer(String defaultServerIP, int defaultServerPort, Profile user) throws IOException {
+		this(InetAddress.getByName(defaultServerIP), defaultServerPort, user);
 	}
-
+	
 	/**
-	 * Constructs a Publisher that will connect to a specific default broker.
-	 *
-	 * @param defaultServerIP   the IP of the default broker, interpreted as
-	 *                          {@link InetAddress#getByAddress(byte[])}.
-	 * @param defaultServerPort the port of the default broker
-	 *
-	 * @throws UnknownHostException if IP address is of illegal length
-	 * @throws IOException          if an I/O error occurs when opening the
-	 *                              Publisher's Server Socket.
+	 * Constructs a Consumer that will connect to a specific default broker.
+	 * 
+	 * @see {@link ClientNode#UserNode(byte[], int)}
 	 */
-	public Consumer(byte[] defaultServerIP, int defaultServerPort) throws IOException {
-		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort);
+	public Consumer(byte[] defaultServerIP, int defaultServerPort, Profile user) throws IOException {
+		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, user);
 	}
-
-	private Consumer(InetAddress ip, int port) throws IOException {
-		topicCIManager = new CIManager(new ConnectionInfo(ip, port));
+	
+	protected Consumer(InetAddress ip, int port, Profile user) throws IOException {
+		super(ip, port);
+		this.user = user;
 		topics = new HashMap<>();
+		
+		for(Topic t : user.getSubscribedTopics()) {
+			topics.put(t.getName(), t);
+		}
+		//TODO: Fill topics with saved posts from disk
 	}
 
 	@Override
@@ -126,10 +116,9 @@ class Consumer implements Runnable, AutoCloseable {
 		} while (!success);
 
 	}
-
-	@Override
-	public void close() throws IOException {
-		topicCIManager.close();
+	
+	public List<Post> getPostsByTopic(String topicName) {
+		return topics.get(topicName).getAllPosts();
 	}
 
 }

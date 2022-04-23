@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 /**
  * A process that initializes connections to brokers to send data.
@@ -14,22 +13,12 @@ import java.net.UnknownHostException;
  * @author Alex Mandelias
  * @author Dimitris Tsirbas
  */
-class Publisher implements Runnable, AutoCloseable {
-
-	private final CIManager topicCIManager;
-
+class Publisher extends ClientNode {
+	
 	/**
 	 * Constructs a Publisher that will connect to a specific default broker.
 	 *
-	 * @param defaultServerIP   the IP of the default broker, interpreted as
-	 *                          {@link InetAddress#getByName(String)}.
-	 * @param defaultServerPort the port of the default broker
-	 *
-	 * @throws UnknownHostException if no IP address for the host could be found, or
-	 *                              if a scope_id was specified for a global IPv6
-	 *                              address while resolving the defaultServerIP.
-	 * @throws IOException          if an I/O error occurs when opening the
-	 *                              Publisher's Server Socket.
+	 * @see {@link ClientNode#UserNode(String, int)}
 	 */
 	public Publisher(String defaultServerIP, int defaultServerPort) throws IOException {
 		this(InetAddress.getByName(defaultServerIP), defaultServerPort);
@@ -38,20 +27,14 @@ class Publisher implements Runnable, AutoCloseable {
 	/**
 	 * Constructs a Publisher that will connect to a specific default broker.
 	 *
-	 * @param defaultServerIP   the IP of the default broker, interpreted as
-	 *                          {@link InetAddress#getByAddress(byte[])}.
-	 * @param defaultServerPort the port of the default broker
-	 *
-	 * @throws UnknownHostException if IP address is of illegal length
-	 * @throws IOException          if an I/O error occurs when opening the
-	 *                              Publisher's Server Socket.
+	 * @see {@link ClientNode#UserNode(byte[], int)}
 	 */
 	public Publisher(byte[] defaultServerIP, int defaultServerPort) throws IOException {
 		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort);
 	}
 
-	private Publisher(InetAddress ip, int port) throws IOException {
-		topicCIManager = new CIManager(new ConnectionInfo(ip, port));
+	protected Publisher(InetAddress ip, int port) throws IOException {
+		super(ip, port);
 	}
 
 	@Override
