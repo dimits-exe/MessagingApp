@@ -49,6 +49,10 @@ class Topic {
 	public void post(Post postData) {
 		posts.add(postData);
 	}
+	
+	public Post getLastPost() {
+		return posts.peek();
+	}
 
 	/**
 	 * Get a list containing posts posted after the provided postId.

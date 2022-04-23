@@ -1,4 +1,3 @@
-
 package eventDeliverySystem;
 
 import static eventDeliverySystem.Message.MessageType.DATA_PACKET_RECEIVE;
@@ -10,16 +9,12 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
- * TODO: implement.
- * <p>
- * A process that initializes connections to brokers to receive data.
- *
- * @author Alex Mandelias
+ * A process that holds the posts of a certain user and updates them
+ * by connecting to a remote server.
+ * 
  */
 class Consumer implements Runnable, AutoCloseable {
 
@@ -27,6 +22,10 @@ class Consumer implements Runnable, AutoCloseable {
 
 	// TODO: use this shit or change it to something else idk
 	private final Map<String, Topic> topics;
+	
+	//TODO: add Profile to constructor
+	//TODO: implement getting a list of sockets from broker
+	//TODO: keep said sockets connected and choose between them (no CIManager ?)
 
 	/**
 	 * Constructs a Publisher that will connect to a specific default broker.
@@ -72,18 +71,16 @@ class Consumer implements Runnable, AutoCloseable {
 	}
 
 	/**
-	 * TODO: rewrite this shit
-	 * <p>
-	 * Pulls a number of Posts from a Topic.
+	 * Updates the local Topic with new posts streamed by a
+	 * remote Topic.
 	 *
 	 * @param topicName the name of the Topic from which to pull
-	 *
-	 * @return a list of the Posts read
 	 */
-	public List<Post> pull(String topicName) {
+	public void pull(String topicName) {
 
 		boolean success;
 		PullThread pullThread = null;
+		Topic relevantTopic = topics.get(topicName);
 
 		do {
 			ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
@@ -92,14 +89,23 @@ class Consumer implements Runnable, AutoCloseable {
 
 				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
-
-					long idOfLast = topics.get(topicName).getIdOfLastTopicPleaseOkayThanks()
-					        .getPostInfo().getId();
-
-					oos.writeObject(new Message(DATA_PACKET_RECEIVE,
-					        new Topic.TopicPointer(topicName, idOfLast)));
-
-					pullThread = new PullThread(ois, topicName);
+					
+					// get last post from the topic and send it to the broker
+					long idOfLast = relevantTopic.getLastPost().getPostInfo().getId();
+					oos.writeObject(new Message(DATA_PACKET_RECEIVE, idOfLast));
+					
+					// receive broker's answer on how many posts need to be sent
+					// so the local topic is updated
+					int postCount;
+					try {
+						postCount = (Integer) ois.readObject();
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+						return;
+					}
+					
+					// begin downloading the posts
+					pullThread = new PullThread(ois, relevantTopic, postCount);
 					pullThread.start();
 					try {
 						pullThread.join();
@@ -119,11 +125,6 @@ class Consumer implements Runnable, AutoCloseable {
 			}
 		} while (!success);
 
-		List<Post> postsRead = pullThread.posts; // can't be null
-
-		postsPerTopic.get(topicName).addAll(postsRead);
-
-		return postsRead;
 	}
 
 	@Override
@@ -131,100 +132,4 @@ class Consumer implements Runnable, AutoCloseable {
 		topicCIManager.close();
 	}
 
-	/**
-	 * TODO: probably nothing, this seems fine
-	 * <p>
-	 * A Thread for sending some data to an output stream.
-	 *
-	 * @author Alex Mandelias
-	 */
-	private static class PullThread extends Thread {
-
-		private final ObjectInputStream stream;
-		private boolean                 success, start, end;
-
-		private final List<Post> posts;
-
-		/**
-		 * Constructs the Thread that, when run, will read data from the stream.
-		 *
-		 * @param stream the input stream from which to read the data
-		 */
-		public PullThread(ObjectInputStream stream) {
-			this.stream = stream;
-			success = start = end = false;
-			posts = new LinkedList<>();
-		}
-
-		@Override
-		public void run() {
-			start = true;
-
-			final List<Packet> postFragments = new LinkedList<>();
-
-			try {
-				Integer postCount;
-				try {
-					postCount = (Integer) stream.readObject();
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-					return;
-				}
-
-				for (int i = 0; i < postCount; i++) {
-					PostInfo postInfo;
-					try {
-						postInfo = (PostInfo) stream.readObject();
-					} catch (ClassNotFoundException e) {
-						e.printStackTrace();
-						return;
-					}
-
-					Packet packet;
-					do {
-						try {
-							packet = (Packet) stream.readObject();
-						} catch (ClassNotFoundException e) {
-							e.printStackTrace();
-							return;
-						}
-						postFragments.add(packet);
-					} while (!packet.isFinal());
-
-					final Packet[] temp    = new Packet[postFragments.size()];
-					final Packet[] packets = postFragments.toArray(temp);
-					final Post     post    = Post.fromPackets(packets, postInfo);
-					posts.add(post);
-				}
-
-				success = true;
-
-			} catch (IOException e) {
-				System.err.printf("IOException while receiving packets from actual broker%n");
-				success = false;
-			}
-
-			end = true;
-		}
-
-		/**
-		 * Returns whether this Thread has executed its job successfully. This method
-		 * shall be called after this Thread has executed its {@code run} method once.
-		 *
-		 * @return {@code true} if it has, {@code false} otherwise
-		 *
-		 * @throws IllegalStateException if this Thread has not completed its execution
-		 *                               before this method is called
-		 */
-		public boolean success() throws IllegalStateException {
-			if (!start)
-				throw new IllegalStateException(
-				        "Can't call 'success()' before starting this Thread");
-			if (!end)
-				throw new IllegalStateException(
-				        "This Thread must finish execution before calling 'success()'");
-
-			return success;
-		}
-	}
 }

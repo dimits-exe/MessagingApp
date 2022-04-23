@@ -3,6 +3,7 @@ package eventDeliverySystem;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -65,6 +66,7 @@ class Broker implements Runnable {
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		this.postsPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.postsBackup = Collections.synchronizedMap(new HashMap<>());
+		this.topics = Collections.synchronizedMap(new HashMap<>());
 		isLeader = true;
 	}
 
@@ -118,8 +120,8 @@ class Broker implements Runnable {
 	private Thread threadFactory(Message message, Socket connection) throws IOException {
 		switch(message.getType()) {
 		case DATA_PACKET_SEND:
-			PostInfo pi = (PostInfo) message.getValue();
-			return new PullThread(new ObjectInputStream(connection.getInputStream()), pi);
+			String topicName = (String) message.getValue();
+			return new PullThread(new ObjectInputStream(connection.getInputStream()), topics.get(topicName), 1);
 
 		case DISCOVER:
 			Topic t = (Topic) message.getValue();
@@ -127,6 +129,21 @@ class Broker implements Runnable {
 
 		default:
 			throw new IllegalArgumentException("How the fuck");
+		}
+	}
+	
+	/**
+	 * Return the broker that's responsible for the requested topic.
+	 * @param topic the topic
+	 * @return the {@link ConnectionInfo} of the assigned broker
+	 */
+	private ConnectionInfo getAssignedBroker(Topic topic) {
+		int brokerIndex = topic.hashCode() % brokerConnections.size();
+
+		try (final Socket broker = brokerConnections.get(brokerIndex)) {
+			return new ConnectionInfo(broker.getInetAddress(), broker.getPort());
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
 		}
 	}
 
@@ -147,22 +164,6 @@ class Broker implements Runnable {
 		}
 	}
 
-	/**
-	 * Return the broker that's responsible for the requested topic.
-	 * @param topic the topic
-	 * @return the {@link ConnectionInfo} of the assigned broker
-	 */
-	private ConnectionInfo getAssignedBroker(Topic topic) {
-		int brokerIndex = topic.hashCode() % brokerConnections.size();
-
-		ConnectionInfo CI = null;
-		try (final Socket broker = brokerConnections.get(brokerIndex)) {
-			CI = new ConnectionInfo(broker.getInetAddress(), broker.getPort());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return CI;
-	}
 
 	/**
 	 * Update internal data structures once a new connection has been established with
@@ -218,55 +219,6 @@ class Broker implements Runnable {
 
         }
     }
-
-	/**
-	 * A Thread for receiving some data from an input stream.
-	 *
-	 * @author Alex Mandelias
-	 */
-	private class PullThread extends Thread {
-
-		private final ObjectInputStream stream;
-		private final PostInfo postInfo;
-
-		/**
-		 * Constructs the Thread that, when run, will read data from the stream.
-		 *
-		 * @param stream the input stream from which to read the data
-		 */
-		public PullThread(ObjectInputStream stream, PostInfo postInfo) {
-			this.stream = stream;
-			this.postInfo = postInfo;
-		}
-
-		@Override
-		public void run() {
-
-			final List<Packet> postFragments = new LinkedList<>();
-
-			try {
-				Packet packet;
-				do {
-					try {
-						packet = (Packet) stream.readObject();
-					} catch (ClassNotFoundException e) {
-						e.printStackTrace();
-						return;
-					}
-					postFragments.add(packet);
-				} while (!packet.isFinal());
-
-				final Packet[] packets = postFragments.toArray(new Packet[postFragments.size()]);
-				final Post     post    = Post.fromPackets(packets, this.postInfo);
-				postsPerTopic.get(post.getPostInfo().getTopicName()).add(post);
-
-				// TODO: multicast this post to every broker
-
-			} catch (IOException e) {
-				// do nothing
-			}
-		}
-	}
 
 	/**
 	 * A Thread for discovering the actual broker for a topic.
