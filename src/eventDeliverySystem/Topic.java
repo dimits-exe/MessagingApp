@@ -17,6 +17,7 @@ import java.util.Stack;
  * @author Dimitris Tsirmpas
  */
 class Topic {
+	//used to transmit the request for all posts via socket messages
 	private static final int FETCH_ALL_POSTS = -1;
 
 	private final String name;
@@ -50,6 +51,10 @@ class Topic {
 		posts.add(postData);
 	}
 	
+	/**
+	 * Get the last posted post in the topic.
+	 * @return the latest post
+	 */
 	public Post getLastPost() {
 		return posts.peek();
 	}
@@ -86,6 +91,14 @@ class Topic {
 		}
 
 		return newPosts;
+	}
+	
+	/**
+	 * Get all the posts in the topic.
+	 * @return a full copy of the posts in the topic
+	 */
+	public List<Post> getAllPosts(){
+		return getPostsSince(Topic.FETCH_ALL_POSTS);
 	}
 
 	@Override
