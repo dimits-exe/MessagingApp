@@ -116,19 +116,34 @@ class Broker implements Runnable {
 		}
 	}
 
-
+	/**
+	 * Get the relevant worker thread to satisfy the request according to the {@link Message#MessageType message's type}.
+	 * @param message the message to be handled
+	 * @param connection the socket from where the message was sent
+	 * @return the worker thread for the request
+	 * @throws IOException if an error occurs while establishing an output stream to write back to the sender
+	 */
 	private Thread threadFactory(Message message, Socket connection) throws IOException {
 		switch(message.getType()) {
 		case DATA_PACKET_SEND:
 			String topicName = (String) message.getValue();
 			return new PullThread(new ObjectInputStream(connection.getInputStream()), topics.get(topicName), 1);
+			
+		case DATA_PACKET_RECEIVE:
+			//TODO: implement this, its 9:30 I want to play LoL
+			return null;
+			// return new PushThread(new ObjectOutputStream(connection.getOutputStream()));
 
-		case DISCOVER:
+		case PUBLISHER_DISCOVERY_REQUEST:
 			Topic t = (Topic) message.getValue();
-			return new DiscoveryThread(new ObjectOutputStream(connection.getOutputStream()), t);
+			return new PublisherDiscoveryThread(new ObjectOutputStream(connection.getOutputStream()), t);
+			
+		case CONSUMER_DISOVERY_REQUEST:
+			@SuppressWarnings("unchecked") Set<String> topicNames = (HashSet<String>) message.getValue();
+			return new ConsumerDiscoveryThread(new ObjectOutputStream(connection.getOutputStream()), topicNames);
 
 		default:
-			throw new IllegalArgumentException("How the fuck");
+			throw new IllegalArgumentException("You forgot to put a case for the new Message enum");
 		}
 	}
 	
@@ -225,7 +240,7 @@ class Broker implements Runnable {
 	 *
 	 * @author Alex Mandelias
 	 */
-	private class DiscoveryThread extends Thread {
+	private class PublisherDiscoveryThread extends Thread {
 
 		private final ObjectOutputStream stream;
 		private final Topic              topic;
@@ -237,7 +252,7 @@ class Broker implements Runnable {
 		 * @param stream  the output stream to which to write the data
 		 * @param topic the topic
 		 */
-		public DiscoveryThread(ObjectOutputStream stream, Topic topic) {
+		public PublisherDiscoveryThread(ObjectOutputStream stream, Topic topic) {
 			this.stream = stream;
 			this.topic = topic;
 		}
@@ -250,10 +265,41 @@ class Broker implements Runnable {
 				stream.writeObject(brokerInfo);
 			} catch (IOException e) {
 				// do nothing
-			}
+			}	// how does the client know no reply is coming?
 		}
 	}
 
+	private class ConsumerDiscoveryThread extends Thread {
+		private final ObjectOutputStream stream;
+		private final Set<String>        topicNames;
 
+		/**
+		 * Constructs the Thread that, when run, will write the address of the broker
+		 * that has the requested topic in the given output stream.
+		 *
+		 * @param stream  the output stream to which to write the data
+		 * @param topic the topic
+		 */
+		public ConsumerDiscoveryThread(ObjectOutputStream stream, Set<String> topicNames) {
+			this.stream = stream;
+			this.topicNames = topicNames;
+		}
+
+		@Override
+		public void run() {
+			Map<String, ConnectionInfo> topicBrokers = new HashMap<String, ConnectionInfo>();
+			
+			for(String topicName : topicNames) {
+				topicBrokers.put(topicName, Broker.this.getAssignedBroker(new Topic(topicName)));// <-- this is fucking spaghetti
+			}
+			
+			try {
+				stream.writeObject(topicBrokers);
+			} catch (IOException e) {
+				// do nothing
+			}	// how does the client know no reply is coming?
+			
+		}
+	}
 
 }

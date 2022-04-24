@@ -20,6 +20,7 @@ class Consumer extends ClientNode {
 
 	// Local saved posts
 	private final Map<String, Topic> topics;
+	private final Map<String, Socket> topicBrokerMap;
 	private final Profile user;
 	
 	//TODO: implement getting a list of sockets from broker
@@ -45,19 +46,22 @@ class Consumer extends ClientNode {
 	
 	protected Consumer(InetAddress ip, int port, Profile user) throws IOException {
 		super(ip, port);
+		
 		this.user = user;
 		topics = new HashMap<>();
+		topicBrokerMap = new HashMap<>();
 		
 		for(Topic t : user.getSubscribedTopics()) {
 			topics.put(t.getName(), t);
 		}
 		//TODO: Fill topics with saved posts from disk
+		
+		connectionSetup();
 	}
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-
+		// this probably should go to the constructor
 	}
 
 	/**
@@ -73,7 +77,7 @@ class Consumer extends ClientNode {
 		Topic relevantTopic = topics.get(topicName);
 
 		do {
-			ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+			ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName); // ???
 
 			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
 
@@ -119,6 +123,33 @@ class Consumer extends ClientNode {
 	
 	public List<Post> getPostsByTopic(String topicName) {
 		return topics.get(topicName).getAllPosts();
+	}
+	
+	private void connectionSetup() {
+		// establish connection to default server
+		Socket defaultBrokerSex = null;
+		
+		// get broker info from default broker
+		try (ObjectInputStream oos = new ObjectInputStream(defaultBrokerSex.getInputStream())) {
+			Map<String, ConnectionInfo> brokerInfo = (Map<String, ConnectionInfo>) oos.readObject();
+			
+			// establish connections with each broker
+			for(var entry : brokerInfo.entrySet()) {
+				ConnectionInfo ci = entry.getValue();
+				
+				try {
+					topicBrokerMap.put(entry.getKey(), new Socket(ci.getAddress(), ci.getPort()));
+				} catch(IOException ioe) {
+					System.err.println("Failed to establish connection with topic broker " + ioe);
+					System.exit(-1);
+				}
+				
+			}
+		} catch(IOException ioe) {
+			System.err.println("Server connection on default broker failed " + ioe);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

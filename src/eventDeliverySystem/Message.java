@@ -53,7 +53,7 @@ class Message implements Serializable {
 	 * @author Dimitris Tsirmpas
 	 */
 	enum MessageType{
-
+		
 		/**
 		 * Indicates the start of a data send message. The value is a String describing the Topic's name.
 		 */
@@ -63,6 +63,13 @@ class Message implements Serializable {
 		DATA_PACKET_RECEIVE,
 
 		/** Requests the actual broker for a Topic. The value is is a String describing the Topic's name. */
-		DISCOVER
+		PUBLISHER_DISCOVERY_REQUEST,
+		
+		/** 
+		 * Requests a list of broker-topic mappings.
+		 * The value is a Set<String> of topic names.
+		 * The answer is a HashMap<String, ConnectionInfo> object. 
+		 */
+		CONSUMER_DISOVERY_REQUEST
 	}
 }

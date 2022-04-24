@@ -71,14 +71,13 @@ class PullThread extends Thread {
 
 		} catch (IOException e) {
 			System.err.printf("IOException while receiving packets from actual broker%n");
-			success = false; // maybe rename to "finish" because an IOException is NOT a success lmfao
+			success = false;
 		}
 
 		end = true;
 	}
 
 	
-	//why does this method only return true? Either make it a void checkIfComplete() or return end;
 	/**
 	 * Returns whether this Thread has executed its job successfully. This method
 	 * shall be called after this Thread has executed its {@code run} method once.

@@ -39,7 +39,7 @@ class Publisher extends ClientNode {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		// this probably should go to the constructor
 
 	}
 
