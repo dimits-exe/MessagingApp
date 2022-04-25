@@ -30,11 +30,10 @@ class Broker implements Runnable {
 	private static final int MAX_CONNECTIONS = 64;
 
 	private final Set<ConnectionInfo> publisherInfo;
-	private final Set<Socket> consumerConnections;
+	private final Map<String, Set<Socket>> consumerConnectionsPerTopic;
 	private ServerSocket              clientRequestSocket;
 
-	// TODO: use this shit or change it to something else idk
-	private final Map<String, Topic> topics;
+	private final Map<String, Topic> topicsByName;
 
 	// === PLACEHOLDERS ===
 
@@ -66,11 +65,11 @@ class Broker implements Runnable {
 	public Broker() {
 		//TODO: establish connection with broker
 		this.publisherInfo = Collections.synchronizedSet(new HashSet<>());
-		this.consumerConnections = Collections.synchronizedSet(new HashSet<>());
+		this.consumerConnectionsPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		this.postsPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.postsBackup = Collections.synchronizedMap(new HashMap<>());
-		this.topics = Collections.synchronizedMap(new HashMap<>());
+		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
 		isLeader = true;
 	}
 
@@ -136,18 +135,28 @@ class Broker implements Runnable {
 		ObjectInputStream ois = new ObjectInputStream(connection.getInputStream());
 		ObjectOutputStream oos = new ObjectOutputStream(connection.getOutputStream());
 
+		// fuck variables in switch statements
+		Topic topic;
+		String topicName;
+
 		switch(message.getType()) {
 		case DATA_PACKET_SEND:
-			String topicName = (String) message.getValue();
-			Topic topic = topicsByName.get(topicName);
-
+			topicName = (String) message.getValue();
+			topic = topicsByName.get(topicName);
 			return new PullThread(ois, topic);
 
 		case INITIALISE_CONSUMER:
 			TopicToken topicToken = (TopicToken) message.getValue();
-			consumerConnectionsPerTopic.get(topicToken.getName()).add(connection);
+			topicName = topicToken.getName();
+			long idOfLast = topicToken.getLastId();
 
-			return new ConsumerDiscoveryThread(oos, topicToken);
+			// register current connection as listener for topic
+			consumerConnectionsPerTopic.get(topicName).add(connection);
+
+			// send existing topics that the consumer does not have
+			topic = topicsByName.get(topicName);
+			List<Post> postsToSend = topic.getPostsSince(idOfLast);
+			return new PushThread(oos, postsToSend, true); // keep consumer's thread alive
 
 		case PUBLISHER_DISCOVERY_REQUEST: // TODO: ???
 			Topic t = (Topic) message.getValue();
@@ -279,38 +288,4 @@ class Broker implements Runnable {
 			}	// how does the client know no reply is coming?
 		}
 	}
-
-	private class ConsumerDiscoveryThread extends Thread {
-		private final ObjectOutputStream stream;
-		private final Set<String>        topicNames;
-
-		/**
-		 * Constructs the Thread that, when run, will write the address of the broker
-		 * that has the requested topic in the given output stream.
-		 *
-		 * @param stream  the output stream to which to write the data
-		 * @param topic the topic
-		 */
-		public ConsumerDiscoveryThread(ObjectOutputStream stream, Set<String> topicNames) {
-			this.stream = stream;
-			this.topicNames = topicNames;
-		}
-
-		@Override
-		public void run() {
-			Map<String, ConnectionInfo> topicBrokers = new HashMap<String, ConnectionInfo>();
-			
-			for(String topicName : topicNames) {
-				topicBrokers.put(topicName, Broker.this.getAssignedBroker(new Topic(topicName)));// <-- this is fucking spaghetti
-			}
-			
-			try {
-				stream.writeObject(topicBrokers);
-			} catch (IOException e) {
-				// do nothing
-			}	// how does the client know no reply is coming?
-			
-		}
-	}
-
 }
