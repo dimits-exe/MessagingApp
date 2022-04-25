@@ -1,5 +1,7 @@
 package eventDeliverySystem;
 
+import java.io.Serializable;
+
 import eventDeliverySystem.Post.DataType;
 
 /**
@@ -8,7 +10,7 @@ import eventDeliverySystem.Post.DataType;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-class PostInfo {
+class PostInfo implements Serializable {
 
 	private final DataType type;
 	private final Profile  poster;
