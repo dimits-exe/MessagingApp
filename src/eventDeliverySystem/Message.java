@@ -52,14 +52,17 @@ class Message implements Serializable {
 	 * @author Alex Mandelias
 	 * @author Dimitris Tsirmpas
 	 */
-	enum MessageType{
+	enum MessageType {
 		
 		/**
 		 * Indicates the start of a data send message. The value is a String describing the Topic's name.
 		 */
 		DATA_PACKET_SEND,
 
-		/** Indicates the start of a data receive message. The value is a String describing the Topic's name. */
+		/** 
+		 * Indicates the start of a data receive message. 
+		 * The value is the {@link TopicToken} of the to-be-updated topic.
+		 */
 		DATA_PACKET_RECEIVE,
 
 		/** Requests the actual broker for a Topic. The value is is a String describing the Topic's name. */

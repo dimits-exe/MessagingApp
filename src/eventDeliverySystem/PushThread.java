@@ -31,6 +31,10 @@ class PushThread extends Thread {
 		start = true;
 
 		try {
+			// send packet count
+			stream.writeObject(data.length);
+			
+			// send packets
 			for (int i = 0; i < data.length; i++) {
 				stream.writeObject(data[i]);
 			}

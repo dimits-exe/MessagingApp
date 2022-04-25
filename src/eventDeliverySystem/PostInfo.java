@@ -11,7 +11,8 @@ import eventDeliverySystem.Post.DataType;
  * @author Dimitris Tsirmpas
  */
 class PostInfo implements Serializable {
-
+	private static final long serialVersionUID = -7113279728249277644L;
+	
 	private final DataType type;
 	private final Profile  poster;
 	private final String   fileExtension;

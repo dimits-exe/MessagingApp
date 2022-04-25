@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import eventDeliverySystem.Topic.TopicToken;
+
 /**
  * TODO: fix.
  * <p>
@@ -27,7 +29,8 @@ class Broker implements Runnable {
 	private static final PortManager portManager = new PortManager();
 	private static final int MAX_CONNECTIONS = 64;
 
-	private final Set<ConnectionInfo> clientInfo;
+	private final Set<ConnectionInfo> publisherInfo;
+	private final Set<Socket> consumerConnections;
 	private ServerSocket              clientRequestSocket;
 
 	// TODO: use this shit or change it to something else idk
@@ -62,7 +65,8 @@ class Broker implements Runnable {
 	 */
 	public Broker() {
 		//TODO: establish connection with broker
-		this.clientInfo = Collections.synchronizedSet(new HashSet<>());
+		this.publisherInfo = Collections.synchronizedSet(new HashSet<>());
+		this.consumerConnections = Collections.synchronizedSet(new HashSet<>());
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		this.postsPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.postsBackup = Collections.synchronizedMap(new HashMap<>());
@@ -127,12 +131,24 @@ class Broker implements Runnable {
 		switch(message.getType()) {
 		case DATA_PACKET_SEND:
 			String topicName = (String) message.getValue();
-			return new PullThread(new ObjectInputStream(connection.getInputStream()), topics.get(topicName), 1);
+			return new PullThread(new ObjectInputStream(connection.getInputStream()), topics.get(topicName));
 			
 		case DATA_PACKET_RECEIVE:
-			//TODO: implement this, its 9:30 I want to play LoL
-			return null;
-			// return new PushThread(new ObjectOutputStream(connection.getOutputStream()));
+			// retrieve posts
+			TopicToken token= (TopicToken) message.getValue();
+			Topic relevantTopic = topics.get(token.getName());
+			long lastId = token.getLastId();
+			List<Post> postsToBeSent = relevantTopic.getPostsSince(lastId);
+			
+			// set up streams
+			// TODO: fill consumerConnections with actual connections
+			Set<ObjectOutputStream> outStreams = new HashSet<>();
+			for(Socket s : consumerConnections) {
+				outStreams.add(new ObjectOutputStream(s.getOutputStream()));
+			}
+			
+			// execute request
+			return new MulticastPushThread(outStreams, postsToBeSent);
 
 		case PUBLISHER_DISCOVERY_REQUEST:
 			Topic t = (Topic) message.getValue();
@@ -224,7 +240,7 @@ class Broker implements Runnable {
 				Thread thread 			= Broker.this.threadFactory(m, socket);
 				thread.start();
 
-				Broker.this.clientInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
+				Broker.this.publisherInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
 			} catch (IOException ioe) {
 				// do nothing
 			} catch (ClassNotFoundException e) {

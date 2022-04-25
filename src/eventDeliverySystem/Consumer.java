@@ -73,7 +73,6 @@ class Consumer extends ClientNode {
 	public void pull(String topicName) {
 
 		boolean success;
-		PullThread pullThread = null;
 		Topic relevantTopic = topics.get(topicName);
 
 		do {
@@ -84,22 +83,11 @@ class Consumer extends ClientNode {
 				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
 					
-					// get last post from the topic and send it to the broker
-					long idOfLast = relevantTopic.getLastPost().getPostInfo().getId();
-					oos.writeObject(new Message(DATA_PACKET_RECEIVE, idOfLast));
-					
-					// receive broker's answer on how many posts need to be sent
-					// so the local topic is updated
-					int postCount;
-					try {
-						postCount = (Integer) ois.readObject();
-					} catch (ClassNotFoundException e) {
-						e.printStackTrace();
-						return;
-					}
+					// send the token of the topic to the broker
+					oos.writeObject(new Message(DATA_PACKET_RECEIVE, relevantTopic.getToken()));
 					
 					// begin downloading the posts
-					pullThread = new PullThread(ois, relevantTopic, postCount);
+					IterativePullThread pullThread = new IterativePullThread(ois, relevantTopic);
 					pullThread.start();
 					try {
 						pullThread.join();
@@ -108,8 +96,8 @@ class Consumer extends ClientNode {
 					}
 				}
 
-				success = pullThread.success();
-
+				//success = pullThread.success();
+				success = true; // TODO: we'll see how we can do this without repeating the same success() code for every class
 			} catch (IOException e) {
 
 				System.err.printf("IOException while connecting to actual broker%n");

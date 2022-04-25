@@ -12,23 +12,20 @@ import java.util.List;
 class PullThread extends Thread {
 
 	private final ObjectInputStream stream;
-	private final int postCount;
-	private boolean                 success, start, end;
-
 	private final Topic topic;
+	
+	private boolean                 success, start, end;
 
 	/**
 	 * Constructs the Thread that, when run, will read data from the stream.
 	 *
 	 * @param stream the input stream from which to read the data
 	 * @param topic the topic in which the new posts will be added
-	 * @param postCount the number of posts to be read
 	 */
-	public PullThread(ObjectInputStream stream, Topic topic, int postCount) {
+	public PullThread(ObjectInputStream stream, Topic topic) {
 		this.stream = stream;
 		success = start = end = false;
 		this.topic = topic;
-		this.postCount = postCount;
 	}
 
 	@Override
@@ -38,6 +35,17 @@ class PullThread extends Thread {
 		final List<Packet> postFragments = new LinkedList<>();
 
 		try {
+			
+			// receive broker's answer on how many posts need to be sent
+			// so the local topic is updated
+			int postCount;
+			try {
+				postCount = (Integer) stream.readObject();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+				return;
+			}
+			
 			for (int i = 0; i < postCount; i++) {
 				
 				//read Post header
