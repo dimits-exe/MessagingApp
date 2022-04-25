@@ -43,8 +43,6 @@ class Consumer extends ClientNode {
 	 *                              address while resolving the defaultServerIP.
 	 * @throws IOException          if an I/O error occurs when opening the
 	 *                              Publisher's Server Socket.
-	 *
-	 * @see ClientNode#ClientNode(String, int)
 	 */
 	public Consumer(String defaultServerIP, int defaultServerPort, Set<Topic> topics)
 	        throws IOException {
@@ -62,8 +60,6 @@ class Consumer extends ClientNode {
 	 * @throws UnknownHostException if IP address is of illegal length
 	 * @throws IOException          if an I/O error occurs when opening the
 	 *                              Publisher's Server Socket.
-	 *
-	 * @see ClientNode#ClientNode(byte[], int)
 	 */
 	public Consumer(byte[] defaultServerIP, int defaultServerPort, Set<Topic> topics)
 	        throws IOException {
