@@ -1,5 +1,6 @@
 package eventDeliverySystem;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,13 +21,57 @@ class Topic {
 	//used to transmit the request for all posts via socket messages
 	private static final int FETCH_ALL_POSTS = -1;
 
+	/**
+	 * A structure holding the topicName and the last post's ID of the topic in a given
+	 * moment. Used to transfer the necessary information to a broker.
+	 */
+	class TopicToken implements Serializable {
+		private static final long serialVersionUID = 1L;
+
+		private final String topicName;
+		private final long   lastId;
+
+		private TopicToken() {
+			this.topicName = Topic.this.getName();
+			this.lastId = Topic.this.getLastPost().getPostInfo().getId();
+		}
+
+		/**
+		 * Returns this TopicToken's topicName.
+		 *
+		 * @return the topicName
+		 */
+		public String getName() {
+			return topicName;
+		}
+
+		/**
+		 * Returns this TopicToken's lastId.
+		 *
+		 * @return the lastId
+		 */
+		public long getLastId() {
+			return lastId;
+		}
+	}
+
+	/**
+	 * Get an {@link TopicToken update token} that can be used to update the topic
+	 * by the broker.
+	 *
+	 * @return the update token
+	 */
+	public TopicToken getToken() {
+		return new TopicToken();
+	}
+
 	private final String name;
 	private final Stack<Post> posts;
 
 	/**
 	 * Creates a new empty Topic.
 	 *
-	 * @param name the Topic's unique name.
+	 * @param name the Topic's unique name
 	 */
 	public Topic(String name) {
 		this.name = name;
@@ -34,9 +79,9 @@ class Topic {
 	}
 
 	/**
-	 * Returns this Topic's name.
+	 * Returns this Topic's topicName.
 	 *
-	 * @return the name
+	 * @return the topicName
 	 */
 	public String getName() {
 		return name;
@@ -50,7 +95,7 @@ class Topic {
 	public void post(Post postData) {
 		posts.add(postData);
 	}
-	
+
 	/**
 	 * Get the last posted post in the topic.
 	 * @return the latest post
@@ -92,12 +137,12 @@ class Topic {
 
 		return newPosts;
 	}
-	
+
 	/**
 	 * Get all the posts in the topic.
 	 * @return a full copy of the posts in the topic
 	 */
-	public List<Post> getAllPosts(){
+	public List<Post> getAllPosts() {
 		return getPostsSince(Topic.FETCH_ALL_POSTS);
 	}
 
