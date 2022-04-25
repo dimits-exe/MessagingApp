@@ -2,8 +2,6 @@ package eventDeliverySystem;
 
 import java.io.Serializable;
 
-import eventDeliverySystem.Topic.TopicToken;
-
 /**
  * A wrapper holding an object and specifying its type using an enum used for
  * Internet transportation. Used to facilitate uniform communication between all
@@ -61,21 +59,8 @@ class Message implements Serializable {
 		 */
 		DATA_PACKET_SEND,
 
-		/**
-		 * Indicates the start of a data receive message.
-		 * The value is the {@link TopicToken} of the to-be-updated topic.
-		 */
-		DATA_PACKET_RECEIVE,
-
 		/** Requests the actual broker for a Topic. The value is is a String describing the Topic's name. */
 		PUBLISHER_DISCOVERY_REQUEST,
-
-		/**
-		 * Requests a list of broker-topic mappings.
-		 * The value is a Set<String> of topic names.
-		 * The answer is a HashMap<String, ConnectionInfo> object.
-		 */
-		CONSUMER_DISOVERY_REQUEST,
 
 		/**
 		 * Request to initialise consumer connection to broker. The value is a
