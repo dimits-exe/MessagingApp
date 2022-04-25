@@ -1,10 +1,11 @@
 package eventDeliverySystem;
 
+import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collections;
@@ -26,51 +27,30 @@ import eventDeliverySystem.Topic.TopicToken;
  */
 class Broker implements Runnable {
 
-	private static final PortManager portManager = new PortManager();
-	private static final int MAX_CONNECTIONS = 64;
+	private static final PortManager portManager     = new PortManager();
+	private static final int         MAX_CONNECTIONS = 64;
 
-	private final Set<ConnectionInfo> publisherInfo;
+	private ServerSocket clientRequestSocket;
+	private ServerSocket brokerRequestSocket;
+
+	private final Set<ConnectionInfo>      publisherConnectionInfo;
 	private final Map<String, Set<Socket>> consumerConnectionsPerTopic;
-	private ServerSocket              clientRequestSocket;
 
 	private final Map<String, Topic> topicsByName;
 
-	// === PLACEHOLDERS ===
-
 	private final List<Socket> brokerConnections;
-	private final Map<Topic, LinkedList<Post>> postsPerTopic;
-	private final Map<Topic, LinkedList<Post>> postsBackup;
 
-	private boolean isLeader;
-
-	// === END PLACEHOLDERS ===
-
-	private ServerSocket brokerRequestSocket;
-
-
-	/**
-	 * Create a new broker and add it to the already existing
-	 * distributed server system.
-	 * @param leaderIP the IP of the broker acting as the leader of the system
-	 */
-	public Broker(InetAddress leaderIP) {
-		this();
-		isLeader = false;
-	}
-
-	/**
-	 * Create a new broker that will act as the Leader of the
-	 * distributed server.
-	 */
+	/** Create a new Broker */
 	public Broker() {
-		//TODO: establish connection with broker
-		this.publisherInfo = Collections.synchronizedSet(new HashSet<>());
+		// TODO: establish connection with broker
+		this.publisherConnectionInfo = Collections.synchronizedSet(new HashSet<>());
 		this.consumerConnectionsPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
-		this.postsPerTopic = Collections.synchronizedMap(new HashMap<>());
-		this.postsBackup = Collections.synchronizedMap(new HashMap<>());
 		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
-		isLeader = true;
+	}
+
+	public static void main(String[] args) {
+		new Thread(new Broker()).start();
 	}
 
 	@Override
@@ -78,6 +58,7 @@ class Broker implements Runnable {
 		try {
 			clientRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
 			brokerRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
+			System.out.printf("Client port: %d", clientRequestSocket.getLocalPort());
 
 			// Start handling client requests
 			Runnable clientRequestThread = () -> {
@@ -144,6 +125,7 @@ class Broker implements Runnable {
 		case DATA_PACKET_SEND:
 			topicName = (String) message.getValue();
 			topic = topicsByName.get(topicName);
+			oos.close();
 			return new PullThread(ois, topic);
 
 		case INITIALISE_CONSUMER:
@@ -157,11 +139,13 @@ class Broker implements Runnable {
 			// send existing topics that the consumer does not have
 			topic = topicsByName.get(topicName);
 			List<Post> postsToSend = topic.getPostsSince(idOfLast);
+			ois.close();
 			return new PushThread(oos, postsToSend, true); // keep consumer's thread alive
 
-		case PUBLISHER_DISCOVERY_REQUEST: // TODO: ???
-			Topic t = (Topic) message.getValue();
-			return new PublisherDiscoveryThread(new ObjectOutputStream(connection.getOutputStream()), t);
+		case PUBLISHER_DISCOVERY_REQUEST:
+			topicName = (String) message.getValue();
+			ois.close();
+			return new PublisherDiscoveryThread(oos, topicName);
 
 		default:
 			throw new IllegalArgumentException("You forgot to put a case for the new Message enum");
@@ -170,11 +154,14 @@ class Broker implements Runnable {
 
 	/**
 	 * Return the broker that's responsible for the requested topic.
-	 * @param topic the topic
+	 *
+	 * @param topicName the name of the Topic
+	 *
 	 * @return the {@link ConnectionInfo} of the assigned broker
 	 */
-	private ConnectionInfo getAssignedBroker(Topic topic) {
-		int brokerIndex = topic.hashCode() % brokerConnections.size();
+	private ConnectionInfo getAssignedBroker(String topicName) {
+		// TODO: figure out what to do for dynamic brokers
+		int brokerIndex = topicsByName.get(topicName).hashCode() % brokerConnections.size();
 
 		try (final Socket broker = brokerConnections.get(brokerIndex)) {
 			return new ConnectionInfo(broker.getInetAddress(), broker.getPort());
@@ -192,8 +179,8 @@ class Broker implements Runnable {
 	 */
 	@SuppressWarnings("unused")
 	private void multicastMessage(Message m) {
-		for(Socket connection : brokerConnections) {
-			try(ObjectOutputStream out = new ObjectOutputStream(connection.getOutputStream())) {
+		for (Socket connection : brokerConnections) {
+			try (ObjectOutputStream out = new ObjectOutputStream(connection.getOutputStream())) {
 				out.writeObject(m);
 			} catch (IOException ioe) {
 				System.err.println("Message transmission failed: " + ioe.toString());
@@ -201,16 +188,15 @@ class Broker implements Runnable {
 		}
 	}
 
-
 	/**
-	 * Update internal data structures once a new connection has been established with
-	 * another broker.
+	 * Update internal data structures once a new connection has been established
+	 * with another broker.
 	 *
 	 * @param newBroker the information of the connected broker
 	 */
 	@SuppressWarnings("unused")
 	private void newBrokerConnected(Socket newBroker) {
-		if(brokerConnections.contains(newBroker))
+		if (brokerConnections.contains(newBroker))
 			return;
 
 		brokerConnections.add(newBroker);
@@ -219,16 +205,6 @@ class Broker implements Runnable {
 			        .compareTo(s2.getInetAddress().getHostName());
 			return ipc != 0 ? ipc : s2.getPort() - s1.getPort();
 		});
-	}
-
-	/**
-	 * Get the assigned topicsByName for this broker.
-	 *
-	 * @return the topicsByName
-	 */
-	@SuppressWarnings("unused")
-	private Set<Topic> getAssignedTopics() {
-		return this.postsPerTopic.keySet();
 	}
 
 	// ========== THREADS ==========
@@ -249,7 +225,30 @@ class Broker implements Runnable {
 				Thread  thread = Broker.this.threadFactory(m, socket);
 				thread.start();
 
-				Broker.this.publisherInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
+
+				// ==================================================
+				// TODO: move this elsewhere
+				try {
+					thread.join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				if (m.getType() == DATA_PACKET_SEND) {
+					String topicName = (String) m.getValue();
+					Topic  topic     = topicsByName.get(topicName);
+
+					for (Socket socket : consumerConnectionsPerTopic.get(topic.getName())) {
+						ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+
+						List<Post> posts = topic.getAllPosts();
+						new PushThread(oos, posts, false).run();
+					}
+				}
+				// ==================================================
+
+				Broker.this.publisherConnectionInfo
+				        .add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
 			} catch (IOException ioe) {
 				// do nothing
 			} catch (ClassNotFoundException e) {
@@ -259,36 +258,36 @@ class Broker implements Runnable {
     }
 
 	/**
-	 * A Thread for discovering the actual broker for a topic.
+	 * A Thread for discovering the actual broker for a Topic.
 	 *
 	 * @author Alex Mandelias
 	 */
 	private class PublisherDiscoveryThread extends Thread {
 
-		private final ObjectOutputStream stream;
-		private final Topic              topic;
+		private final ObjectOutputStream oos;
+		private final String             topicName;
 
 		/**
 		 * Constructs the Thread that, when run, will write the address of the broker
 		 * that has the requested topic in the given output stream.
 		 *
-		 * @param stream  the output stream to which to write the data
-		 * @param topic the topic
+		 * @param stream    the output stream to which to write the data
+		 * @param topicName the name of the Topic
 		 */
-		public PublisherDiscoveryThread(ObjectOutputStream stream, Topic topic) {
-			this.stream = stream;
-			this.topic = topic;
+		public PublisherDiscoveryThread(ObjectOutputStream stream, String topicName) {
+			oos = stream;
+			this.topicName = topicName;
 		}
 
 		@Override
 		public void run() {
 
-			try {
-				ConnectionInfo brokerInfo = Broker.this.getAssignedBroker(topic);
-				stream.writeObject(brokerInfo);
+			try (oos) {
+				ConnectionInfo brokerInfo = Broker.this.getAssignedBroker(topicName);
+				oos.writeObject(brokerInfo);
 			} catch (IOException e) {
 				// do nothing
-			}	// how does the client know no reply is coming?
+			}
 		}
 	}
 }
