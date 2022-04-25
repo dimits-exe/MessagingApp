@@ -13,8 +13,8 @@ class PullThread extends Thread {
 
 	private final ObjectInputStream stream;
 	private final Topic topic;
-	
-	private boolean                 success, start, end;
+
+	private boolean success, start, end;
 
 	/**
 	 * Constructs the Thread that, when run, will read data from the stream.
@@ -35,7 +35,7 @@ class PullThread extends Thread {
 		final List<Packet> postFragments = new LinkedList<>();
 
 		try {
-			
+
 			// receive broker's answer on how many posts need to be sent
 			// so the local topic is updated
 			int postCount;
@@ -45,9 +45,9 @@ class PullThread extends Thread {
 				e.printStackTrace();
 				return;
 			}
-			
+
 			for (int i = 0; i < postCount; i++) {
-				
+
 				//read Post header
 				PostInfo postInfo;
 				try {
@@ -56,7 +56,7 @@ class PullThread extends Thread {
 					e.printStackTrace();
 					return;
 				}
-				
+
 				//start reading Post data
 				Packet packet;
 				do {
@@ -85,7 +85,7 @@ class PullThread extends Thread {
 		end = true;
 	}
 
-	
+
 	/**
 	 * Returns whether this Thread has executed its job successfully. This method
 	 * shall be called after this Thread has executed its {@code run} method once.
