@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.List;
 
 /**
  * A process that initializes connections to brokers to send data.
@@ -44,9 +45,7 @@ class Publisher extends ClientNode {
 	 */
 	public void push(Post post) {
 
-		final Packet[] packets   = Packet.fromPost(post);
-		final PostInfo postInfo  = post.getPostInfo();
-		final String   topicName = postInfo.getTopicName();
+		final String topicName = post.getPostInfo().getTopicName();
 
 		boolean success;
 
@@ -59,9 +58,9 @@ class Publisher extends ClientNode {
 				PushThread pushThread;
 				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
 
-					oos.writeObject(new Message(DATA_PACKET_SEND, postInfo));
+					oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
 
-					pushThread = new PushThread(packets, oos);
+					pushThread = new PushThread(oos, List.of(post));
 					pushThread.start();
 					try {
 						pushThread.join();

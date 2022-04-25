@@ -121,48 +121,43 @@ class Broker implements Runnable {
 	}
 
 	/**
-	 * Get the relevant worker thread to satisfy the request according to the {@link Message#MessageType message's type}.
-	 * @param message the message to be handled
+	 * Get the relevant worker thread to satisfy the request according to the
+	 * {@link Message.MessageType message's type}.
+	 *
+	 * @param message    the message to be handled
 	 * @param connection the socket from where the message was sent
+	 *
 	 * @return the worker thread for the request
-	 * @throws IOException if an error occurs while establishing an output stream to write back to the sender
+	 *
+	 * @throws IOException if an error occurs while establishing an output stream to
+	 *                     write back to the sender
 	 */
 	private Thread threadFactory(Message message, Socket connection) throws IOException {
+		ObjectInputStream ois = new ObjectInputStream(connection.getInputStream());
+		ObjectOutputStream oos = new ObjectOutputStream(connection.getOutputStream());
+
 		switch(message.getType()) {
 		case DATA_PACKET_SEND:
 			String topicName = (String) message.getValue();
-			return new PullThread(new ObjectInputStream(connection.getInputStream()), topics.get(topicName));
-			
-		case DATA_PACKET_RECEIVE:
-			// retrieve posts
-			TopicToken token= (TopicToken) message.getValue();
-			Topic relevantTopic = topics.get(token.getName());
-			long lastId = token.getLastId();
-			List<Post> postsToBeSent = relevantTopic.getPostsSince(lastId);
-			
-			// set up streams
-			// TODO: fill consumerConnections with actual connections
-			Set<ObjectOutputStream> outStreams = new HashSet<>();
-			for(Socket s : consumerConnections) {
-				outStreams.add(new ObjectOutputStream(s.getOutputStream()));
-			}
-			
-			// execute request
-			return new MulticastPushThread(outStreams, postsToBeSent);
+			Topic topic = topicsByName.get(topicName);
 
-		case PUBLISHER_DISCOVERY_REQUEST:
+			return new PullThread(ois, topic);
+
+		case INITIALISE_CONSUMER:
+			TopicToken topicToken = (TopicToken) message.getValue();
+			consumerConnectionsPerTopic.get(topicToken.getName()).add(connection);
+
+			return new ConsumerDiscoveryThread(oos, topicToken);
+
+		case PUBLISHER_DISCOVERY_REQUEST: // TODO: ???
 			Topic t = (Topic) message.getValue();
 			return new PublisherDiscoveryThread(new ObjectOutputStream(connection.getOutputStream()), t);
-			
-		case CONSUMER_DISOVERY_REQUEST:
-			@SuppressWarnings("unchecked") Set<String> topicNames = (HashSet<String>) message.getValue();
-			return new ConsumerDiscoveryThread(new ObjectOutputStream(connection.getOutputStream()), topicNames);
 
 		default:
 			throw new IllegalArgumentException("You forgot to put a case for the new Message enum");
 		}
 	}
-	
+
 	/**
 	 * Return the broker that's responsible for the requested topic.
 	 * @param topic the topic
@@ -235,9 +230,9 @@ class Broker implements Runnable {
         @Override
         public void run() {
 
-			try(ObjectInputStream ois 	= new ObjectInputStream(socket.getInputStream())) {
-				Message           m   	= (Message) ois.readObject();
-				Thread thread 			= Broker.this.threadFactory(m, socket);
+			try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
+				Message m      = (Message) ois.readObject();
+				Thread  thread = Broker.this.threadFactory(m, socket);
 				thread.start();
 
 				Broker.this.publisherInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));

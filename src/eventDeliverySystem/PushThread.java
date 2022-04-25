@@ -2,27 +2,29 @@ package eventDeliverySystem;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.List;
 
 /**
- * A Thread for sending some data to an output stream.
+ * A Thread that writes some Posts to a stream.
  *
  * @author Alex Mandelias
  */
 class PushThread extends Thread {
 
-	private final Packet[]           data;
-	private final ObjectOutputStream stream;
-	private boolean                  success, start, end;
+	private final ObjectOutputStream oos;
+	private final List<Post>         posts;
+
+	private boolean success, start, end;
 
 	/**
-	 * Constructs the Thread that, when run, will write the data to the stream.
+	 * Constructs the Thread that, when run, will write some Posts to a stream.
 	 *
-	 * @param data   the data to write
-	 * @param stream the output stream to which to write the data
+	 * @param stream the output stream to which to write the Posts
+	 * @param posts  the Posts to write
 	 */
-	public PushThread(Packet[] data, ObjectOutputStream stream) {
-		this.data = data;
-		this.stream = stream;
+	public PushThread(ObjectOutputStream stream, List<Post> posts) {
+		oos = stream;
+		this.posts = posts;
 		success = start = end = false;
 	}
 
@@ -30,13 +32,18 @@ class PushThread extends Thread {
 	public void run() {
 		start = true;
 
-		try {
-			// send packet count
-			stream.writeObject(data.length);
-			
-			// send packets
-			for (int i = 0; i < data.length; i++) {
-				stream.writeObject(data[i]);
+		try (oos) {
+
+			final int postCount = posts.size();
+			oos.writeInt(postCount);
+
+			for (Post post : posts) {
+				final PostInfo postInfo = post.getPostInfo();
+				oos.writeObject(postInfo);
+
+				final Packet[] packets = Packet.fromPost(post);
+				for (Packet packet : packets)
+					oos.writeObject(packet);
 			}
 
 			success = true;

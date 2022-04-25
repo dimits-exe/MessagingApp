@@ -6,9 +6,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * A Thread that reads some Posts from a Stream and then posts them to a Topic.
+ * A Thread that reads some Posts from a stream and then posts them to a Topic.
  *
- * @author AlexMandelias
+ * @author Alex Mandelias
  */
 class PullThread extends Thread {
 
@@ -18,8 +18,8 @@ class PullThread extends Thread {
 	private boolean success, start, end;
 
 	/**
-	 * Constructs the Thread that, when run, will read Posts from the stream and
-	 * post them to the Topic.
+	 * Constructs the Thread that, when run, will read some Posts from a stream and
+	 * post them to a Topic.
 	 *
 	 * @param stream the input stream from which to read the Posts
 	 * @param topic  the Topic in which the new Posts will be added
