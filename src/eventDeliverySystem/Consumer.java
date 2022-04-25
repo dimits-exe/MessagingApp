@@ -118,6 +118,7 @@ class Consumer extends ClientNode {
 			ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
 			try (Socket socket = new Socket(ci.getAddress(), ci.getPort())) {
+				// save open socket, don't send anything yet
 				brokersForTopic.put(topicName, socket); // closes at close1()
 			} catch (IOException e) {
 				// invalidate and ask again for topicName;
@@ -126,6 +127,7 @@ class Consumer extends ClientNode {
 			}
 		}
 
+		// send INITIALISE_CONSUMER message to every socket
 		for (Entry<String, Socket> e : brokersForTopic.entrySet()) {
 			Socket socket = e.getValue(); // closes at close1()
 

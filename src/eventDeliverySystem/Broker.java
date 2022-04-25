@@ -81,20 +81,21 @@ class Broker implements Runnable {
 
 			// Start handling client requests
 			Runnable clientRequestThread = () -> {
-                while (true) {
-                    try {
-                        Socket socket = clientRequestSocket.accept();
-                        new ClientRequestHandler(socket).start();
+				while (true) {
+					try {
+						// TODO: figure out how to close this one
+						Socket socket = clientRequestSocket.accept();
+						new ClientRequestHandler(socket).start();
 
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        System.exit(-1); 		// serious error when waiting, close broker
-                    }
-                }
-            }; //clientRequestThread
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.exit(-1); // serious error when waiting, close broker
+					}
+				}
+			};
 
 
-            //TODO: properly implement
+			//TODO: properly implement
 			Runnable brokerRequestThread = new Runnable() {
 
 				@Override
@@ -189,6 +190,7 @@ class Broker implements Runnable {
 	 *
 	 * @param m the message
 	 */
+	@SuppressWarnings("unused")
 	private void multicastMessage(Message m) {
 		for(Socket connection : brokerConnections) {
 			try(ObjectOutputStream out = new ObjectOutputStream(connection.getOutputStream())) {
@@ -206,6 +208,7 @@ class Broker implements Runnable {
 	 *
 	 * @param newBroker the information of the connected broker
 	 */
+	@SuppressWarnings("unused")
 	private void newBrokerConnected(Socket newBroker) {
 		if(brokerConnections.contains(newBroker))
 			return;
@@ -219,9 +222,11 @@ class Broker implements Runnable {
 	}
 
 	/**
-	 * Get the assigned topics for this broker.
-	 * @return the topics
+	 * Get the assigned topicsByName for this broker.
+	 *
+	 * @return the topicsByName
 	 */
+	@SuppressWarnings("unused")
 	private Set<Topic> getAssignedTopics() {
 		return this.postsPerTopic.keySet();
 	}
@@ -250,8 +255,6 @@ class Broker implements Runnable {
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
-
-
         }
     }
 
