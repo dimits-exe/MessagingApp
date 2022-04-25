@@ -60,7 +60,7 @@ class Publisher extends ClientNode {
 
 					oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
 
-					pushThread = new PushThread(oos, List.of(post));
+					pushThread = new PushThread(oos, List.of(post), false);
 					pushThread.start();
 					try {
 						pushThread.join();

@@ -13,18 +13,23 @@ class PushThread extends Thread {
 
 	private final ObjectOutputStream oos;
 	private final List<Post>         posts;
+	private final boolean            keepAlive;
 
 	private boolean success, start, end;
 
 	/**
 	 * Constructs the Thread that, when run, will write some Posts to a stream.
 	 *
-	 * @param stream the output stream to which to write the Posts
-	 * @param posts  the Posts to write
+	 * @param stream    the output stream to which to write the Posts
+	 * @param posts     the Posts to write
+	 * @param keepAlive {@code true} if the PullThread associated with pulling the
+	 *                  data should not terminate after reading the data that this
+	 *                  PushThread pushes, {@code false} otherwise.
 	 */
-	public PushThread(ObjectOutputStream stream, List<Post> posts) {
+	public PushThread(ObjectOutputStream stream, List<Post> posts, boolean keepAlive) {
 		oos = stream;
 		this.posts = posts;
+		this.keepAlive = keepAlive;
 		success = start = end = false;
 	}
 
@@ -34,7 +39,7 @@ class PushThread extends Thread {
 
 		try (oos) {
 
-			final int postCount = posts.size();
+			final int postCount = keepAlive ? Integer.MAX_VALUE : posts.size();
 			oos.writeInt(postCount);
 
 			for (Post post : posts) {
