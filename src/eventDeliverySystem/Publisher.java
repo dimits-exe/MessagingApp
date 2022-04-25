@@ -14,7 +14,7 @@ import java.net.Socket;
  * @author Dimitris Tsirbas
  */
 class Publisher extends ClientNode {
-	
+
 	/**
 	 * Constructs a Publisher that will connect to a specific default broker.
 	 *
@@ -35,12 +35,6 @@ class Publisher extends ClientNode {
 
 	protected Publisher(InetAddress ip, int port) throws IOException {
 		super(ip, port);
-	}
-
-	@Override
-	public void run() {
-		// this probably should go to the constructor
-
 	}
 
 	/**
@@ -87,10 +81,4 @@ class Publisher extends ClientNode {
 			}
 		} while (!success);
 	}
-
-	@Override
-	public void close() throws IOException {
-		topicCIManager.close();
-	}
-
 }

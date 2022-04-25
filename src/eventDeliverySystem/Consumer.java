@@ -1,143 +1,145 @@
 package eventDeliverySystem;
 
-import static eventDeliverySystem.Message.MessageType.DATA_PACKET_RECEIVE;
+import static eventDeliverySystem.Message.MessageType.INITIALISE_CONSUMER;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
- * A process that holds the posts of a certain user and updates them
- * by connecting to a remote server.
- * 
+ * A process that holds the posts of a certain user and updates them by
+ * connecting to a remote server.
+ *
+ * @author Alex Mandelias
+ * @author Dimitris Tsirmpas
  */
 class Consumer extends ClientNode {
 
-	// Local saved posts
-	private final Map<String, Topic> topics;
-	private final Map<String, Socket> topicBrokerMap;
-	private final Profile user;
-	
-	//TODO: implement getting a list of sockets from broker
-	//TODO: keep said sockets connected and choose between them (no CIManager ?)
-	
+	private final Map<String, Topic> topicsByName;
+	private final Map<String, Socket> brokersForTopic;
+
+	// TODO: inform user when a new Post for a Topic arrives
+
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
-	 * 
-	 * @see {@link ClientNode#UserNode(String, int)}
+	 *
+	 * @param defaultServerIP   the IP of the default broker, interpreted as
+	 *                          {@link InetAddress#getByName(String)}.
+	 * @param defaultServerPort the port of the default broker
+	 * @param topics            the Topics for which this Consumer listens
+	 *
+	 * @throws UnknownHostException if no IP address for the host could be found, or
+	 *                              if a scope_id was specified for a global IPv6
+	 *                              address while resolving the defaultServerIP.
+	 * @throws IOException          if an I/O error occurs when opening the
+	 *                              Publisher's Server Socket.
+	 *
+	 * @see ClientNode#ClientNode(String, int)
 	 */
-	public Consumer(String defaultServerIP, int defaultServerPort, Profile user) throws IOException {
-		this(InetAddress.getByName(defaultServerIP), defaultServerPort, user);
+	public Consumer(String defaultServerIP, int defaultServerPort, Set<Topic> topics)
+	        throws IOException {
+		this(InetAddress.getByName(defaultServerIP), defaultServerPort, topics);
 	}
-	
+
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
-	 * 
-	 * @see {@link ClientNode#UserNode(byte[], int)}
+	 *
+	 * @param defaultServerIP   the IP of the default broker, interpreted as
+	 *                          {@link InetAddress#getByAddress(byte[])}.
+	 * @param defaultServerPort the port of the default broker
+	 * @param topics            the Topics for which this Consumer listens
+	 *
+	 * @throws UnknownHostException if IP address is of illegal length
+	 * @throws IOException          if an I/O error occurs when opening the
+	 *                              Publisher's Server Socket.
+	 *
+	 * @see ClientNode#ClientNode(byte[], int)
 	 */
-	public Consumer(byte[] defaultServerIP, int defaultServerPort, Profile user) throws IOException {
-		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, user);
+	public Consumer(byte[] defaultServerIP, int defaultServerPort, Set<Topic> topics)
+	        throws IOException {
+		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, topics);
 	}
-	
-	protected Consumer(InetAddress ip, int port, Profile user) throws IOException {
+
+	/**
+	 * Constructs a Consumer that will connect to a specific default broker.
+	 *
+	 * @param ip     the InetAddress of the default broker
+	 * @param port   the port of the default broker
+	 * @param topics the Topics for which this Consumer listens
+	 *
+	 * @throws IOException if an I/O error occurs while initialising the Client Node
+	 */
+	protected Consumer(InetAddress ip, int port, Set<Topic> topics) throws IOException {
 		super(ip, port);
-		
-		this.user = user;
-		topics = new HashMap<>();
-		topicBrokerMap = new HashMap<>();
-		
-		for(Topic t : user.getSubscribedTopics()) {
-			topics.put(t.getName(), t);
-		}
-		//TODO: Fill topics with saved posts from disk
-		
+
+		brokersForTopic = new HashMap<>();
+		topicsByName = new HashMap<>();
+
+		for (Topic topic : topics)
+			topicsByName.put(topic.getName(), topic);
+
 		connectionSetup();
 	}
 
 	@Override
-	public void run() {
-		// this probably should go to the constructor
+	protected void closeImpl() throws IOException {
+		for (Socket socket : brokersForTopic.values())
+			socket.close();
 	}
 
 	/**
-	 * Updates the local Topic with new posts streamed by a
-	 * remote Topic.
+	 * Returns all Posts from a Topic.
 	 *
-	 * @param topicName the name of the Topic from which to pull
+	 * @param topicName the name of the Topic
+	 *
+	 * @return a List with all the Posts of the Topic
 	 */
-	public void pull(String topicName) {
-
-		boolean success;
-		Topic relevantTopic = topics.get(topicName);
-
-		do {
-			ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName); // ???
-
-			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
-
-				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-				        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
-					
-					// send the token of the topic to the broker
-					oos.writeObject(new Message(DATA_PACKET_RECEIVE, relevantTopic.getToken()));
-					
-					// begin downloading the posts
-					IterativePullThread pullThread = new IterativePullThread(ois, relevantTopic);
-					pullThread.start();
-					try {
-						pullThread.join();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-
-				//success = pullThread.success();
-				success = true; // TODO: we'll see how we can do this without repeating the same success() code for every class
-			} catch (IOException e) {
-
-				System.err.printf("IOException while connecting to actual broker%n");
-
-				success = false;
-				topicCIManager.invalidate(topicName);
-			}
-		} while (!success);
-
+	public List<Post> pull(String topicName) {
+		return topicsByName.get(topicName).getAllPosts();
 	}
-	
-	public List<Post> getPostsByTopic(String topicName) {
-		return topics.get(topicName).getAllPosts();
-	}
-	
+
+	@SuppressWarnings("resource")
 	private void connectionSetup() {
-		// establish connection to default server
-		Socket defaultBrokerSex = null;
-		
-		// get broker info from default broker
-		try (ObjectInputStream oos = new ObjectInputStream(defaultBrokerSex.getInputStream())) {
-			Map<String, ConnectionInfo> brokerInfo = (Map<String, ConnectionInfo>) oos.readObject();
-			
-			// establish connections with each broker
-			for(var entry : brokerInfo.entrySet()) {
-				ConnectionInfo ci = entry.getValue();
-				
-				try {
-					topicBrokerMap.put(entry.getKey(), new Socket(ci.getAddress(), ci.getPort()));
-				} catch(IOException ioe) {
-					System.err.println("Failed to establish connection with topic broker " + ioe);
-					System.exit(-1);
-				}
-				
+
+		List<String> topicNames = new ArrayList<>(topicsByName.keySet());
+
+		for (int i = 0; i < topicNames.size(); i++) {
+			String         topicName = topicNames.get(i);
+			ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
+
+			try (Socket socket = new Socket(ci.getAddress(), ci.getPort())) {
+				brokersForTopic.put(topicName, socket); // closes at close1()
+			} catch (IOException e) {
+				// invalidate and ask again for topicName;
+				topicCIManager.invalidate(topicName);
+				i--;
 			}
-		} catch(IOException ioe) {
-			System.err.println("Server connection on default broker failed " + ioe);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+		}
+
+		for (Entry<String, Socket> e : brokersForTopic.entrySet()) {
+			Socket socket = e.getValue(); // closes at close1()
+
+			try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+				ObjectInputStream  ois = new ObjectInputStream(socket.getInputStream());
+
+				Topic topic = topicsByName.get(e.getKey());
+				oos.writeObject(new Message(INITIALISE_CONSUMER, topic.getToken()));
+
+				new PullThread(ois, topic).start();
+
+			} catch (IOException e1) {
+				throw new UncheckedIOException(e1); // closes at close1()
+			}
 		}
 	}
-
 }
