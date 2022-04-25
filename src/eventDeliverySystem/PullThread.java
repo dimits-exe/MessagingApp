@@ -6,85 +6,75 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * A Thread that continuously reads data from an input stream, re-assembles them
- * and adds them on a provided list.
+ * A Thread that reads some Posts from a Stream and then posts them to a Topic.
+ *
+ * @author AlexMandelias
  */
 class PullThread extends Thread {
 
-	private final ObjectInputStream stream;
-	private final Topic topic;
+	private final ObjectInputStream ois;
+	private final Topic             topic;
 
 	private boolean success, start, end;
 
 	/**
-	 * Constructs the Thread that, when run, will read data from the stream.
+	 * Constructs the Thread that, when run, will read Posts from the stream and
+	 * post them to the Topic.
 	 *
-	 * @param stream the input stream from which to read the data
-	 * @param topic the topic in which the new posts will be added
+	 * @param stream the input stream from which to read the Posts
+	 * @param topic  the Topic in which the new Posts will be added
 	 */
 	public PullThread(ObjectInputStream stream, Topic topic) {
-		this.stream = stream;
-		success = start = end = false;
+		ois = stream;
 		this.topic = topic;
+		success = start = end = false;
 	}
 
 	@Override
 	public void run() {
 		start = true;
 
-		final List<Packet> postFragments = new LinkedList<>();
+		try (ois) {
 
-		try {
-
-			// receive broker's answer on how many posts need to be sent
-			// so the local topic is updated
-			int postCount;
-			try {
-				postCount = (Integer) stream.readObject();
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-				return;
-			}
+			final int postCount = ois.readInt();
 
 			for (int i = 0; i < postCount; i++) {
 
-				//read Post header
-				PostInfo postInfo;
+				final PostInfo postInfo;
 				try {
-					postInfo = (PostInfo) stream.readObject();
-				} catch (ClassNotFoundException e) {
+					postInfo = (PostInfo) ois.readObject();
+				} catch (final ClassNotFoundException e) {
 					e.printStackTrace();
 					return;
 				}
 
-				//start reading Post data
-				Packet packet;
+				final List<Packet> packets = new LinkedList<>();
+				Packet             packet;
 				do {
 					try {
-						packet = (Packet) stream.readObject();
-					} catch (ClassNotFoundException e) {
+						packet = (Packet) ois.readObject();
+					} catch (final ClassNotFoundException e) {
 						e.printStackTrace();
 						return;
 					}
-					postFragments.add(packet);
+					packets.add(packet);
 				} while (!packet.isFinal());
 
-				final Packet[] temp    = new Packet[postFragments.size()];
-				final Packet[] packets = postFragments.toArray(temp);
-				final Post     post    = Post.fromPackets(packets, postInfo);
-				topic.post(post);
+				final Packet[] packetArray = new Packet[packets.size()];
+				packets.toArray(packetArray);
+				final Post newPost = Post.fromPackets(packetArray, postInfo);
+				topic.post(newPost);
 			}
 
 			success = true;
 
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.err.printf("IOException while receiving packets from actual broker%n");
 			success = false;
 		}
 
 		end = true;
 	}
-
 
 	/**
 	 * Returns whether this Thread has executed its job successfully. This method
