@@ -14,7 +14,7 @@ class PostInfo implements Serializable {
 	private static final long serialVersionUID = 1;
 
 	private final DataType type;
-	private final Profile  poster;
+	private final long     posterId;
 	private final String   fileExtension;
 	private final String   topicName;
 	private final long     id;
@@ -23,32 +23,32 @@ class PostInfo implements Serializable {
 	 * Constructs a new PostInfo.
 	 *
 	 * @param type          the Type of the data of the PostInfo
-	 * @param poster        the Poster of the PostInfo
+	 * @param posterId      the ID of the Poster of the Post
 	 * @param fileExtension the file extension associated with the data of the
 	 *                      PostInfo. Must be {@code null} if
 	 *                      {@code type == DataType.TEXT}.
 	 * @param topicName     the name of the PostInfo
 	 * @param id            the id of the PostInfo
 	 */
-	public PostInfo(DataType type, Profile poster, String fileExtension, String topicName,
+	public PostInfo(DataType type, long posterId, String fileExtension, String topicName,
 	        long id) {
 		if ((type == DataType.TEXT) && (fileExtension != null))
 			throw new IllegalArgumentException("DataType TEXT requires 'null' file extension");
 
 		this.type = type;
-		this.poster = poster;
+		this.posterId = posterId;
 		this.fileExtension = fileExtension;
 		this.topicName = topicName;
 		this.id = id;
 	}
 
 	/**
-	 * Returns the poster.
+	 * Returns the posterId.
 	 *
-	 * @return the poster
+	 * @return the posterId
 	 */
-	public Profile getPoster() {
-		return poster;
+	public long getPosterId() {
+		return posterId;
 	}
 
 	/**
