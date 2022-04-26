@@ -54,7 +54,8 @@ class PushThread extends Thread {
 			success = true;
 
 		} catch (IOException e) {
-			System.err.printf("IOException while sending packets to actual broker%n");
+			System.err.printf("IOException in PushThread#run()%n");
+			e.printStackTrace();
 			success = false;
 		}
 

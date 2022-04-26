@@ -68,6 +68,8 @@ class Publisher extends ClientNode {
 	 */
 	public void push(Post post) {
 
+		LG.sout("Pushing: %s", post);
+
 		final String topicName = post.getPostInfo().getTopicName();
 
 		boolean success;
@@ -75,6 +77,8 @@ class Publisher extends ClientNode {
 		do {
 			ConnectionInfo actualBrokerCI = topicCIManager
 			        .getConnectionInfoForTopic(topicName);
+
+			LG.sout("Actual Broker CI: %s", actualBrokerCI);
 
 			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
 
@@ -97,6 +101,7 @@ class Publisher extends ClientNode {
 			} catch (IOException e) {
 
 				System.err.printf("IOException while connecting to actual broker%n");
+				e.printStackTrace();
 
 				success = false;
 				topicCIManager.invalidate(topicName);

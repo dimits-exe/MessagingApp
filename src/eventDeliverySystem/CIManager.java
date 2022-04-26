@@ -113,7 +113,9 @@ class CIManager implements AutoCloseable {
 	 * @return the ConnectionInfo for that Topic
 	 */
 	public ConnectionInfo getConnectionInfoForTopic(String topicName) {
+		LG.sout("Getting CI for topic: %s", topicName);
 		ConnectionInfo address = map.get(topicName);
+		LG.sout("%s", address);
 
 		if (address != null)
 			return address;
@@ -139,6 +141,7 @@ class CIManager implements AutoCloseable {
 	}
 
 	private void updateCIForTopic(String topicName) {
+		LG.sout("Updating CI for topic: %s", topicName);
 		boolean ipForTopicBrokerException;
 		do {
 			ipForTopicBrokerException = false;

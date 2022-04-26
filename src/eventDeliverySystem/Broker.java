@@ -50,7 +50,12 @@ class Broker implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		new Thread(new Broker()).start();
+		LG.sout("Broker#main start");
+		LG.args(args);
+		Broker broker = new Broker();
+		Thread thread = new Thread(broker, "Broker-" + args[0]);
+		thread.start();
+		LG.sout("Broker#main end");
 	}
 
 	@Override
@@ -58,10 +63,13 @@ class Broker implements Runnable {
 		try {
 			clientRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
 			brokerRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
-			System.out.printf("Client port: %d", clientRequestSocket.getLocalPort());
+			LG.sout("Broker connected at:");
+			LG.socket("Client", clientRequestSocket);
+			LG.socket("Broker", brokerRequestSocket);
 
 			// Start handling client requests
 			Runnable clientRequestThread = () -> {
+				LG.sout("Start: clientRequestThread");
 				while (true) {
 					try {
 						// TODO: figure out how to close this one
@@ -75,12 +83,12 @@ class Broker implements Runnable {
 				}
 			};
 
-
 			//TODO: properly implement
 			Runnable brokerRequestThread = new Runnable() {
 
 				@Override
 				public void run() {
+					LG.sout("Start: BrokerRequestThread");
 					while(true) {
 						try {
 							brokerConnections.add(brokerRequestSocket.accept());
@@ -99,6 +107,8 @@ class Broker implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		LG.sout("Broker#run end");
 	}
 
 	/**
@@ -113,6 +123,7 @@ class Broker implements Runnable {
 	 * @throws IOException if an error occurs while establishing an output stream to
 	 *                     write back to the sender
 	 */
+	@Deprecated
 	private Thread threadFactory(Message message, Socket connection) throws IOException {
 		ObjectInputStream ois = new ObjectInputStream(connection.getInputStream());
 		ObjectOutputStream oos = new ObjectOutputStream(connection.getOutputStream());
@@ -281,6 +292,8 @@ class Broker implements Runnable {
 
 		@Override
 		public void run() {
+
+			LG.sout("Sending CI to publisher");
 
 			try (oos) {
 				ConnectionInfo brokerInfo = Broker.this.getAssignedBroker(topicName);
