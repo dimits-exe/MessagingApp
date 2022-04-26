@@ -140,7 +140,7 @@ class CIManager implements AutoCloseable {
 		serverThread.close();
 	}
 
-	private void updateCIForTopic(String topicName) {
+	private synchronized void updateCIForTopic(String topicName) {
 		LG.sout("Updating CI for topic: %s", topicName);
 		boolean ipForTopicBrokerException;
 		do {
@@ -168,7 +168,7 @@ class CIManager implements AutoCloseable {
 				ipForTopicBrokerException = true;
 
 				System.err
-				        .printf("IOException while getting ConnectionInfo for Topic from default broker%n");
+				        .printf("IOException while getting ConnectionInfo for Topic from default broker%n\n" + e);
 				System.err.flush();
 
 				try {
