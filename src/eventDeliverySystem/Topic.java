@@ -25,15 +25,21 @@ class Topic {
 	 * A structure holding the topicName and the last post's ID of the topic in a given
 	 * moment. Used to transfer the necessary information to a broker.
 	 */
-	class TopicToken implements Serializable {
+	static class TopicToken implements Serializable {
 		private static final long serialVersionUID = 1L;
 
 		private final String topicName;
 		private final long   lastId;
 
-		private TopicToken() {
-			this.topicName = Topic.this.getName();
-			this.lastId = Topic.this.getLastPost().getPostInfo().getId();
+		private TopicToken(Topic topic) {
+			this.topicName = topic.getName();
+			long tempId;
+			try {
+				tempId = topic.getLastPost().getPostInfo().getId();
+			} catch (EmptyStackException e) {
+				tempId = Topic.FETCH_ALL_POSTS;
+			}
+			this.lastId = tempId;
 		}
 
 		/**
@@ -62,7 +68,7 @@ class Topic {
 	 * @return the update token
 	 */
 	public TopicToken getToken() {
-		return new TopicToken();
+		return new TopicToken(this);
 	}
 
 	private final String name;
@@ -98,9 +104,12 @@ class Topic {
 
 	/**
 	 * Get the last posted post in the topic.
+	 *
 	 * @return the latest post
+	 *
+	 * @throws EmptyStackException if this stack is empty.
 	 */
-	public Post getLastPost() {
+	public Post getLastPost() throws EmptyStackException {
 		return posts.peek();
 	}
 
