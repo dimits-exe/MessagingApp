@@ -127,8 +127,10 @@ class Broker implements Runnable {
 	 */
 	@Deprecated
 	private Thread threadFactory(Message message, Socket connection) throws IOException {
-		ObjectInputStream ois = new ObjectInputStream(connection.getInputStream());
+		LG.sout("Creating thread for message type: %s", message.getType());
 		ObjectOutputStream oos = new ObjectOutputStream(connection.getOutputStream());
+		oos.flush();
+		ObjectInputStream ois = new ObjectInputStream(connection.getInputStream());
 
 		// fuck variables in switch statements
 		Topic topic;
@@ -137,8 +139,7 @@ class Broker implements Runnable {
 		switch(message.getType()) {
 		case DATA_PACKET_SEND:
 			topicName = (String) message.getValue();
-			topic = topicsByName.get(topicName);
-			oos.close();
+			topic = getTopic(topicName);
 			return new PullThread(ois, topic);
 
 		case INITIALISE_CONSUMER:
@@ -149,15 +150,12 @@ class Broker implements Runnable {
 			registerConsumerForTopic(topicName, connection);
 
 			// send existing topics that the consumer does not have
-			topic = topicsByName.get(topicName);
-			List<Post> postsToSend = topic.getPostsSince(idOfLast);
-			ois.close();
+			List<Post> postsToSend = getTopic(topicName).getPostsSince(idOfLast);
 			return new PushThread(oos, postsToSend, true); // keep consumer's thread alive
 
 		case PUBLISHER_DISCOVERY_REQUEST:
 			addPublisherCI(connection);
 			topicName = (String) message.getValue();
-			ois.close();
 			return new PublisherDiscoveryThread(oos, topicName);
 
 		default:
@@ -229,53 +227,91 @@ class Broker implements Runnable {
 
 	// ========== THREADS ==========
 
-	 private class ClientRequestHandler extends Thread {
+	private class ClientRequestHandler extends Thread {
 
-        private Socket socket;
+		private static int counter = 0;
 
-        public ClientRequestHandler(Socket socket) {
-            this.socket = socket;
-        }
+		private Socket socket;
 
-        @Override
-        public void run() {
+		public ClientRequestHandler(Socket socket) {
+			super("ClientRequestHandler-" + counter++);
+			this.socket = socket;
+		}
 
-			try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
-				Message m      = (Message) ois.readObject();
-				Thread  thread = Broker.this.threadFactory(m, socket);
+		@Override
+		public void run() {
+
+			LG.ssocket("Starting ClientRequestHandler for Socket", socket);
+
+			try {
+				// Thread  thread = Broker.this.threadFactory(m, socket);
+
+				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+				Message message = (Message) ois.readObject();
+				LG.sout("Creating thread for message type: %s", message.getType());
+
+				// fuck variables in switch statements
+				Topic  topic;
+				String topicName;
+				Thread thread = null;
+
+				switch (message.getType()) {
+				case DATA_PACKET_SEND:
+					topicName = (String) message.getValue();
+					topic = getTopic(topicName);
+					thread = new PullThread(ois, topic);
+					break;
+
+				case INITIALISE_CONSUMER:
+					TopicToken topicToken = (TopicToken) message.getValue();
+					topicName = topicToken.getName();
+					long idOfLast = topicToken.getLastId();
+
+					registerConsumerForTopic(topicName, socket);
+
+					// send existing topics that the consumer does not have
+					List<Post> postsToSend = getTopic(topicName).getPostsSince(idOfLast);
+					thread = new PushThread(oos, postsToSend, true); // keep consumer's thread alive
+					break;
+
+				case PUBLISHER_DISCOVERY_REQUEST:
+					addPublisherCI(socket);
+					topicName = (String) message.getValue();
+					thread = new PublisherDiscoveryThread(oos, topicName);
+					break;
+
+				default:
+					throw new IllegalArgumentException(
+					        "You forgot to put a case for the new Message enum");
+				}
+
 				thread.start();
 
+				/*
+				 * ================================================== // TODO: move this
+				 * elsewhere try { thread.join(); } catch (InterruptedException e) {
+				 * e.printStackTrace(); }
+				 *
+				 * if (m.getType() == DATA_PACKET_SEND) { String topicName = (String)
+				 * m.getValue(); Topic topic = topicsByName.get(topicName);
+				 *
+				 * for (Socket s : consumerConnectionsPerTopic.get(topic.getName())) {
+				 * ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+				 *
+				 * List<Post> posts = topic.getAllPosts(); new PushThread(oos, posts,
+				 * false).run(); } } // ==================================================
+				 */
 
-				// ==================================================
-				// TODO: move this elsewhere
-				try {
-					thread.join();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-
-				if (m.getType() == DATA_PACKET_SEND) {
-					String topicName = (String) m.getValue();
-					Topic  topic     = topicsByName.get(topicName);
-
-					for (Socket socket : consumerConnectionsPerTopic.get(topic.getName())) {
-						ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-
-						List<Post> posts = topic.getAllPosts();
-						new PushThread(oos, posts, false).run();
-					}
-				}
-				// ==================================================
-
-				Broker.this.publisherConnectionInfo
-				        .add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
 			} catch (IOException ioe) {
 				// do nothing
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
-        }
-    }
+				}
+			}
 
 	/**
 	 * A Thread for discovering the actual broker for a Topic.

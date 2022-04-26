@@ -34,7 +34,7 @@ class PullThread extends Thread {
 	public void run() {
 		start = true;
 
-		try (ois) {
+		try /* (ois) */ {
 
 			final int postCount = ois.readInt();
 

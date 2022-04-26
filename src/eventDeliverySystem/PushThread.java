@@ -37,7 +37,7 @@ class PushThread extends Thread {
 	public void run() {
 		start = true;
 
-		try (oos) {
+		try /* (oos) */ {
 
 			final int postCount = keepAlive ? Integer.MAX_VALUE : posts.size();
 			oos.writeInt(postCount);

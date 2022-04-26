@@ -146,11 +146,13 @@ class CIManager implements AutoCloseable {
 		do {
 			ipForTopicBrokerException = false;
 
-			try (Socket socket = getSocketToDefaultBroker();
-			        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
-
+			try {
+				Socket             socket = getSocketToDefaultBroker();
+				ObjectOutputStream oos    = new ObjectOutputStream(socket.getOutputStream());
 				oos.writeObject(new Message(PUBLISHER_DISCOVERY_REQUEST, topicName));
+				oos.flush();
+
+				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
 				ConnectionInfo actualBrokerCIForTopic;
 				try {
@@ -167,6 +169,7 @@ class CIManager implements AutoCloseable {
 
 				System.err
 				        .printf("IOException while getting ConnectionInfo for Topic from default broker%n");
+				System.err.flush();
 
 				try {
 					// wait until notified by server thread that the default broker has been changed

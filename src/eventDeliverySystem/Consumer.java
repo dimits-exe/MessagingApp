@@ -113,9 +113,10 @@ class Consumer extends ClientNode {
 			String         topicName = topicNames.get(i);
 			ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
-			try (Socket socket = new Socket(ci.getAddress(), ci.getPort())) {
+			try {
+				Socket socket = new Socket(ci.getAddress(), ci.getPort());
 				// save open socket, don't send anything yet
-				brokersForTopic.put(topicName, socket); // closes at close1()
+				brokersForTopic.put(topicName, socket); // closes at closeImpl()
 			} catch (IOException e) {
 				// invalidate and ask again for topicName;
 				topicCIManager.invalidate(topicName);
@@ -125,9 +126,11 @@ class Consumer extends ClientNode {
 
 		// send INITIALISE_CONSUMER message to every socket
 		for (Entry<String, Socket> e : brokersForTopic.entrySet()) {
-			Socket socket = e.getValue(); // closes at close1()
+			Socket socket = e.getValue(); // closes at closeImpl()
 
-			try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+			try {
+				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
 				ObjectInputStream  ois = new ObjectInputStream(socket.getInputStream());
 
 				Topic topic = topicsByName.get(e.getKey());
@@ -136,7 +139,7 @@ class Consumer extends ClientNode {
 				new PullThread(ois, topic).start();
 
 			} catch (IOException e1) {
-				throw new UncheckedIOException(e1); // closes at close1()
+				throw new UncheckedIOException(e1); // closes at closeImpl()
 			}
 		}
 	}
