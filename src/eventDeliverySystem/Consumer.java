@@ -10,11 +10,14 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * A process that holds the posts of a certain user and updates them by
@@ -24,9 +27,18 @@ import java.util.Set;
  * @author Dimitris Tsirmpas
  */
 class Consumer extends ClientNode {
+	/**
+	 * If there has been no previous call to pull()
+	 */
+	private static final long NO_REQUESTS_MADE = -1;
 
 	private final Map<String, Topic> topicsByName;
 	private final Map<String, Socket> brokersForTopic;
+	
+	/**
+	 * A pointer to the last post pulled by calling the pull() method.
+	 */
+	private long lastRequestId = NO_REQUESTS_MADE;
 
 	// TODO: inform user when a new Post for a Topic arrives
 
@@ -87,23 +99,40 @@ class Consumer extends ClientNode {
 		connectionSetup();
 	}
 
+	/**
+	 * Returns all new Posts from a Topic.
+	 *
+	 * @param topicName the name of the Topic
+	 *
+	 * @return a List with all the Posts not yet requested
+	 */
+	public List<Post> pull(String topicName) {		
+		Topic topic = topicsByName.get(topicName);
+		List<Post> newPosts;
+		
+		try {
+			if(lastRequestId == NO_REQUESTS_MADE)
+				newPosts = topic.getAllPosts();
+			else
+				newPosts = topic.getPostsSince(lastRequestId);
+	
+			lastRequestId = topic.getLastPost().getPostInfo().getId();
+			return newPosts;
+		} catch(EmptyStackException | NoSuchElementException e) {
+			// if no posts have been received
+			lastRequestId = NO_REQUESTS_MADE;
+			return new Stack<Post>();
+		}
+		
+	}
+	
 	@Override
 	protected void closeImpl() throws IOException {
 		for (Socket socket : brokersForTopic.values())
 			socket.close();
 	}
 
-	/**
-	 * Returns all Posts from a Topic.
-	 *
-	 * @param topicName the name of the Topic
-	 *
-	 * @return a List with all the Posts of the Topic
-	 */
-	public List<Post> pull(String topicName) {
-		return topicsByName.get(topicName).getAllPosts();
-	}
-
+	//TODO: Dynamically allocate new thread for newly created topic
 	@SuppressWarnings("resource")
 	private void connectionSetup() {
 

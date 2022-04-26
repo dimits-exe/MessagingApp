@@ -67,5 +67,11 @@ class Message implements Serializable {
 		 * TopicToken.
 		 */
 		INITIALISE_CONSUMER,
+		
+		/**
+		 * Request the (not-default) broker to create a new Topic.
+		 * The value is is a String describing the new Topic's name.
+		 */
+		CREATE_TOPIC,
 	}
 }

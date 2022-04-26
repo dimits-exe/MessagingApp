@@ -1,6 +1,7 @@
 package eventDeliverySystem;
 
 import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
+import static eventDeliverySystem.Message.MessageType.CREATE_TOPIC;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -108,4 +109,28 @@ class Publisher extends ClientNode {
 			}
 		} while (!success);
 	}
+	
+	/**
+	 * Request the remote server to create a new topic with the specified name.
+	 * @param topicName the name of the new topic
+	 */
+	public void createTopic(String topicName) {
+
+		ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+
+		LG.sout("Actual Broker CI: %s", actualBrokerCI);
+
+		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort());
+				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+			
+			oos.writeObject(new Message(CREATE_TOPIC, topicName));
+			
+		} catch (IOException e) {
+
+			System.err.printf("IOException while connecting to actual broker%n");
+			e.printStackTrace();
+			topicCIManager.invalidate(topicName);
+			
+		} // try
+	} // createTopic
 }

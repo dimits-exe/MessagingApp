@@ -27,6 +27,7 @@ class Broker implements Runnable {
 
 	private static final PortManager portManager     = new PortManager();
 	private static final int         MAX_CONNECTIONS = 64;
+	private static int clientRequestCounter = 0;
 
 	private ServerSocket clientRequestSocket;
 	private ServerSocket brokerRequestSocket;
@@ -46,8 +47,7 @@ class Broker implements Runnable {
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
 
-		// TODO: refactor into 'addTopic' method
-		topicsByName.put("opa", new Topic("opa"));
+		addTopic(new Topic("opa"));
 		consumerConnectionsPerTopic.put("opa", new HashSet<>());
 	}
 
@@ -113,56 +113,7 @@ class Broker implements Runnable {
 		LG.sout("Broker#run end");
 	}
 
-	/**
-	 * Get the relevant worker thread to satisfy the request according to the
-	 * {@link Message.MessageType message's type}.
-	 *
-	 * @param message    the message to be handled
-	 * @param connection the socket from where the message was sent
-	 *
-	 * @return the worker thread for the request
-	 *
-	 * @throws IOException if an error occurs while establishing an output stream to
-	 *                     write back to the sender
-	 */
-	@Deprecated
-	private Thread threadFactory(Message message, Socket connection) throws IOException {
-		LG.sout("Creating thread for message type: %s", message.getType());
-		ObjectOutputStream oos = new ObjectOutputStream(connection.getOutputStream());
-		oos.flush();
-		ObjectInputStream ois = new ObjectInputStream(connection.getInputStream());
-
-		// fuck variables in switch statements
-		Topic topic;
-		String topicName;
-
-		switch(message.getType()) {
-		case DATA_PACKET_SEND:
-			topicName = (String) message.getValue();
-			topic = getTopic(topicName);
-			return new PullThread(ois, topic);
-
-		case INITIALISE_CONSUMER:
-			TopicToken topicToken = (TopicToken) message.getValue();
-			topicName = topicToken.getName();
-			long idOfLast = topicToken.getLastId();
-
-			registerConsumerForTopic(topicName, connection);
-
-			// send existing topics that the consumer does not have
-			List<Post> postsToSend = getTopic(topicName).getPostsSince(idOfLast);
-			return new PushThread(oos, postsToSend, true); // keep consumer's thread alive
-
-		case PUBLISHER_DISCOVERY_REQUEST:
-			addPublisherCI(connection);
-			topicName = (String) message.getValue();
-			return new PublisherDiscoveryThread(oos, topicName);
-
-		default:
-			throw new IllegalArgumentException("You forgot to put a case for the new Message enum");
-		}
-	}
-
+	
 	/**
 	 * Return the broker that's responsible for the requested topic.
 	 *
@@ -186,6 +137,14 @@ class Broker implements Runnable {
 		}
 		@foff
 		*/
+	}
+	
+	/**
+	 * Adds a new topic to the Broker's <String, Topic> map.
+	 * @param topic the topic to be added
+	 */
+	private void addTopic(Topic topic) {
+		topicsByName.put(topic.getName(), topic);
 	}
 
 	// ============== UNUSED =======================
@@ -229,12 +188,10 @@ class Broker implements Runnable {
 
 	private class ClientRequestHandler extends Thread {
 
-		private static int counter = 0;
-
 		private Socket socket;
 
 		public ClientRequestHandler(Socket socket) {
-			super("ClientRequestHandler-" + counter++);
+			super("ClientRequestHandler-" + clientRequestCounter++);
 			this.socket = socket;
 		}
 
@@ -282,28 +239,21 @@ class Broker implements Runnable {
 					topicName = (String) message.getValue();
 					thread = new PublisherDiscoveryThread(oos, topicName);
 					break;
-
+				
+				case CREATE_TOPIC:
+					topicName = (String) message.getValue();
+					
+					if(!topicsByName.containsKey(topicName))
+						addTopic(new Topic(topicName));
+					
+					return;
+					
 				default:
 					throw new IllegalArgumentException(
 					        "You forgot to put a case for the new Message enum");
 				}
 
 				thread.start();
-
-				/*
-				 * ================================================== // TODO: move this
-				 * elsewhere try { thread.join(); } catch (InterruptedException e) {
-				 * e.printStackTrace(); }
-				 *
-				 * if (m.getType() == DATA_PACKET_SEND) { String topicName = (String)
-				 * m.getValue(); Topic topic = topicsByName.get(topicName);
-				 *
-				 * for (Socket s : consumerConnectionsPerTopic.get(topic.getName())) {
-				 * ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-				 *
-				 * List<Post> posts = topic.getAllPosts(); new PushThread(oos, posts,
-				 * false).run(); } } // ==================================================
-				 */
 
 			} catch (IOException ioe) {
 				// do nothing

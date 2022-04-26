@@ -1,6 +1,8 @@
 package eventDeliverySystem;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
@@ -100,7 +102,7 @@ class Profile {
 
 	@Override
 	public String toString() {
-		return String.format("Profile [name=%s, id=%d, subscribedTopics=%s]", name, id,
-		        subscribedTopics.stream().map(t -> t.getName()).toList());
+		List<Object> words = Arrays.asList(subscribedTopics.stream().map(t -> t.getName()).toArray());
+		return String.format("Profile [name=%s, id=%d, subscribedTopics=%s]", name, id, words);
 	}
 }
