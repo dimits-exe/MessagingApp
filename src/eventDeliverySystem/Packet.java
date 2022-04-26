@@ -48,13 +48,13 @@ class Packet implements Serializable {
 	 * Turn a string of text to a series of packets.
 	 *
 	 * @param text      the text
-	 * @param poster    the profile of the user that sent the text
+	 * @param posterId  the ID of the Poster of the Post
 	 * @param topicName the name of the Topic
 	 *
 	 * @return an array of packet objects holding the text
 	 */
-	public static Packet[] fromText(String text, Profile poster, String topicName) {
-		final Post rawData = new Post(text.getBytes(), DataType.TEXT, poster, null, topicName);
+	public static Packet[] fromText(String text, long posterId, String topicName) {
+		final Post rawData = new Post(text.getBytes(), DataType.TEXT, posterId, null, topicName);
 		return Packet.fromPost(rawData);
 	}
 
