@@ -1,11 +1,8 @@
 package eventDeliverySystem;
 
-import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collections;
@@ -14,6 +11,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import eventDeliverySystem.Topic.TopicToken;
@@ -47,6 +45,10 @@ class Broker implements Runnable {
 		this.consumerConnectionsPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
+
+		// TODO: refactor into 'addTopic' method
+		topicsByName.put("opa", new Topic("opa"));
+		consumerConnectionsPerTopic.put("opa", new HashSet<>());
 	}
 
 	public static void main(String[] args) {
@@ -144,8 +146,7 @@ class Broker implements Runnable {
 			topicName = topicToken.getName();
 			long idOfLast = topicToken.getLastId();
 
-			// register current connection as listener for topic
-			consumerConnectionsPerTopic.get(topicName).add(connection);
+			registerConsumerForTopic(topicName, connection);
 
 			// send existing topics that the consumer does not have
 			topic = topicsByName.get(topicName);
@@ -154,6 +155,7 @@ class Broker implements Runnable {
 			return new PushThread(oos, postsToSend, true); // keep consumer's thread alive
 
 		case PUBLISHER_DISCOVERY_REQUEST:
+			addPublisherCI(connection);
 			topicName = (String) message.getValue();
 			ois.close();
 			return new PublisherDiscoveryThread(oos, topicName);
@@ -171,14 +173,21 @@ class Broker implements Runnable {
 	 * @return the {@link ConnectionInfo} of the assigned broker
 	 */
 	private ConnectionInfo getAssignedBroker(String topicName) {
+		return new ConnectionInfo(clientRequestSocket.getInetAddress(),
+		        clientRequestSocket.getLocalPort());
+
+		/*
+		@fon
 		// TODO: figure out what to do for dynamic brokers
-		int brokerIndex = topicsByName.get(topicName).hashCode() % brokerConnections.size();
+		int brokerIndex = getTopic(topicName).hashCode() % (brokerConnections.size() + 1);
 
 		try (final Socket broker = brokerConnections.get(brokerIndex)) {
 			return new ConnectionInfo(broker.getInetAddress(), broker.getPort());
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+		@foff
+		*/
 	}
 
 	// ============== UNUSED =======================
@@ -302,5 +311,22 @@ class Broker implements Runnable {
 				// do nothing
 			}
 		}
+	}
+
+	// ==================== PRIVATE METHODS ====================
+
+	private void addPublisherCI(Socket socket) {
+		publisherConnectionInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
+	}
+
+	private void registerConsumerForTopic(String topicName, Socket socket) {
+		consumerConnectionsPerTopic.get(topicName).add(socket);
+	}
+
+	private Topic getTopic(String topicName) {
+		Topic topic = topicsByName.get(topicName);
+		if (topic == null)
+			throw new NoSuchElementException("There is no Topic with name " + topicName);
+		return topic;
 	}
 }
