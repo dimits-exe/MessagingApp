@@ -86,4 +86,11 @@ class PostInfo implements Serializable {
 	public long getId() {
 		return id;
 	}
+
+	@Override
+	public String toString() {
+		return String.format(
+		        "PostInfo [type=%s, posterId=%d, fileExtension=%s, topicName=%s, id=%s]",
+		        type, posterId, fileExtension, topicName, id);
+	}
 }

@@ -11,10 +11,10 @@ import java.net.InetAddress;
 final class ConnectionInfo implements Serializable {
 
 	private static final long serialVersionUID = -3742145900403155967L;
-	
+
 	private final InetAddress address;
 	private final int port;
-	
+
 	/**
 	 * Construct a new info object with the connection details of the host.
 	 * @param address the IP address of the host
@@ -24,7 +24,7 @@ final class ConnectionInfo implements Serializable {
 		this.address = address;
 		this.port = port;
 	}
-	
+
 	/**
 	 * Get the IP address of the connection.
 	 * @return the address
@@ -32,7 +32,7 @@ final class ConnectionInfo implements Serializable {
 	public InetAddress getAddress() {
 		return address;
 	}
-	
+
 	/**
 	 * Get the port number of the connection.
 	 * @return the port
@@ -41,4 +41,8 @@ final class ConnectionInfo implements Serializable {
 		return port;
 	}
 
+	@Override
+	public String toString() {
+		return String.format("ConnectionInfo [address=%s, port=%d]", address, port);
+	}
 }

@@ -97,6 +97,10 @@ class Profile {
 		Profile other = (Profile) obj;
 		return id == other.id;
 	}
-	
-}
 
+	@Override
+	public String toString() {
+		return String.format("Profile [name=%s, id=%d, subscribedTopics=%s]", name, id,
+		        subscribedTopics.stream().map(t -> t.getName()).toList());
+	}
+}

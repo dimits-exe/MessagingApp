@@ -122,4 +122,9 @@ class Post {
 	public PostInfo getPostInfo() {
 		return postInfo;
 	}
+
+	@Override
+	public String toString() {
+		return String.format("%d bytes: %s", data.length, postInfo);
+	}
 }
