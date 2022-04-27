@@ -73,5 +73,14 @@ class Message implements Serializable {
 		 * The value is is a String describing the new Topic's name.
 		 */
 		CREATE_TOPIC,
+		
+		/**
+		 * Inform the broker that another broker has connected.
+		 * The value is the ConnectionInfo of the newly created Broker.
+		 * 
+		 * Warning: in case of a multicast the accepting socket and the serialized
+		 * ConnectionInfo object may NOT represent the same broker.
+		 */
+		BROKER_CONNECTION
 	}
 }

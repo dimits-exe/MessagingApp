@@ -3,6 +3,7 @@ package eventDeliverySystem;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collections;
@@ -46,9 +47,6 @@ class Broker implements Runnable {
 		this.consumerConnectionsPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
-
-		addTopic(new Topic("opa"));
-		consumerConnectionsPerTopic.put("opa", new HashSet<>());
 	}
 
 	public static void main(String[] args) {
@@ -122,21 +120,21 @@ class Broker implements Runnable {
 	 * @return the {@link ConnectionInfo} of the assigned broker
 	 */
 	private ConnectionInfo getAssignedBroker(String topicName) {
-		return new ConnectionInfo(clientRequestSocket.getInetAddress(),
-		        clientRequestSocket.getLocalPort());
-
-		/*
-		@fon
-		// TODO: figure out what to do for dynamic brokers
 		int brokerIndex = getTopic(topicName).hashCode() % (brokerConnections.size() + 1);
-
+		
+		// last index (out of range normally) => this broker is responsible for the topic
+		// this rule should work because the default broker is the only broker that processes
+		// such requests.
+		if(brokerIndex == brokerConnections.size()) {
+			return new ConnectionInfo(clientRequestSocket.getInetAddress(), clientRequestSocket.getLocalPort());
+		}
+		
+		// else send the broker from the other connections
 		try (final Socket broker = brokerConnections.get(brokerIndex)) {
 			return new ConnectionInfo(broker.getInetAddress(), broker.getPort());
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
-		@foff
-		*/
 	}
 	
 	/**
@@ -201,8 +199,6 @@ class Broker implements Runnable {
 			LG.ssocket("Starting ClientRequestHandler for Socket", socket);
 
 			try {
-				// Thread  thread = Broker.this.threadFactory(m, socket);
-
 				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				oos.flush();
 				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
@@ -246,6 +242,15 @@ class Broker implements Runnable {
 					if(!topicsByName.containsKey(topicName))
 						addTopic(new Topic(topicName));
 					
+					return;
+				
+				case BROKER_CONNECTION:
+					// we don't add the socket directly because it might be from the default
+					// broker who is notifying us of another connection
+					ConnectionInfo newBroker = (ConnectionInfo) message.getValue();
+					brokerConnections.add(new Socket(newBroker.getAddress(), newBroker.getPort()));
+					//TODO: if leader send the connection to all other brokers
+						
 					return;
 					
 				default:
