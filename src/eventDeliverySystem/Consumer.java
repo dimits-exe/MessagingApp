@@ -88,9 +88,14 @@ class Consumer extends ClientNode {
 	 * @param defaultServerIP   the IP of the default broker, interpreted as
 	 *                          {@link InetAddress#getByName(String)}.
 	 * @param defaultServerPort the port of the default broker
+<<<<<<< HEAD
 	 * @param topics        	the Topics for which this Consumer
 	 *                          listens. It's assumed that the topics are loaded
 	 *                          with previous Posts.
+=======
+	 * @param topicNames        the names of the Topics for which this Consumer
+	 *                          listens
+>>>>>>> branch 'broker' of https://github.com/dimits-exe/MessagingApp
 	 *
 	 * @throws UnknownHostException if no IP address for the host could be found, or
 	 *                              if a scope_id was specified for a global IPv6
@@ -98,9 +103,9 @@ class Consumer extends ClientNode {
 	 * @throws IOException          if an I/O error occurs when opening the
 	 *                              Publisher's Server Socket.
 	 */
-	public Consumer(String defaultServerIP, int defaultServerPort, Set<Topic> topics)
+	public Consumer(String defaultServerIP, int defaultServerPort, Set<String> topicNames)
 	        throws IOException {
-		this(InetAddress.getByName(defaultServerIP), defaultServerPort, topics);
+		this(InetAddress.getByName(defaultServerIP), defaultServerPort, topicNames);
 	}
 
 	/**
@@ -109,17 +114,22 @@ class Consumer extends ClientNode {
 	 * @param defaultServerIP   the IP of the default broker, interpreted as
 	 *                          {@link InetAddress#getByAddress(byte[])}.
 	 * @param defaultServerPort the port of the default broker
+<<<<<<< HEAD
 	 * @param topics        	the Topics for which this Consumer
 	 *                          listens. It's assumed that the topics are loaded
 	 *                          with previous Posts.
+=======
+	 * @param topicNames        the names of the Topics for which this Consumer
+	 *                          listens
+>>>>>>> branch 'broker' of https://github.com/dimits-exe/MessagingApp
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 * @throws IOException          if an I/O error occurs when opening the
 	 *                              Publisher's Server Socket.
 	 */
-	public Consumer(byte[] defaultServerIP, int defaultServerPort, Set<Topic> topics)
+	public Consumer(byte[] defaultServerIP, int defaultServerPort, Set<String> topicNames)
 	        throws IOException {
-		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, topics);
+		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, topicNames);
 	}
 
 	/**
@@ -127,15 +137,28 @@ class Consumer extends ClientNode {
 	 *
 	 * @param ip         the InetAddress of the default broker
 	 * @param port       the port of the default broker
+<<<<<<< HEAD
 	 * @param topics	 the Topics for which this Consumer
 	 *                   listens. It's assumed that the topics are loaded
 	 *                   with previous Posts.	 *
+=======
+	 * @param topicNames the names of the Topics for which this Consumer listens
+	 *
+>>>>>>> branch 'broker' of https://github.com/dimits-exe/MessagingApp
 	 * @throws IOException if an I/O error occurs while initialising the Client Node
 	 */
-	protected Consumer(InetAddress ip, int port, Set<Topic> topics) throws IOException {
+	protected Consumer(InetAddress ip, int port, Set<String> topicNames) throws IOException {
 		super(ip, port);
 		topicManager = new TopicManager();
+<<<<<<< HEAD
+=======
 
+		for (String topicName : topicNames)
+			listenForTopic(topicName);
+	}
+>>>>>>> branch 'broker' of https://github.com/dimits-exe/MessagingApp
+
+<<<<<<< HEAD
 		for (Topic topic : topics)
 			listenForTopic(topic.getName());
 	}
@@ -186,6 +209,17 @@ class Consumer extends ClientNode {
 		} catch (IOException e1) {
 			throw new UncheckedIOException(e1); // 'socket' closes at closeImpl()
 		}
+=======
+	/**
+	 * Returns all Posts which have not been previously pulled, from a Topic.
+	 *
+	 * @param topicName the name of the Topic
+	 *
+	 * @return a List with all the Posts not yet pulled
+	 */
+	public List<Post> pull(String topicName) {
+		return topicManager.fetch(topicName);
+>>>>>>> branch 'broker' of https://github.com/dimits-exe/MessagingApp
 	}
 
 	@Override
@@ -193,4 +227,82 @@ class Consumer extends ClientNode {
 		topicManager.close();
 	}
 
+<<<<<<< HEAD
 }
+=======
+	private void listenForTopic(String topicName) {
+		Socket  socket = null;
+		while (true) {
+			ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
+
+			try {
+				socket = new Socket(ci.getAddress(), ci.getPort());
+			} catch (IOException e) {
+				// invalidate and ask again for topicName;
+				topicCIManager.invalidate(topicName);
+				continue;
+			}
+
+			topicManager.update(topicName, socket);
+			break;
+		}
+
+		try {
+			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+			oos.flush();
+			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+			Topic topic = topicManager.get(topicName);
+			oos.writeObject(new Message(INITIALISE_CONSUMER, topic.getToken()));
+
+			new PullThread(ois, topic).start();
+
+		} catch (IOException e1) {
+			throw new UncheckedIOException(e1); // 'socket' closes at closeImpl()
+		}
+	}
+
+	//TODO: Dynamically allocate new thread for newly created topic
+	// this is what line 159 does
+	@SuppressWarnings("resource")
+	@Deprecated
+	private void connectionSetup() {
+
+		List<String> topicNames = new ArrayList<>(topicsByName.keySet());
+
+		// create and store open sockets, don't send anything yet
+		for (int i = 0; i < topicNames.size(); i++) {
+			String         topicName = topicNames.get(i);
+			ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
+
+			try {
+				Socket socket = new Socket(ci.getAddress(), ci.getPort());
+				topicManager.update(topicName, socket); // 'socket' closes at closeImpl()
+			} catch (IOException e) {
+				// invalidate and ask again for topicName;
+				topicCIManager.invalidate(topicName);
+				i--;
+			}
+		}
+
+		// send INITIALISE_CONSUMER message to every socket
+		for (Entry<String, Socket> e : brokersForTopic.entrySet()) {
+			Socket socket = e.getValue(); // 'socket' closes at closeImpl()
+
+			try {
+				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+				ObjectInputStream  ois = new ObjectInputStream(socket.getInputStream());
+
+				Topic topic = topicManager.get(e.getKey());
+				oos.writeObject(new Message(INITIALISE_CONSUMER, topic.getToken()));
+
+				new PullThread(ois, topic).start();
+
+			} catch (IOException e1) {
+				throw new UncheckedIOException(e1); // 'socket' closes at closeImpl()
+			}
+		}
+	}
+}
+>>>>>>> branch 'broker' of https://github.com/dimits-exe/MessagingApp

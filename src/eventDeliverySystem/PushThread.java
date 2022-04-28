@@ -37,7 +37,7 @@ class PushThread extends Thread {
 	public void run() {
 		start = true;
 
-		try (oos) {
+		try /* (oos) */ {
 
 			final int postCount = keepAlive ? Integer.MAX_VALUE : posts.size();
 			oos.writeInt(postCount);
@@ -54,7 +54,8 @@ class PushThread extends Thread {
 			success = true;
 
 		} catch (IOException e) {
-			System.err.printf("IOException while sending packets to actual broker%n");
+			System.err.printf("IOException in PushThread#run()%n");
+			e.printStackTrace();
 			success = false;
 		}
 

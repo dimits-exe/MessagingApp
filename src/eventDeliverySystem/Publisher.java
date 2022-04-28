@@ -1,5 +1,6 @@
 package eventDeliverySystem;
 
+import static eventDeliverySystem.Message.MessageType.CREATE_TOPIC;
 import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
 
 import java.io.IOException;
@@ -62,45 +63,88 @@ class Publisher extends ClientNode {
 	}
 
 	/**
-	 * Pushes some Data to a Topic as a specific File Type.
+	 * Pushes a Post by creating a new Thread that connects to the actual Broker and
+	 * starts a PushThread.
 	 *
-	 * @param post          the data
+	 * @param post the Post
 	 */
 	public void push(Post post) {
 
-		final String topicName = post.getPostInfo().getTopicName();
+		LG.sout("Pushing: %s", post);
 
-		boolean success;
+		Runnable job = () -> {
 
-		do {
-			ConnectionInfo actualBrokerCI = topicCIManager
-			        .getConnectionInfoForTopic(topicName);
+			final String topicName = post.getPostInfo().getTopicName();
 
-			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
+			boolean success;
 
-				PushThread pushThread;
-				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+			do {
+				ConnectionInfo actualBrokerCI = topicCIManager
+				        .getConnectionInfoForTopic(topicName);
 
-					oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
+				LG.sout("Actual Broker CI: %s", actualBrokerCI);
 
-					pushThread = new PushThread(oos, List.of(post), false);
-					pushThread.start();
-					try {
-						pushThread.join();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+				try (Socket socket = new Socket(actualBrokerCI.getAddress(),
+				        actualBrokerCI.getPort())) {
+
+					PushThread pushThread;
+					try (ObjectOutputStream oos = new ObjectOutputStream(
+					        socket.getOutputStream())) {
+
+						oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
+
+						pushThread = new PushThread(oos, List.of(post), false);
+						pushThread.start();
+						try {
+							pushThread.join();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 					}
+
+					success = pushThread.success();
+
+				} catch (IOException e) {
+
+					System.err.printf("IOException while connecting to actual broker%n");
+					e.printStackTrace();
+
+					success = false;
+					topicCIManager.invalidate(topicName);
 				}
+			} while (!success);
+		};
 
-				success = pushThread.success();
+		new Thread(job).start();
+	}
 
-			} catch (IOException e) {
+	/**
+	 * Request that the remote server create a new Topic with the specified name by
+	 * connecting to the actual Broker for the Topic.
+	 *
+	 * @param topicName the name of the new Topic
+	 *
+	 * @return {@code true} if request was sent successfully, {@code false} if an
+	 *         IOException occurred while transmitting the request
+	 */
+	public boolean createTopic(String topicName) {
 
-				System.err.printf("IOException while connecting to actual broker%n");
+		ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+		boolean        success;
 
-				success = false;
-				topicCIManager.invalidate(topicName);
-			}
-		} while (!success);
+		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort());
+				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+
+			oos.writeObject(new Message(CREATE_TOPIC, topicName));
+			success = true;
+
+		} catch (IOException e) {
+			System.err.printf("IOException while creating Topic '%s'%n", topicName);
+			e.printStackTrace();
+			topicCIManager.invalidate(topicName);
+			success = false;
+		}
+
+		return success;
 	}
 }

@@ -1,6 +1,8 @@
 package eventDeliverySystem;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
@@ -12,10 +14,11 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  */
 class Profile {
-	private final String name;
-	private final long id;
+
+	private final String     name;
+	private final long       id;
 	private final Set<Topic> subscribedTopics;
-	
+
 	/**
 	 * Create a new user profile with the specified name.
 	 * @param name the name of the user
@@ -25,7 +28,7 @@ class Profile {
 		this.id = ThreadLocalRandom.current().nextLong();
 		this.subscribedTopics = new HashSet<Topic>();
 	}
-	
+
 	/**
 	 * Create a new user profile with the specified name and subscribed topics.
 	 * @param name the username
@@ -36,7 +39,7 @@ class Profile {
 		this.id = ThreadLocalRandom.current().nextLong();
 		this.subscribedTopics = subscribedTopics;
 	}
-	
+
 	/**
 	 * Get the username of the profile.
 	 * @return the name of the user
@@ -44,7 +47,7 @@ class Profile {
 	public String getName() {
 		return name;
 	}
-	
+
 	/**
 	 * Get a unique id of the user.
 	 * @return the user's id
@@ -52,7 +55,7 @@ class Profile {
 	public long getId() {
 		return id;
 	}
-	
+
 	/**
 	 * Get all the subscribed topics.
 	 * @return a copy of all the subscribed topics
@@ -62,16 +65,16 @@ class Profile {
 		copyTopics.addAll(subscribedTopics);
 		return copyTopics;
 	}
-	
+
 	/**
 	 * Unsubscribe the user from a topic.
-	 * @param topic the topic 
+	 * @param topic the topic
 	 * @throws NoSuchElementException if the user wasn't subscribed to the topic
 	 */
 	public void unsubscribeFromTopic(Topic topic) throws NoSuchElementException {
 		subscribedTopics.remove(topic);
 	}
-	
+
 	/**
 	 * Subscribe to a new topic
 	 * @param topic the topic
@@ -96,6 +99,10 @@ class Profile {
 		Profile other = (Profile) obj;
 		return id == other.id;
 	}
-	
-}
 
+	@Override
+	public String toString() {
+		List<Object> words = Arrays.asList(subscribedTopics.stream().map(t -> t.getName()).toArray());
+		return String.format("Profile [name=%s, id=%d, subscribedTopics=%s]", name, id, words);
+	}
+}

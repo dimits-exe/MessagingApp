@@ -34,7 +34,7 @@ class PullThread extends Thread {
 	public void run() {
 		start = true;
 
-		try (ois) {
+		try /* (ois) */ {
 
 			final int postCount = ois.readInt();
 
@@ -69,7 +69,8 @@ class PullThread extends Thread {
 			success = true;
 
 		} catch (final IOException e) {
-			System.err.printf("IOException while receiving packets from actual broker%n");
+			System.err.printf("IOException in PullThread#run()%n");
+			e.printStackTrace();
 			success = false;
 		}
 

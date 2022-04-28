@@ -1,7 +1,5 @@
 package eventDeliverySystem;
 
-import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -14,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import eventDeliverySystem.Topic.TopicToken;
@@ -29,6 +28,7 @@ class Broker implements Runnable {
 
 	private static final PortManager portManager     = new PortManager();
 	private static final int         MAX_CONNECTIONS = 64;
+	private static int clientRequestCounter = 0;
 
 	private ServerSocket clientRequestSocket;
 	private ServerSocket brokerRequestSocket;
@@ -50,7 +50,12 @@ class Broker implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		new Thread(new Broker()).start();
+		LG.sout("Broker#main start");
+		LG.args(args);
+		Broker broker = new Broker();
+		Thread thread = new Thread(broker, "Broker-" + args[0]);
+		thread.start();
+		LG.sout("Broker#main end");
 	}
 
 	@Override
@@ -58,10 +63,13 @@ class Broker implements Runnable {
 		try {
 			clientRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
 			brokerRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
-			System.out.printf("Client port: %d", clientRequestSocket.getLocalPort());
+			LG.sout("Broker connected at:");
+			LG.socket("Client", clientRequestSocket);
+			LG.socket("Broker", brokerRequestSocket);
 
 			// Start handling client requests
 			Runnable clientRequestThread = () -> {
+				LG.sout("Start: clientRequestThread");
 				while (true) {
 					try {
 						// TODO: figure out how to close this one
@@ -75,12 +83,12 @@ class Broker implements Runnable {
 				}
 			};
 
-
 			//TODO: properly implement
 			Runnable brokerRequestThread = new Runnable() {
 
 				@Override
 				public void run() {
+					LG.sout("Start: BrokerRequestThread");
 					while(true) {
 						try {
 							brokerConnections.add(brokerRequestSocket.accept());
@@ -99,59 +107,11 @@ class Broker implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		LG.sout("Broker#run end");
 	}
 
-	/**
-	 * Get the relevant worker thread to satisfy the request according to the
-	 * {@link Message.MessageType message's type}.
-	 *
-	 * @param message    the message to be handled
-	 * @param connection the socket from where the message was sent
-	 *
-	 * @return the worker thread for the request
-	 *
-	 * @throws IOException if an error occurs while establishing an output stream to
-	 *                     write back to the sender
-	 */
-	private Thread threadFactory(Message message, Socket connection) throws IOException {
-		ObjectInputStream ois = new ObjectInputStream(connection.getInputStream());
-		ObjectOutputStream oos = new ObjectOutputStream(connection.getOutputStream());
-
-		// fuck variables in switch statements
-		Topic topic;
-		String topicName;
-
-		switch(message.getType()) {
-		case DATA_PACKET_SEND:
-			topicName = (String) message.getValue();
-			topic = topicsByName.get(topicName);
-			oos.close();
-			return new PullThread(ois, topic);
-
-		case INITIALISE_CONSUMER:
-			TopicToken topicToken = (TopicToken) message.getValue();
-			topicName = topicToken.getName();
-			long idOfLast = topicToken.getLastId();
-
-			// register current connection as listener for topic
-			consumerConnectionsPerTopic.get(topicName).add(connection);
-
-			// send existing topics that the consumer does not have
-			topic = topicsByName.get(topicName);
-			List<Post> postsToSend = topic.getPostsSince(idOfLast);
-			ois.close();
-			return new PushThread(oos, postsToSend, true); // keep consumer's thread alive
-
-		case PUBLISHER_DISCOVERY_REQUEST:
-			topicName = (String) message.getValue();
-			ois.close();
-			return new PublisherDiscoveryThread(oos, topicName);
-
-		default:
-			throw new IllegalArgumentException("You forgot to put a case for the new Message enum");
-		}
-	}
-
+	
 	/**
 	 * Return the broker that's responsible for the requested topic.
 	 *
@@ -160,14 +120,29 @@ class Broker implements Runnable {
 	 * @return the {@link ConnectionInfo} of the assigned broker
 	 */
 	private ConnectionInfo getAssignedBroker(String topicName) {
-		// TODO: figure out what to do for dynamic brokers
-		int brokerIndex = topicsByName.get(topicName).hashCode() % brokerConnections.size();
-
+		int brokerIndex = getTopic(topicName).hashCode() % (brokerConnections.size() + 1);
+		
+		// last index (out of range normally) => this broker is responsible for the topic
+		// this rule should work because the default broker is the only broker that processes
+		// such requests.
+		if(brokerIndex == brokerConnections.size()) {
+			return new ConnectionInfo(clientRequestSocket.getInetAddress(), clientRequestSocket.getLocalPort());
+		}
+		
+		// else send the broker from the other connections
 		try (final Socket broker = brokerConnections.get(brokerIndex)) {
 			return new ConnectionInfo(broker.getInetAddress(), broker.getPort());
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+	
+	/**
+	 * Adds a new topic to the Broker's <String, Topic> map.
+	 * @param topic the topic to be added
+	 */
+	private void addTopic(Topic topic) {
+		topicsByName.put(topic.getName(), topic);
 	}
 
 	// ============== UNUSED =======================
@@ -209,53 +184,89 @@ class Broker implements Runnable {
 
 	// ========== THREADS ==========
 
-	 private class ClientRequestHandler extends Thread {
+	private class ClientRequestHandler extends Thread {
 
-        private Socket socket;
+		private Socket socket;
 
-        public ClientRequestHandler(Socket socket) {
-            this.socket = socket;
-        }
+		public ClientRequestHandler(Socket socket) {
+			super("ClientRequestHandler-" + clientRequestCounter++);
+			this.socket = socket;
+		}
 
-        @Override
-        public void run() {
+		@Override
+		public void run() {
 
-			try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
-				Message m      = (Message) ois.readObject();
-				Thread  thread = Broker.this.threadFactory(m, socket);
+			LG.ssocket("Starting ClientRequestHandler for Socket", socket);
+
+			try {
+				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+				Message message = (Message) ois.readObject();
+				LG.sout("Creating thread for message type: %s", message.getType());
+
+				// fuck variables in switch statements
+				Topic  topic;
+				String topicName;
+				Thread thread = null;
+
+				switch (message.getType()) {
+				case DATA_PACKET_SEND:
+					topicName = (String) message.getValue();
+					topic = getTopic(topicName);
+					thread = new PullThread(ois, topic);
+					break;
+
+				case INITIALISE_CONSUMER:
+					TopicToken topicToken = (TopicToken) message.getValue();
+					topicName = topicToken.getName();
+					long idOfLast = topicToken.getLastId();
+
+					registerConsumerForTopic(topicName, socket);
+
+					// send existing topics that the consumer does not have
+					List<Post> postsToSend = getTopic(topicName).getPostsSince(idOfLast);
+					thread = new PushThread(oos, postsToSend, true); // keep consumer's thread alive
+					break;
+
+				case PUBLISHER_DISCOVERY_REQUEST:
+					addPublisherCI(socket);
+					topicName = (String) message.getValue();
+					thread = new PublisherDiscoveryThread(oos, topicName);
+					break;
+				
+				case CREATE_TOPIC:
+					topicName = (String) message.getValue();
+					
+					if(!topicsByName.containsKey(topicName))
+						addTopic(new Topic(topicName));
+					
+					return;
+				
+				case BROKER_CONNECTION:
+					// we don't add the socket directly because it might be from the default
+					// broker who is notifying us of another connection
+					ConnectionInfo newBroker = (ConnectionInfo) message.getValue();
+					brokerConnections.add(new Socket(newBroker.getAddress(), newBroker.getPort()));
+					//TODO: if leader send the connection to all other brokers
+						
+					return;
+					
+				default:
+					throw new IllegalArgumentException(
+					        "You forgot to put a case for the new Message enum");
+				}
+
 				thread.start();
 
-
-				// ==================================================
-				// TODO: move this elsewhere
-				try {
-					thread.join();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-
-				if (m.getType() == DATA_PACKET_SEND) {
-					String topicName = (String) m.getValue();
-					Topic  topic     = topicsByName.get(topicName);
-
-					for (Socket socket : consumerConnectionsPerTopic.get(topic.getName())) {
-						ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-
-						List<Post> posts = topic.getAllPosts();
-						new PushThread(oos, posts, false).run();
-					}
-				}
-				// ==================================================
-
-				Broker.this.publisherConnectionInfo
-				        .add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
 			} catch (IOException ioe) {
 				// do nothing
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
-        }
-    }
+				}
+			}
 
 	/**
 	 * A Thread for discovering the actual broker for a Topic.
@@ -282,6 +293,8 @@ class Broker implements Runnable {
 		@Override
 		public void run() {
 
+			LG.sout("Sending CI to publisher");
+
 			try (oos) {
 				ConnectionInfo brokerInfo = Broker.this.getAssignedBroker(topicName);
 				oos.writeObject(brokerInfo);
@@ -289,5 +302,22 @@ class Broker implements Runnable {
 				// do nothing
 			}
 		}
+	}
+
+	// ==================== PRIVATE METHODS ====================
+
+	private void addPublisherCI(Socket socket) {
+		publisherConnectionInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
+	}
+
+	private void registerConsumerForTopic(String topicName, Socket socket) {
+		consumerConnectionsPerTopic.get(topicName).add(socket);
+	}
+
+	private Topic getTopic(String topicName) {
+		Topic topic = topicsByName.get(topicName);
+		if (topic == null)
+			throw new NoSuchElementException("There is no Topic with name " + topicName);
+		return topic;
 	}
 }

@@ -113,7 +113,9 @@ class CIManager implements AutoCloseable {
 	 * @return the ConnectionInfo for that Topic
 	 */
 	public ConnectionInfo getConnectionInfoForTopic(String topicName) {
+		LG.sout("Getting CI for topic: %s", topicName);
 		ConnectionInfo address = map.get(topicName);
+		LG.sout("%s", address);
 
 		if (address != null)
 			return address;
@@ -138,16 +140,19 @@ class CIManager implements AutoCloseable {
 		serverThread.close();
 	}
 
-	private void updateCIForTopic(String topicName) {
+	private synchronized void updateCIForTopic(String topicName) {
+		LG.sout("Updating CI for topic: %s", topicName);
 		boolean ipForTopicBrokerException;
 		do {
 			ipForTopicBrokerException = false;
 
-			try (Socket socket = getSocketToDefaultBroker();
-			        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
-
+			try {
+				Socket             socket = getSocketToDefaultBroker();
+				ObjectOutputStream oos    = new ObjectOutputStream(socket.getOutputStream());
 				oos.writeObject(new Message(PUBLISHER_DISCOVERY_REQUEST, topicName));
+				oos.flush();
+
+				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
 				ConnectionInfo actualBrokerCIForTopic;
 				try {
@@ -163,7 +168,8 @@ class CIManager implements AutoCloseable {
 				ipForTopicBrokerException = true;
 
 				System.err
-				        .printf("IOException while getting ConnectionInfo for Topic from default broker%n");
+				        .printf("IOException while getting ConnectionInfo for Topic from default broker%n\n" + e);
+				System.err.flush();
 
 				try {
 					// wait until notified by server thread that the default broker has been changed

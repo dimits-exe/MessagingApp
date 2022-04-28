@@ -62,14 +62,15 @@ class Post {
 	 *
 	 * @param data          the data to be encapsulated in the Post
 	 * @param type          the Type of the data of the Post
-	 * @param poster        the Poster of the Post
+	 * @param posterId      the ID of the Poster of the Post
 	 * @param fileExtension the file extension associated with the data of the Post.
 	 *                      Must be {@code null} if {@code type == DataType.TEXT}.
 	 * @param topicName     the Topic of the Post
 	 */
-	public Post(byte[] data, DataType type, Profile poster, String fileExtension,
+	public Post(byte[] data, DataType type, long posterId, String fileExtension,
 	        String topicName) {
-		this(data, type, poster, fileExtension, topicName, ThreadLocalRandom.current().nextLong());
+		this(data, type, posterId, fileExtension, topicName,
+		        ThreadLocalRandom.current().nextLong());
 	}
 
 	/**
@@ -79,7 +80,8 @@ class Post {
 	 * @param postInfo the info of the post
 	 */
 	public Post(byte[] data, PostInfo postInfo) {
-		this(data, postInfo.getType(), postInfo.getPoster(), postInfo.getFileExtension(), postInfo.getTopicName(),
+		this(data, postInfo.getType(), postInfo.getPosterId(), postInfo.getFileExtension(),
+		        postInfo.getTopicName(),
 				postInfo.getId());
 	}
 
@@ -88,19 +90,19 @@ class Post {
 	 *
 	 * @param data          the data to be encapsulated in the Post
 	 * @param type          the Type of the data of the Post
-	 * @param poster        the Poster of the Post
+	 * @param posterId      the ID of the Poster of the Post
 	 * @param fileExtension the file extension associated with the data of the Post.
 	 *                      Must be {@code null} if {@code type == DataType.TEXT}.
 	 * @param topicName     the Topic of the Post
 	 * @param postID        the id of the Post
 	 */
-	private Post(byte[] data, DataType type, Profile poster, String fileExtension, String topicName,
+	private Post(byte[] data, DataType type, long posterId, String fileExtension, String topicName,
 	        long postID) {
 		if ((type == DataType.TEXT) && (fileExtension != null))
 			throw new IllegalArgumentException("DataType TEXT requires 'null' file extension");
 
 		this.data = data;
-		this.postInfo = new PostInfo(type, poster, fileExtension, topicName, postID);
+		this.postInfo = new PostInfo(type, posterId, fileExtension, topicName, postID);
 	}
 
 	/**
@@ -119,5 +121,10 @@ class Post {
 	 */
 	public PostInfo getPostInfo() {
 		return postInfo;
+	}
+
+	@Override
+	public String toString() {
+		return String.format("%d bytes: %s", data.length, postInfo);
 	}
 }
