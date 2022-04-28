@@ -1,7 +1,7 @@
 package eventDeliverySystem;
 
-import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
 import static eventDeliverySystem.Message.MessageType.CREATE_TOPIC;
+import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -63,74 +63,88 @@ class Publisher extends ClientNode {
 	}
 
 	/**
-	 * Pushes some Data to a Topic as a specific File Type.
+	 * Pushes a Post by creating a new Thread that connects to the actual Broker and
+	 * starts a PushThread.
 	 *
-	 * @param post          the data
+	 * @param post the Post
 	 */
 	public void push(Post post) {
 
 		LG.sout("Pushing: %s", post);
 
-		final String topicName = post.getPostInfo().getTopicName();
+		Runnable job = () -> {
 
-		boolean success;
+			final String topicName = post.getPostInfo().getTopicName();
 
-		do {
-			ConnectionInfo actualBrokerCI = topicCIManager
-			        .getConnectionInfoForTopic(topicName);
+			boolean success;
 
-			LG.sout("Actual Broker CI: %s", actualBrokerCI);
+			do {
+				ConnectionInfo actualBrokerCI = topicCIManager
+				        .getConnectionInfoForTopic(topicName);
 
-			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
+				LG.sout("Actual Broker CI: %s", actualBrokerCI);
 
-				PushThread pushThread;
-				try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+				try (Socket socket = new Socket(actualBrokerCI.getAddress(),
+				        actualBrokerCI.getPort())) {
 
-					oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
+					PushThread pushThread;
+					try (ObjectOutputStream oos = new ObjectOutputStream(
+					        socket.getOutputStream())) {
 
-					pushThread = new PushThread(oos, List.of(post), false);
-					pushThread.start();
-					try {
-						pushThread.join();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+						oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
+
+						pushThread = new PushThread(oos, List.of(post), false);
+						pushThread.start();
+						try {
+							pushThread.join();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 					}
+
+					success = pushThread.success();
+
+				} catch (IOException e) {
+
+					System.err.printf("IOException while connecting to actual broker%n");
+					e.printStackTrace();
+
+					success = false;
+					topicCIManager.invalidate(topicName);
 				}
+			} while (!success);
+		};
 
-				success = pushThread.success();
-
-			} catch (IOException e) {
-
-				System.err.printf("IOException while connecting to actual broker%n");
-				e.printStackTrace();
-
-				success = false;
-				topicCIManager.invalidate(topicName);
-			}
-		} while (!success);
+		new Thread(job).start();
 	}
-	
+
 	/**
-	 * Request the remote server to create a new topic with the specified name.
-	 * @param topicName the name of the new topic
+	 * Request that the remote server create a new Topic with the specified name by
+	 * connecting to the actual Broker for the Topic.
+	 *
+	 * @param topicName the name of the new Topic
+	 *
+	 * @return {@code true} if request was sent successfully, {@code false} if an
+	 *         IOException occurred while transmitting the request
 	 */
-	public void createTopic(String topicName) {
+	public boolean createTopic(String topicName) {
 
 		ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
-
-		LG.sout("Actual Broker CI: %s", actualBrokerCI);
+		boolean        success;
 
 		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort());
 				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
-			
-			oos.writeObject(new Message(CREATE_TOPIC, topicName));
-			
-		} catch (IOException e) {
 
-			System.err.printf("IOException while connecting to actual broker%n");
+			oos.writeObject(new Message(CREATE_TOPIC, topicName));
+			success = true;
+
+		} catch (IOException e) {
+			System.err.printf("IOException while creating Topic '%s'%n", topicName);
 			e.printStackTrace();
 			topicCIManager.invalidate(topicName);
-			
-		} // try
-	} // createTopic
+			success = false;
+		}
+
+		return success;
+	}
 }
