@@ -2,48 +2,38 @@ package eventDeliverySystem;
 
 import java.io.Serializable;
 
-import eventDeliverySystem.Post.DataType;
-
 /**
- * Contains information about a Post. It is shared among the Packets of a Post.
+ * Contains information about a Post.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
+ *
+ * @see Post
  */
 class PostInfo implements Serializable {
+
 	private static final long serialVersionUID = 1;
 
-	private final DataType type;
-	private final long     posterId;
-	private final String   fileExtension;
-	private final String   topicName;
-	private final long     id;
+	private final long   posterId;
+	private final String fileExtension;
+	private final long   id;
 
 	/**
-	 * Constructs a new PostInfo.
+	 * Constructs a new PostInfo that holds information associated with a Post.
 	 *
-	 * @param type          the Type of the data of the PostInfo
-	 * @param posterId      the ID of the Poster of the Post
-	 * @param fileExtension the file extension associated with the data of the
-	 *                      PostInfo. Must be {@code null} if
-	 *                      {@code type == DataType.TEXT}.
-	 * @param topicName     the name of the PostInfo
-	 * @param id            the id of the PostInfo
+	 * @param posterId      the unique id of the Post's poster
+	 * @param fileExtension the extension of the associated Post's file,
+	 *                      '{@code ~txt}' for plain-text messages
+	 * @param id            the unique id of the Post
 	 */
-	public PostInfo(DataType type, long posterId, String fileExtension, String topicName,
-	        long id) {
-		if ((type == DataType.TEXT) && (fileExtension != null))
-			throw new IllegalArgumentException("DataType TEXT requires 'null' file extension");
-
-		this.type = type;
+	public PostInfo(long posterId, String fileExtension, long id) {
 		this.posterId = posterId;
 		this.fileExtension = fileExtension;
-		this.topicName = topicName;
 		this.id = id;
 	}
 
 	/**
-	 * Returns the posterId.
+	 * Returns this PostInfo's posterId.
 	 *
 	 * @return the posterId
 	 */
@@ -52,16 +42,7 @@ class PostInfo implements Serializable {
 	}
 
 	/**
-	 * Returns the type.
-	 *
-	 * @return the type
-	 */
-	public DataType getType() {
-		return type;
-	}
-
-	/**
-	 * Returns the fileExtension.
+	 * Returns this PostInfo's fileExtension.
 	 *
 	 * @return the fileExtension
 	 */
@@ -70,16 +51,7 @@ class PostInfo implements Serializable {
 	}
 
 	/**
-	 * Returns the topicName.
-	 *
-	 * @return the topicName
-	 */
-	public String getTopicName() {
-		return topicName;
-	}
-
-	/**
-	 * Returns the id.
+	 * Returns this PostInfo's id.
 	 *
 	 * @return the id
 	 */
@@ -89,8 +61,7 @@ class PostInfo implements Serializable {
 
 	@Override
 	public String toString() {
-		return String.format(
-		        "PostInfo [type=%s, posterId=%d, fileExtension=%s, topicName=%s, id=%s]",
-		        type, posterId, fileExtension, topicName, id);
+		return String.format("PostInfo [posterId=%d, fileExtension=%s, id=%d]", posterId,
+		        fileExtension, id);
 	}
 }

@@ -66,15 +66,14 @@ class Publisher extends ClientNode {
 	 * Pushes a Post by creating a new Thread that connects to the actual Broker and
 	 * starts a PushThread.
 	 *
-	 * @param post the Post
+	 * @param post      the Post
+	 * @param topicName the name of the Topic to which to push the Post
 	 */
-	public void push(Post post) {
+	public void push(Post post, String topicName) {
 
 		LG.sout("Pushing: %s", post);
 
 		Runnable job = () -> {
-
-			final String topicName = post.getPostInfo().getTopicName();
 
 			boolean success;
 
