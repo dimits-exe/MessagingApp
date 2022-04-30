@@ -2,65 +2,52 @@ package eventDeliverySystem;
 
 import java.io.Serializable;
 
-import eventDeliverySystem.Post.DataType;
-
 /**
- * Provides utility methods to facilitate the transmission of RawData objects by
- * breaking them into packets and then reassembling them.
+ * Provides utility methods to facilitate the transmission of Posts by breaking
+ * them into Packets and then reassembling them.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
 class Packet implements Serializable {
 
-	private static final int  PACKET_SIZE      = (int) (512 * Math.pow(2, 10));
 	private static final long serialVersionUID = 1L;
 
+	private static final int PACKET_SIZE = (int) (512 * Math.pow(2, 10));
+
 	/**
-	 * Turn a file to a series of packets.
+	 * Break a Post into an array of Packets.
 	 *
-	 * @param data the data of the file
+	 * @param post the Post
 	 *
-	 * @return an array of packet objects holding the file's data
+	 * @return an array of Packets which collectively stores the original Post
 	 */
-	public static Packet[] fromPost(Post data) {
-		final byte[] src = data.getData();
-		int          ptr = 0;
+	public static Packet[] fromPost(Post post) {
+		final byte[]   src      = post.getData();
+		final PostInfo postInfo = post.getPostInfo();
+		final long     id       = postInfo.getId();
 
 		final int      packetCount = (int) Math.ceil(src.length / (double) Packet.PACKET_SIZE);
 		final Packet[] packets     = new Packet[packetCount];
-		final PostInfo postInfo    = data.getPostInfo();
 
+		int srcPointer = 0;
 		for (int i = 0; i < packetCount; i++) {
-			final boolean  isFinal = i == (packetCount - 1);
-			final byte[]   payload = new byte[Packet.PACKET_SIZE];
+			final boolean isFinal = i == (packetCount - 1);
+			final byte[]  payload = new byte[Packet.PACKET_SIZE];
 
-			final int length = Math.min(Packet.PACKET_SIZE, src.length - ptr);
-			System.arraycopy(src, (ptr += length) - length, payload, 0, length);
+			final int length = Math.min(Packet.PACKET_SIZE, src.length - srcPointer);
+			System.arraycopy(src, srcPointer, payload, 0, length);
+			srcPointer += length;
 
-			packets[i] = new Packet(isFinal, payload, postInfo.getId());
+			packets[i] = new Packet(isFinal, payload, id);
 		}
 
 		return packets;
 	}
 
-	/**
-	 * Turn a string of text to a series of packets.
-	 *
-	 * @param text      the text
-	 * @param posterId  the ID of the Poster of the Post
-	 * @param topicName the name of the Topic
-	 *
-	 * @return an array of packet objects holding the text
-	 */
-	public static Packet[] fromText(String text, long posterId, String topicName) {
-		final Post rawData = new Post(text.getBytes(), DataType.TEXT, posterId, null, topicName);
-		return Packet.fromPost(rawData);
-	}
-
-	private final boolean  isFinal;
-	private final byte[]   payload;
-	private final long postId;
+	private final boolean isFinal;
+	private final byte[]  payload;
+	private final long    postId;
 
 	private Packet(boolean isFinal, byte[] payload, long postId) {
 		this.isFinal = isFinal;
@@ -69,10 +56,10 @@ class Packet implements Serializable {
 	}
 
 	/**
-	 * Returns whether there are more remaining packets for this RawData object.
+	 * Returns whether there are more remaining packets for the associated Post.
 	 *
-	 * @return {@code true} if this is the last packet for the RawData object,
-	 *         {@code false} otherwise
+	 * @return {@code true} if this is the last packet for the Post, {@code false}
+	 *         otherwise
 	 */
 	public boolean isFinal() {
 		return isFinal;
@@ -90,7 +77,7 @@ class Packet implements Serializable {
 	/**
 	 * Returns this Packet's id.
 	 *
-	 * @return the id that corresponds to the post being sent
+	 * @return the id, which corresponds to the id of the associated Post being sent
 	 */
 	public long getPostId() {
 		return postId;

@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 /**
- * Contains information about a Post, its data and its associated PostInfo.
+ * Encapsulates a Post, its data and its associated PostInfo object.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
@@ -153,6 +153,6 @@ class Post {
 
 	@Override
 	public String toString() {
-		return String.format("%d bytes: %s", data.length, postInfo);
+		return String.format("%s: %d bytes", postInfo, data.length);
 	}
 }
