@@ -18,3 +18,5 @@
 *.project
 *.prefs
 
+# App files
+users/
