@@ -4,26 +4,31 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
 import java.util.EmptyStackException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Stack;
 
 /**
- * A data structure holding the contents of a conversation/topic between users.
- * Note that it does NOT keep track of users subscribed to it.
+ * Encapsulates the contents of a conversation / Topic.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
 class Topic {
-	//used to transmit the request for all posts via socket messages
+
+	// used to transmit the request for all posts via socket messages
 	private static final int FETCH_ALL_POSTS = -1;
 
 	/**
-	 * A structure holding the topicName and the last post's ID of the topic in a given
-	 * moment. Used to transfer the necessary information to a broker.
+	 * Encapsulates a Token that uniquely identifies a Post in a Topic and is used
+	 * to transfer only the necessary information between the server and the client.
+	 *
+	 * @author Alex Mandelias
+	 * @author Dimitris Tsirmpas
 	 */
 	static class TopicToken implements Serializable {
 		private static final long serialVersionUID = 1L;
@@ -35,7 +40,7 @@ class Topic {
 			this.topicName = topic.getName();
 			long tempId;
 			try {
-				tempId = topic.getLastPost().getPostInfo().getId();
+				tempId = topic.postStack.peek().getPostInfo().getId();
 			} catch (EmptyStackException e) {
 				tempId = Topic.FETCH_ALL_POSTS;
 			}
@@ -62,94 +67,109 @@ class Topic {
 	}
 
 	/**
-	 * Get an {@link TopicToken update token} that can be used to update the topic
-	 * by the broker.
+	 * Get an update token that can be used to smartly update the topic by the
+	 * broker.
 	 *
 	 * @return the update token
+	 *
+	 * @see TopicToken
 	 */
 	public TopicToken getToken() {
 		return new TopicToken(this);
 	}
 
 	private final String name;
-	private final Stack<Post> posts;
+	private final Stack<Post> postStack;
 
 	/**
-	 * Creates a new empty Topic.
+	 * Creates a new, empty, Topic.
 	 *
 	 * @param name the Topic's unique name
 	 */
 	public Topic(String name) {
 		this.name = name;
-		this.posts = new Stack<>();
+		this.postStack = new Stack<>();
 	}
 
 	/**
-	 * Returns this Topic's topicName.
+	 * Creates a new Topic with some Posts.
 	 *
-	 * @return the topicName
+	 * @param name  the Topic's unique name
+	 * @param posts the Posts to add to the Topic
+	 */
+	public Topic(String name, List<Post> posts) {
+		this(name);
+		post(posts);
+	}
+
+	/**
+	 * Returns this Topic's name.
+	 *
+	 * @return the name
 	 */
 	public String getName() {
 		return name;
 	}
 
 	/**
-	 * Add a new post to the conversation.
+	 * Adds a Post to this Topic.
 	 *
-	 * @param postData a Post object containing the post's data.
+	 * @param post the Post
 	 */
-	public void post(Post postData) {
-		posts.add(postData);
+	public void post(Post post) {
+		postStack.push(post);
 	}
 
 	/**
-	 * Get the last posted post in the topic.
+	 * Adds a collection of Posts to this Topic.
 	 *
-	 * @return the latest post
-	 *
-	 * @throws EmptyStackException if this stack is empty.
+	 * @param posts the Posts
 	 */
-	public Post getLastPost() throws EmptyStackException {
-		return posts.peek();
+	public void post(Collection<Post> posts) {
+		for (Post post : posts)
+			post(post);
 	}
 
 	/**
-	 * Get a list containing posts posted after the provided postId.
+	 * Returns the Posts in this Topic that were posted after the Post with the
+	 * given ID. The Post with the given ID is not returned.
 	 *
-	 * @param lastPostId the id of the last post saved in the conversation
+	 * @param lastPostId the ID of the Post
 	 *
-	 * @return the new posts sorted last-to-first posted
+	 * @return the Posts in this Topic that were posted after the Post with the
+	 *         given ID, sorted from latest to earliest
 	 *
-	 * @throws NoSuchElementException if the lastPostId doesn't correspond to a post
-	 *                                in the topic
+	 * @throws NoSuchElementException if no Post in this Topic has the given ID
 	 */
 	public List<Post> getPostsSince(long lastPostId) throws NoSuchElementException {
 
 		Stack<Post> postsClone = new Stack<>();
-		postsClone.addAll(posts);
+		postsClone.addAll(postStack);
+
+		LinkedList<Post> postsAfterGivenPost = new LinkedList<>();
 
 		if (lastPostId == Topic.FETCH_ALL_POSTS) {
-			return new LinkedList<>(postsClone);
+			while (!postsClone.isEmpty())
+				postsAfterGivenPost.add(postsClone.pop());
+
+			return postsAfterGivenPost;
 		}
 
-		LinkedList<Post> newPosts = new LinkedList<>();
 		try {
+			while (postsClone.peek().getPostInfo().getId() != lastPostId)
+				postsAfterGivenPost.add(postsClone.pop());
 
-			do {
-				newPosts.add(postsClone.pop());
-			} while (postsClone.peek().getPostInfo().getId() != lastPostId);
-
-		} catch(EmptyStackException e) {
+			return postsAfterGivenPost;
+		} catch (EmptyStackException e) {
 			throw new NoSuchElementException(
 			        "No post with id " + lastPostId + " found in the stack");
 		}
-
-		return newPosts;
 	}
 
 	/**
-	 * Get all the posts in the topic.
-	 * @return a full copy of the posts in the topic
+	 * Returns all Posts in this Topic.
+	 *
+	 * @return the Posts in this Topic, sorted from latest to earliest
 	 */
 	public List<Post> getAllPosts() {
 		return getPostsSince(Topic.FETCH_ALL_POSTS);
@@ -182,11 +202,9 @@ class Topic {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
+		if (!(obj instanceof Topic))
 			return false;
 		Topic other = (Topic) obj;
-		return name.equals(other.name);
+		return Objects.equals(name, other.name); // same name == same Topic, can't have duplicate names
 	}
 }
