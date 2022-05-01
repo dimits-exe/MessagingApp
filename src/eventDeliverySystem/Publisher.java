@@ -12,10 +12,13 @@ import java.net.UnknownHostException;
 import java.util.List;
 
 /**
- * A process that initialises connections to brokers to send data.
+ * A client-side process which is responsible for creating Topics and pushing
+ * Posts to them by connecting to a remote server.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirbas
+ *
+ * @see Broker
  */
 class Publisher extends ClientNode {
 
@@ -59,7 +62,7 @@ class Publisher extends ClientNode {
 	 *
 	 * @throws IOException if an I/O error occurs while initialising the Client Node
 	 */
-	protected Publisher(InetAddress ip, int port) throws IOException {
+	private Publisher(InetAddress ip, int port) throws IOException {
 		super(ip, port);
 	}
 

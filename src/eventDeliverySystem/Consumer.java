@@ -15,11 +15,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A process that holds the posts of a certain user and updates them by
- * connecting to a remote server.
+ * A client-side process which is responsible for listening for a set of Topics
+ * and pulling Posts from them by connecting to a remote server.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
+ *
+ * @see Broker
  */
 class Consumer extends ClientNode {
 
@@ -85,54 +87,53 @@ class Consumer extends ClientNode {
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
 	 *
-	 * @param defaultServerIP   the IP of the default broker, interpreted as
-	 *                          {@link InetAddress#getByName(String)}.
-	 * @param defaultServerPort the port of the default broker
-	 * @param topics        	the Topics for which this Consumer
-	 *                          listens. It's assumed that the topics are loaded
-	 *                          with previous Posts.
+	 * @param serverIP   the IP of the default broker, interpreted by
+	 *                   {@link InetAddress#getByName(String)}.
+	 * @param serverPort the port of the default broker
+	 * @param topics     the Topics for which this Consumer listens, which may
+	 *                   already contain some Posts
 	 *
 	 * @throws UnknownHostException if no IP address for the host could be found, or
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
-	 * @throws IOException          if an I/O error occurs when opening the
-	 *                              Publisher's Server Socket.
+	 * @throws IOException          if an I/O error occurs while establishing
+	 *                              connection to the server
 	 */
-	public Consumer(String defaultServerIP, int defaultServerPort, Set<Topic> topics)
+	public Consumer(String serverIP, int serverPort, Set<Topic> topics)
 	        throws IOException {
-		this(InetAddress.getByName(defaultServerIP), defaultServerPort, topics);
+		this(InetAddress.getByName(serverIP), serverPort, topics);
 	}
 
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
 	 *
-	 * @param defaultServerIP   the IP of the default broker, interpreted as
-	 *                          {@link InetAddress#getByAddress(byte[])}.
-	 * @param defaultServerPort the port of the default broker
-	 * @param topics        	the Topics for which this Consumer
-	 *                          listens. It's assumed that the topics are loaded
-	 *                          with previous Posts.
+	 * @param serverIP   the IP of the default broker, interpreted by
+	 *                   {@link InetAddress#getByAddress(byte[])}.
+	 * @param serverPort the port of the default broker
+	 * @param topics     the Topics for which this Consumer listens, which may
+	 *                   already contain some Posts
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
-	 * @throws IOException          if an I/O error occurs when opening the
-	 *                              Publisher's Server Socket.
+	 * @throws IOException          if an I/O error occurs while establishing
+	 *                              connection to the server
 	 */
-	public Consumer(byte[] defaultServerIP, int defaultServerPort, Set<Topic> topics)
+	public Consumer(byte[] serverIP, int serverPort, Set<Topic> topics)
 	        throws IOException {
-		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, topics);
+		this(InetAddress.getByAddress(serverIP), serverPort, topics);
 	}
 
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
 	 *
-	 * @param ip         the InetAddress of the default broker
-	 * @param port       the port of the default broker
-	 * @param topics	 the Topics for which this Consumer
-	 *                   listens. It's assumed that the topics are loaded
-	 *                   with previous Posts.	 *
-	 * @throws IOException if an I/O error occurs while initialising the Client Node
+	 * @param ip     the InetAddress of the default broker
+	 * @param port   the port of the default broker
+	 * @param topics the Topics for which this Consumer listens, which may already
+	 *               contain some Posts
+	 *
+	 * @throws IOException if an I/O error occurs while establishing connection to
+	 *                     the server
 	 */
-	protected Consumer(InetAddress ip, int port, Set<Topic> topics) throws IOException {
+	private Consumer(InetAddress ip, int port, Set<Topic> topics) throws IOException {
 		super(ip, port);
 		topicManager = new TopicManager();
 
