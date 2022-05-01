@@ -131,6 +131,19 @@ class Topic {
 	}
 
 	/**
+	 * Returns the ID of the most recent Post in this Topic.
+	 *
+	 * @return the ID of the most recent Post or {@code -1} if there are no Posts in
+	 *         this Topic
+	 */
+	public long getLastPostId() {
+		if (postStack.isEmpty())
+			return -1;
+
+		return postStack.peek().getPostInfo().getId();
+	}
+
+	/**
 	 * Returns the Posts in this Topic that were posted after the Post with the
 	 * given ID. The Post with the given ID is not returned.
 	 *

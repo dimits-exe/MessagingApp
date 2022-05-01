@@ -12,6 +12,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -26,14 +27,15 @@ import java.util.Set;
 class Consumer extends ClientNode {
 
 	private static class TopicData {
+
 		private Topic  topic;
 		private long   pointer;
 		private Socket broker;
 
-		public TopicData(String name) {
-			this.topic = new Topic(name);
-			this.pointer = 0L;
-			this.broker = null;
+		public TopicData(Topic topic) {
+			this.topic = topic;
+			pointer = topic.getLastPostId();
+			broker = null;
 		}
 	}
 
@@ -41,15 +43,20 @@ class Consumer extends ClientNode {
 
 		private final Map<String, TopicData> tdMap = new HashMap<>();
 
-		public Topic get(String topicName) {
-			return tdMap.get(topicName).topic;
+		public TopicManager(Set<Topic> topics) {
+			for (Topic topic : topics) {
+				add(topic);
+			}
 		}
 
 		public List<Post> fetch(String topicName) {
+			if (!tdMap.containsKey(topicName))
+				throw new NoSuchElementException("No Topic with name " + topicName + " found");
+
 			TopicData  td = tdMap.get(topicName);
 			List<Post> newPosts;
 
-			if (td.pointer == 0) // 0 is default value of pointer
+			if (td.pointer == -1) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
 				newPosts = td.topic.getAllPosts();
 			else
 				newPosts = td.topic.getPostsSince(td.pointer);
@@ -64,19 +71,28 @@ class Consumer extends ClientNode {
 			return newPosts;
 		}
 
-		public void update(String topicName, Socket broker) {
-			TopicData td = tdMap.get(topicName);
-			if (td == null) {
-				td = new TopicData(topicName);
-				tdMap.put(topicName, td);
-			}
+		public void addSocket(Topic topic, Socket broker) {
+			String topicName = topic.getName();
+			if (tdMap.containsKey(topicName))
+				throw new IllegalArgumentException(
+				        "Topic with name " + topicName + " already exists");
+
+			add(topic);
+
+			TopicData td = tdMap.get(topic.getName());
 			td.broker = broker;
+		}
+
+		private void add(Topic topic) {
+			tdMap.put(topic.getName(), new TopicData(topic));
 		}
 
 		@Override
 		public void close() throws IOException {
 			for (TopicData td : tdMap.values())
 				td.broker.close();
+
+			tdMap.clear();
 		}
 	}
 
@@ -135,10 +151,21 @@ class Consumer extends ClientNode {
 	 */
 	private Consumer(InetAddress ip, int port, Set<Topic> topics) throws IOException {
 		super(ip, port);
-		topicManager = new TopicManager();
+		topicManager = new TopicManager(topics);
+		topics.forEach(this::listenForTopic);
+	}
 
-		for (Topic topic : topics)
-			listenForTopic(topic.getName());
+	/**
+	 * Changes the Topics that this Consumer listens to. All connections regarding
+	 * the previous Topics are closed and new ones are established.
+	 *
+	 * @param newTopics the new Topics to listen for
+	 *
+	 * @throws IOException if an I/O error occurs while closing existing connections
+	 */
+	public void setTopics(Set<Topic> newTopics) throws IOException {
+		topicManager.close();
+		newTopics.forEach(this::listenForTopic);
 	}
 
 	/**
@@ -147,39 +174,42 @@ class Consumer extends ClientNode {
 	 * @param topicName the name of the Topic
 	 *
 	 * @return a List with all the Posts not yet pulled
+	 *
+	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public List<Post> pull(String topicName) {
 		return topicManager.fetch(topicName);
 	}
-	
+
 	/**
-	 * Register a new topic for the Consumer to monitor and
-	 * automatically download new posts from.
-	 * @param topicName the name of the new topic
+	 * Registers a new Topic for this Consumer to automatically pull new Posts from.
+	 *
+	 * @param topic the Topic to pull from
 	 */
-	public void listenForTopic(String topicName) {
-		Socket  socket = null;
+	public void listenForTopic(Topic topic) {
+		String topicName = topic.getName();
+		Socket socket    = null;
+
 		while (true) {
 			ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
 			try {
 				socket = new Socket(ci.getAddress(), ci.getPort());
 			} catch (IOException e) {
-				// invalidate and ask again for topicName;
+				// invalidate and ask again for topicName
 				topicCIManager.invalidate(topicName);
 				continue;
 			}
 
-			topicManager.update(topicName, socket);
+			topicManager.addSocket(topic, socket);
 			break;
 		}
 
 		try {
-			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream()); // socket can't be null
 			oos.flush();
 			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-			Topic topic = topicManager.get(topicName);
 			oos.writeObject(new Message(INITIALISE_CONSUMER, topic.getToken()));
 
 			new PullThread(ois, topic).start();
