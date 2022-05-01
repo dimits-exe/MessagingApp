@@ -78,6 +78,8 @@ class Profile {
 		return topics;
 	}
 
+	// TODO: maybe not throw IllegalArgumentException and return boolean?
+
 	/**
 	 * Adds a new, unique, Topic to this Profile.
 	 *
@@ -102,7 +104,7 @@ class Profile {
 			throw new NullPointerException("Topic can't be null");
 
 		final String topicName = topic.getName();
-		if (topics.containsKey(topic.getName()))
+		if (topics.containsKey(topicName))
 			throw new IllegalArgumentException("Topic with name " + topicName + " already exists");
 
 		topics.put(topicName, topic);
@@ -131,7 +133,7 @@ class Profile {
 	 *
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
-	public void removeTopic(String topicName) throws NoSuchElementException {
+	public void removeTopic(String topicName) {
 		if (topics.remove(topicName) == null)
 			throw new NoSuchElementException("No Topic with name " + topicName + " found");
 	}
