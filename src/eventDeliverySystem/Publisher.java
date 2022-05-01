@@ -4,6 +4,7 @@ import static eventDeliverySystem.Message.MessageType.CREATE_TOPIC;
 import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -123,8 +124,9 @@ class Publisher extends ClientNode {
 	 *
 	 * @param topicName the name of the new Topic
 	 *
-	 * @return {@code true} if request was sent successfully, {@code false} if an
-	 *         IOException occurred while transmitting the request
+	 * @return {@code true} if Topic was successfully created, {@code false} if an
+	 *         IOException occurred while transmitting the request or if a Topic
+	 *         with that name already exists
 	 */
 	public boolean createTopic(String topicName) {
 
@@ -132,10 +134,11 @@ class Publisher extends ClientNode {
 		boolean        success;
 
 		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort());
-				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+		        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+		        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
 
 			oos.writeObject(new Message(CREATE_TOPIC, topicName));
-			success = true;
+			success = ois.readBoolean();
 
 		} catch (IOException e) {
 			System.err.printf("IOException while creating Topic '%s'%n", topicName);

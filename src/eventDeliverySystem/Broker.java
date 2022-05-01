@@ -239,10 +239,12 @@ class Broker implements Runnable {
 				case CREATE_TOPIC:
 					topicName = (String) message.getValue();
 					
-					if(!topicsByName.containsKey(topicName))
+					boolean topicExists = topicsByName.containsKey(topicName);
+					if (!topicExists)
 						addTopic(new Topic(topicName));
 					
-					return;
+					oos.writeBoolean(!topicExists);
+					break;
 				
 				case BROKER_CONNECTION:
 					// we don't add the socket directly because it might be from the default
