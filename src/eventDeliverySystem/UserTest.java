@@ -23,7 +23,7 @@ public class UserTest {
 		user.pullLocal("poggers", List.of(p1, p2));
 
 		System.out.println("reading:");
-		for (Topic topic : user.user.getTopics().values()) {
+		for (Topic topic : user.getCurrentProfile().getTopics().values()) {
 			System.out.println(topic);
 			for (Post post : topic.getAllPosts()) {
 				System.out.println(post);

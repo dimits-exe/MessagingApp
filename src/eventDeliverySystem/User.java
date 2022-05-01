@@ -1,10 +1,9 @@
 package eventDeliverySystem;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -25,66 +24,106 @@ public class User {
 	private final Consumer  consumer;
 
 	// TODO: remove
+	@SuppressWarnings("javadoc")
 	public static User forAlex() throws IOException {
-		return new User(null, -1,
+		return loadExisting("", -1,
 		        Path.of("C:\\Users\\alexm\\projects\\Java\\MessagingApp\\users\\"), 1);
 	}
 
 	// TODO: remove
+	@SuppressWarnings("javadoc")
 	public static User forDimits() throws IOException {
-		throw new RuntimeException("User::44, go write the method lmao");
+		throw new RuntimeException("User::47, go write the method lmao");
+		// return loadExisting("", -1, Path.of("C:\\Your\\Path\\Here\\"), 2);
 	}
 
 	/**
 	 * Retrieve the user's data and the saved posts, establish connection to the
 	 * server and prepare to receive and send posts.
 	 *
-	 * @param serverIP the IP of the server
-	 * @param port     the port of the server
-	 * @param usersDir the base directory of the users
-	 * @param userId   the id of the profile of this user. The directory
-	 *                 'usersDir\\userId' contains all the Topics and saved posts.
+	 * @param serverIP              the IP of the server
+	 * @param serverPort            the port of the server
+	 * @param profilesRootDirectory the root directory of all the Profiles in the
+	 *                              file system
+	 * @param profileId             the id of the existing profile
 	 *
-	 * @throws IOException if a connection can't be established with the server or
-	 *                     if the file system can't be reached
+	 * @return the new User
+	 *
+	 * @throws IOException if an I/O error occurs while interacting with the file
+	 *                     system or while establishing connection to the server
 	 */
-	public User(InetAddress serverIP, int port, Path usersDir, long userId)
+	public static User loadExisting(String serverIP, int serverPort, Path profilesRootDirectory,
+	        long profileId) throws IOException {
+		User user = new User(serverIP, serverPort, profilesRootDirectory);
+		user.switchToExistingProfile(profileId);
+		return user;
+	}
+
+	/**
+	 * Creates a new User in the file system and returns a new User object.
+	 *
+	 * @param serverIP              the IP of the server
+	 * @param serverPort            the port of the server
+	 * @param profilesRootDirectory the root directory of all the Profiles in the
+	 *                              file system
+	 * @param name                  the name of the new Profile
+	 *
+	 * @return the new User
+	 *
+	 * @throws IOException if an I/O error occurs while interacting with the file
+	 *                     system or while establishing connection to the server
+	 */
+	public static User createNew(String serverIP, int serverPort, Path profilesRootDirectory,
+	        String name) throws IOException {
+		User user = new User(serverIP, serverPort, profilesRootDirectory);
+		user.switchToNewProfile(name);
+		return user;
+	}
+
+	private User(String serverIP, int port, Path profilesRootDirectory)
 	        throws IOException {
-		this.usersDir = usersDir;
-
-		try {
-			user = loadEmptyUser(userId);
-		} catch (IOException e) {
-			// TODO: remove throw, add:
-			// user = createNewEmptyUser(userId);
-			throw new IOException("Could not create user " + userId, e);
-		}
-
-		try {
-			loadTopicsForUser(user);
-		} catch (IOException e) {
-			throw new IOException("Could not load data for user " + userId, e);
-		}
+		this.profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 
 		try {
 			this.publisher = new Publisher(serverIP, port);
-			this.consumer = new Consumer(serverIP, port,
-			        new HashSet<>(user.getTopics().values()));
-		} catch(IOException ioe) {
-			throw new IOException("Could not establish connection with server", ioe);
+			this.consumer = new Consumer(serverIP, port, Collections.emptySet());
+		} catch (IOException e) {
+			throw new IOException("Could not establish connection with server", e);
 		}
 	}
 
-	/*
-	@foff
-	TOOD: Methods to implement:
-
-	Pubilsher#push
-	Publisher#createTopic
-	Consumer#pull
-	Consumer#listenForTopic
-	@fon
+	/**
+	 * Returns this User's current Profile.
+	 *
+	 * @return the current Profile
 	 */
+	public Profile getCurrentProfile() {
+		return currentProfile;
+	}
+
+	/**
+	 * Switches this User to manage a new Profile.
+	 *
+	 * @param profileName the name of the new Profile
+	 *
+	 * @throws IOException if an I/O error occurs while creating the new Profile
+	 */
+	public void switchToNewProfile(String profileName) throws IOException {
+		currentProfile = profileFileSystem.createNewProfile(profileName);
+		consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
+	}
+
+	/**
+	 * Switches this User to manage an existing.
+	 *
+	 * @param profileId the id of an existing Profile
+	 *
+	 * @throws IOException if an I/O error occurs while loading the existing Profile
+	 */
+	public void switchToExistingProfile(long profileId) throws IOException {
+		currentProfile = profileFileSystem.loadProfile(profileId);
+		consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
+	}
 
 	/**
 	 * Posts a Post to a Topic.
