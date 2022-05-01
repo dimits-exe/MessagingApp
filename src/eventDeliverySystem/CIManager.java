@@ -146,29 +146,30 @@ class CIManager implements AutoCloseable {
 		do {
 			ipForTopicBrokerException = false;
 
-			try {
-				Socket             socket = getSocketToDefaultBroker();
-				ObjectOutputStream oos    = new ObjectOutputStream(socket.getOutputStream());
+			try (Socket socket = getSocketToDefaultBroker();
+			        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+
 				oos.writeObject(new Message(PUBLISHER_DISCOVERY_REQUEST, topicName));
 				oos.flush();
 
-				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+				try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
+					ConnectionInfo actualBrokerCIForTopic;
+					try {
+						actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+						return;
+					}
 
-				ConnectionInfo actualBrokerCIForTopic;
-				try {
-					actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-					return;
+					map.put(topicName, actualBrokerCIForTopic);
 				}
-
-				map.put(topicName, actualBrokerCIForTopic);
 
 			} catch (IOException e) {
 				ipForTopicBrokerException = true;
 
 				System.err
-				        .printf("IOException while getting ConnectionInfo for Topic from default broker%n\n" + e);
+				        .printf("IOException while getting ConnectionInfo for Topic from default broker%n\n"
+				                + e);
 				System.err.flush();
 
 				try {
