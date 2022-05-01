@@ -1,18 +1,12 @@
 package eventDeliverySystem;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.NoSuchElementException;
 
 
 /**
@@ -24,17 +18,11 @@ import java.util.regex.Pattern;
  */
 public class User {
 
-	private static final Pattern pattern = Pattern
-	        .compile("(<?postId>\\-?\\d+)\\-(<?posterid>\\d+)\\.(<?extension>.*)");
-	private static final String  format  = "%d-%d.%s";
+	private final ProfileFileSystem profileFileSystem;
+	private Profile                 currentProfile;
 
-	private static final String HEAD = "HEAD";
-	private static final String META = ".meta";
-
-	private Publisher  publisher;
-	private Consumer   consumer;
-	private final Path usersDir;
-	public Profile     user;     // TODO: make private, it is public for UserTest
+	private final Publisher publisher;
+	private final Consumer  consumer;
 
 	// TODO: remove
 	public static User forAlex() throws IOException {
@@ -110,243 +98,129 @@ public class User {
 		publisher.push(post, topicName);
 	}
 
-	// TODO: add doc below and potentially fix implementation
+	/**
+	 * Attempts to create a new Topic and add it to the Profile. If this operation
+	 * succeeds, the new Topic is pushed. If it is not pushed successfully, the
+	 * Profile's Topic is deleted.
+	 *
+	 * @param topicName the name of the Topic to create
+	 *
+	 * @return {@code true} if it was successfully created, {@code false} otherwise
+	 *
+	 * @throw IllegalArgumentException if a Topic with the same name already exists
+	 */
+	public boolean createTopic(String topicName) {
+		currentProfile.addTopic(topicName);
 
+		boolean success = publisher.createTopic(topicName);
+		if (!success)
+			currentProfile.removeTopic(topicName);
+
+		return success;
+	}
+
+	/**
+	 * Pulls all new Posts from a Topic, adds them to the Profile and saves them to
+	 * the file system. Posts that have already been pulled are not pulled again.
+	 *
+	 * @param topicName the name of the Topic from which to pull
+	 *
+	 * @throws IOException            if an I/O Error occurs while writing the new
+	 *                                Posts to the file system
+	 * @throws NoSuchElementException if no Topic with the given name exists
+	 */
 	public void pull(String topicName) throws IOException {
-		List<Post> posts = consumer.pull(topicName);
-		user.updateTopic(topicName, posts);
+		List<Post> newPosts = consumer.pull(topicName);
+		currentProfile.updateTopic(topicName, newPosts);
 
-		for (Post post : posts) {
-			savePostToFileSystem(post, topicName);
+		for (Post post : newPosts) {
+			profileFileSystem.savePostToFileSystem(post, topicName);
 		}
 	}
 
-	public void createTopic(String topicName) throws IOException {
-		publisher.createTopic(topicName);
-		user.addTopic(topicName);
-		addTopic(topicName);
-	}
-
-	public void listenForTopic(String topicName) {
-		consumer.listenForTopic(topicName);
-		user.addTopic(topicName);
+	/**
+	 * Registers a new Topic for which new Posts will be pulled. The pulled topics
+	 * will be added to the Profile and saved to the file system.
+	 *
+	 * @param topic the Topic to listen for
+	 *
+	 * @throws IOException              if an I/O error occurs while interacting
+	 *                                  with the file system
+	 * @throws NullPointerException     if topic == null
+	 * @throws IllegalArgumentException if a Topic with the same name already exists
+	 */
+	public void listenForTopic(Topic topic) throws IOException {
+		consumer.listenForTopic(topic);
+		currentProfile.addTopic(topic);
+		profileFileSystem.addTopic(topic.getName());
 	}
 
 	// ==================== LOCAL VERSIONS OF METHODS ====================
 
-	public void pullLocal(String topicName, List<Post> posts) throws IOException {
-		user.updateTopic(topicName, posts);
+	// TODO: remove all local methods once done
 
-		for (Post post : posts) {
-			savePostToFileSystem(post, topicName);
+	/**
+	 * Does nothing.
+	 *
+	 * @param post      the Post to post
+	 * @param topicName the name of the Topic to which to post
+	 *
+	 * @see Publisher#push(Post, String)
+	 */
+	@SuppressWarnings({ "static-method", "unused" })
+	public void postLocal(Post post, String topicName) {
+		;
+	}
+
+	/**
+	 * Attempts to create a new Topic and add it to the Profile. If this operation
+	 * succeeds, it is written to the file system.
+	 *
+	 * @param topicName the name of the Topic to create
+	 *
+	 * @return {@code true} if it was successfully created, {@code false} otherwise
+	 *
+	 * @throws IOException if an I/O Error occurs while writing the newly created
+	 *                     Topic to the file system
+	 */
+	public boolean createTopicLocal(String topicName) throws IOException {
+		currentProfile.addTopic(topicName);
+		profileFileSystem.addTopic(topicName);
+		return true;
+	}
+
+	/**
+	 * Adds some Posts them to the Profile and saves them to the file system.
+	 *
+	 * @param topicName the name of the Topic from which to pull
+	 * @param newPosts  the posts that would be pulled from the Consumer
+	 *
+	 * @throws IOException            if an I/O Error occurs while writing the new
+	 *                                Posts to the file system
+	 * @throws NoSuchElementException if no Topic with the given name exists
+	 */
+	public void pullLocal(String topicName, List<Post> newPosts) throws IOException {
+		currentProfile.updateTopic(topicName, newPosts);
+
+		for (Post post : newPosts) {
+			profileFileSystem.savePostToFileSystem(post, topicName);
 		}
 	}
 
-	public void createTopicLocal(String topicName) throws IOException {
-		user.addTopic(topicName);
-		addTopic(topicName);
-	}
-
-	// TODO: add remaining local versions of methods
-
-	// ============================== PRIVATE METHODS ==============================
-
-	// ==================== CREATE / LOAD UESR ====================
-
-	// TODO: add createNewUser
-
-	private Profile loadEmptyUser(long userId) throws IOException {
-		File   profileMeta  = getFileInDirectory(getUserDirectory(userId), META);
-		byte[] userNameData = read(profileMeta);
-		String userName     = new String(userNameData);
-		return new Profile(userName, userId);
-	}
-
-	private void loadTopicsForUser(Profile emptyUser) throws IOException {
-		File[] topicDirectories = getUserDirectory().toFile().listFiles(File::isDirectory);
-		Set<Topic> loadedTopics = new HashSet<>();
-
-		for (File topicDirectory : topicDirectories) {
-			String     topicName = topicDirectory.getName();
-			List<Post> posts     = loadPostsForTopic(topicName);
-			loadedTopics.add(new Topic(topicName, posts));
-		}
-
-		for (Topic topic : loadedTopics)
-			emptyUser.addTopic(topic);
-	}
-
-	// ==================== PATH HELPER METHODS ====================
-
-	private Path getUserDirectory() {
-		return getUserDirectory(user.getId());
-	}
-
-	private Path getUserDirectory(long userId) {
-		String userDir = usersDir.toAbsolutePath().toString();
-		return Path.of(userDir, String.valueOf(userId));
-	}
-
-	private Path getTopicDirectory(String topicName) {
-		String userDir = getUserDirectory().toString();
-		return Path.of(userDir, topicName);
-	}
-
-	private static File getFileInDirectory(Path directory, String filename) {
-		String dir = directory.toAbsolutePath().toString();
-		return Path.of(dir, filename).toFile();
-	}
-
-	// ==================== CREATE TOPIC ====================
-
-	private void addTopic(String topicName) throws IOException {
-		File topicDirectory = getTopicDirectory(topicName).toFile();
-
-		if (!topicDirectory.mkdir()) {
-			throw new IOException(
-			        String.format("Directory for Topic %s already exists", topicName));
-		}
-
-		File head = getHead(topicName);
-		create(head);
-	}
-
-	// ==================== SAVE POST ====================
-
-	private void savePostToFileSystem(Post post, String topicName) throws IOException {
-		File fileForPost = writePost(post, topicName);
-		writePointerForPost(post, topicName);
-		updateHeadForPost(fileForPost, topicName);
-	}
-
-	private File writePost(Post post, String topicName) throws FileNotFoundException, IOException {
-		String fileName = getFileNameFromPostInfo(post.getPostInfo());
-
-		Path topicDirectory = getTopicDirectory(topicName);
-		File fileForPost    = getFileInDirectory(topicDirectory, fileName);
-
-		create(fileForPost);
-
-		byte[] data = post.getData();
-		write(fileForPost, data);
-
-		return fileForPost;
-	}
-
-	private void writePointerForPost(Post post, String topicName)
-	        throws FileNotFoundException, IOException {
-		String fileName = getFileNameFromPostInfo(post.getPostInfo());
-
-		Path topicDirectory    = getTopicDirectory(topicName);
-		File pointerToNextPost = getFileInDirectory(topicDirectory, fileName + META);
-		create(pointerToNextPost);
-
-		File   head         = getHead(topicName);
-		byte[] headContents = read(head);
-		write(pointerToNextPost, headContents);
-	}
-
-	private void updateHeadForPost(File fileForPost, String topicName) throws IOException {
-		File   head            = getHead(topicName);
-		byte[] newHeadContents = fileForPost.getName().getBytes();
-		write(head, newHeadContents);
-	}
-
-	private File getHead(String topicName) {
-		Path topicDirectory = getTopicDirectory(topicName);
-		return getFileInDirectory(topicDirectory, HEAD);
-	}
-
-	// ==================== LOAD POSTS FOR TOPIC ====================
-
-	private List<Post> loadPostsForTopic(String topicName) throws IOException {
-		List<Post> loadedPosts = new LinkedList<>();
-
-		File firstPost = getFirstPost(topicName);
-		for (File postFile = firstPost; postFile != null; postFile = getNextFile(postFile)) {
-			PostInfo postInfo   = getPostInfoFromFileName(postFile.getName());
-			Post     loadedPost = readPost(postInfo, postFile);
-			loadedPosts.add(loadedPost);
-		}
-
-		return loadedPosts;
-	}
-
-	// returns null if topic has no posts
-	private File getFirstPost(String topicName) throws FileNotFoundException, IOException {
-		File head = getHead(topicName);
-		byte[] headContents = read(head);
-
-		if (headContents.length == 0)
-			return null;
-
-		Path   topicDirectory  = getTopicDirectory(topicName);
-		String firstPostFile = new String(headContents);
-		return getFileInDirectory(topicDirectory, firstPostFile);
-	}
-
-	// returns null if there is no next post
-	private static File getNextFile(File postFile) throws IOException {
-		File   pointerToNextPost = new File(postFile.toPath() + META);
-		byte[] pointerToNextPostData = read(pointerToNextPost);
-
-		if (pointerToNextPostData.length == 0)
-			return null;
-
-		String nextPost = new String(pointerToNextPostData);
-		return new File(nextPost);
-	}
-
-	private static Post readPost(PostInfo postInfo, File postFile) throws FileNotFoundException, IOException {
-		byte[] data = read(postFile);
-		return new Post(data, postInfo);
-	}
-
-	// ==================== READ/WRITE ====================
-
-	private static void create(File file) throws IOException {
-		if (!file.createNewFile())
-			throw new IOException(String.format("File %s already exists", file));
-	}
-
-	private static byte[] read(File file) throws IOException {
-		try (FileInputStream fis = new FileInputStream(file)) {
-			return fis.readAllBytes();
-		} catch (FileNotFoundException e) {
-			System.err.printf("File %s could not be found", file);
-		}
-
-		return null;
-	}
-
-	private static void write(File file, byte[] data) throws IOException {
-		try (FileOutputStream fos = new FileOutputStream(file)) {
-			fos.write(data);
-		} catch (FileNotFoundException e) {
-			System.err.printf("File %s could not be found", file);
-		}
-	}
-
-	// ==================== POST INFO ====================
-
-	private static String getFileNameFromPostInfo(PostInfo postInfo) {
-		long   postId        = postInfo.getId();
-		long   posterId      = postInfo.getPosterId();
-		String fileExtension = postInfo.getFileExtension();
-
-		return String.format(format, postId, posterId, fileExtension);
-	}
-
-	private static PostInfo getPostInfoFromFileName(String fileName) {
-		Matcher m = pattern.matcher(fileName);
-
-		if (!m.find())
-			throw new RuntimeException("Bad filename: " + fileName);
-
-		long   postId        = Long.parseLong(m.group("postId"));
-		long   posterId      = Long.parseLong(m.group("posterId"));
-		String fileExtension = m.group("extension");
-
-		return new PostInfo(posterId, fileExtension, postId);
+	/**
+	 * Registers a new Topic for which new Posts will be pulled and creates that
+	 * topic in the file system. The pulled topics will be added to the Profile and
+	 * saved to the file system.
+	 *
+	 * @param topic the Topic to listen for
+	 *
+	 * @throws IOException              if an I/O error occurs while interacting
+	 *                                  with the file system
+	 * @throws NullPointerException     if topic == null
+	 * @throws IllegalArgumentException if a Topic with the same name already exists
+	 */
+	public void listenForTopicLocal(Topic topic) throws IOException {
+		currentProfile.addTopic(topic);
+		profileFileSystem.addTopic(topic.getName());
 	}
 }
