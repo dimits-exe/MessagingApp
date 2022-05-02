@@ -75,6 +75,10 @@ class Publisher extends ClientNode {
 	 */
 	public void push(Post post, String topicName) {
 
+		// TODO: add queue instead of making many separate Runnable jobs to ensure
+		// 1 - non-blocking push
+		// 2 - synchronisation
+
 		LG.sout("Publisher#push(%s, %s)", post, topicName);
 
 		LG.in();
