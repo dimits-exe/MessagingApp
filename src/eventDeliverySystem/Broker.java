@@ -247,6 +247,7 @@ class Broker implements Runnable {
 						addTopic(new Topic(topicName));
 
 					oos.writeBoolean(!topicExists);
+					oos.flush();
 					break;
 
 				case BROKER_CONNECTION:
