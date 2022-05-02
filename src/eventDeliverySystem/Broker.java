@@ -122,15 +122,15 @@ class Broker implements Runnable {
 	 * @return the {@link ConnectionInfo} of the assigned broker
 	 */
 	private ConnectionInfo getAssignedBroker(String topicName) {
-		int brokerIndex = getTopic(topicName).hashCode() % (brokerConnections.size() + 1);
-		
+		int brokerIndex = Topic.hashForTopic(topicName) % (brokerConnections.size() + 1);
+
 		// last index (out of range normally) => this broker is responsible for the topic
 		// this rule should work because the default broker is the only broker that processes
 		// such requests.
 		if(brokerIndex == brokerConnections.size()) {
 			return new ConnectionInfo(clientRequestSocket.getInetAddress(), clientRequestSocket.getLocalPort());
 		}
-		
+
 		// else send the broker from the other connections
 		try (final Socket broker = brokerConnections.get(brokerIndex)) {
 			return new ConnectionInfo(broker.getInetAddress(), broker.getPort());

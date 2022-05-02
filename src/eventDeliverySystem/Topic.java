@@ -196,11 +196,20 @@ class Topic {
 		return getPostsSince(Topic.FETCH_ALL_POSTS);
 	}
 
-	@Override
-	public int hashCode() {
+	/**
+	 * Returns the hash that a Topic with a given name would have. Since a Topic's
+	 * hash is determined solely by its name, this method returns the same result as
+	 * Topic#hashCode(), when given the name of the Topic, and can be used when an
+	 * instance of Topic is not available, but its name is known.
+	 *
+	 * @param topicName the name of the Topic for which to compute the hash
+	 *
+	 * @return a hash code value for this Topic
+	 */
+	public static int hashForTopic(String topicName) {
 		try {
 			MessageDigest a = MessageDigest.getInstance("md5");
-			byte[]        b = a.digest(name.getBytes());
+			byte[]        b = a.digest(topicName.getBytes());
 
 			// big brain stuff
 			final int FOUR = 4;
@@ -217,6 +226,11 @@ class Topic {
 		} catch (NoSuchAlgorithmException | ArithmeticException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public int hashCode() {
+		return Topic.hashForTopic(name);
 	}
 
 	@Override
