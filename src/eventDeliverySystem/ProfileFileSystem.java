@@ -6,12 +6,16 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 
 /**
- * TODO
+ * Manages Profiles that are saved in directories in the file system.
  *
  * @author Alex Mandelias
  */
@@ -19,112 +23,143 @@ class ProfileFileSystem {
 
 	private static final String PROFILE_META = "profile.meta";
 
+	private final Path                       profilesRootDirectory;
 	private final Map<Long, TopicFileSystem> topicFileSystemMap;
 
-	private final Path profilesRootDirectory;
-	private long       currentProfileId;
+	private long currentProfileId;
 
 	/**
-	 * TODO
+	 * Creates a new Profile File System for the specified root directory.
 	 *
-	 * @param profilesRootDirectory
+	 * @param profilesRootDirectory the root directory of the new file system whose
+	 *                              sub-directories correspond to different Profiles
 	 */
 	public ProfileFileSystem(Path profilesRootDirectory) {
 		this.profilesRootDirectory = profilesRootDirectory;
 		topicFileSystemMap = new HashMap<>();
+
+		for (String id : getProfileIDs()) {
+			long            profileId = Long.parseLong(id);
+			TopicFileSystem tfs       = new TopicFileSystem(getTopicsDirectory(profileId));
+			topicFileSystemMap.put(profileId, tfs);
+		}
 	}
 
 	/**
-	 * TODO
+	 * Returns the all the Profile IDs found in the root directory.
 	 *
-	 * @param name
+	 * @return a collection of all the Profile IDs found
+	 */
+	public Collection<String> getProfileIDs() {
+		File[] profileDirectories = profilesRootDirectory.toFile().listFiles(File::isDirectory);
+		return new HashSet<>(Stream.of(profileDirectories).map(td -> td.getName()).toList());
+	}
+
+	/**
+	 * Creates a new, empty, Profile in this File System.
 	 *
-	 * @return
+	 * @param name the name of the new Profile
 	 *
-	 * @throws IOException
+	 * @return the new Profile
+	 *
+	 * @throws IOException if an I/O error occurs while interacting with the file
+	 *                     system
 	 */
 	public Profile createNewProfile(String name) throws IOException {
-		long id;
-		Path profileDirectory;
+		long profileId;
+		Path topicsDirectory;
 		do {
-			id = ThreadLocalRandom.current().nextLong();
-			profileDirectory = getProfileDirectory(id);
-		} while (!profileDirectory.toFile().mkdir());
+			profileId = ThreadLocalRandom.current().nextLong();
+			topicsDirectory = getTopicsDirectory(profileId);
+		} while (!topicsDirectory.toFile().mkdir());
 
-		File   profileMeta     = getFileInDirectory(profileDirectory, PROFILE_META);
+		topicFileSystemMap.put(profileId, new TopicFileSystem(topicsDirectory));
+
+		changeProfile(profileId);
+
+		File profileMeta = getProfileMeta();
 		profileMeta.createNewFile();
 		byte[] profileNameData = name.getBytes();
 		write(profileMeta, profileNameData);
 
-		return new Profile(name, id);
+		return new Profile(name, currentProfileId);
 	}
 
 	/**
-	 * TODO
+	 * Reads a Profile from this File System and returns it as a Profile object.
+	 * After this method returns, this file system will operate on the new Profile.
 	 *
-	 * @param profileId
+	 * @param profileId the id of the Profile to read
 	 *
-	 * @return
+	 * @return the Profile read
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs while interacting with the file
+	 *                     system
 	 */
 	public Profile loadProfile(long profileId) throws IOException {
-		Path profileDirectory = getProfileDirectory(profileId);
-		topicFileSystemMap.put(profileId, new TopicFileSystem(profileDirectory));
+		changeProfile(profileId);
 
-		File    profileMeta     = getFileInDirectory(profileDirectory, PROFILE_META);
+		File    profileMeta     = getProfileMeta();
 		byte[]  profileNameData = read(profileMeta);
-		String  userName        = new String(profileNameData);
-		Profile profile         = new Profile(userName, profileId);
-		topicFileSystemMap.get(profile.getId()).loadTopicsForProfile(profile);
+		String  name            = new String(profileNameData);
+		Profile profile         = new Profile(name, currentProfileId);
+
+		TopicFileSystem tfs = getTopicFileSystemForCurrentUser();
+		for (Topic topic : tfs.readAllTopics())
+			profile.addTopic(topic);
+
 		return profile;
 	}
 
 	/**
-	 * TODO
+	 * Creates a new Topic for the current Profile.
 	 *
-	 * @param newProfile
+	 * @param topicName the name of the new Topic
+	 *
+	 * @throws IOException if an I/O error occurs while interacting with the file
+	 *                     system
 	 */
-	public void changeProfile(Profile newProfile) {
-		currentProfileId = newProfile.getId();
+	public void createTopic(String topicName) throws IOException {
+		getTopicFileSystemForCurrentUser().createTopic(topicName);
 	}
 
 	/**
-	 * TODO
+	 * Saves a Post in the file system for the current Profile.
 	 *
-	 * @param topicName
+	 * @param post      the Post to save
+	 * @param topicName the name of the Topic in which to save
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs while interacting with the file
+	 *                     system
 	 */
-	public void addTopic(String topicName) throws IOException {
-		getTopicFileSystemForCurrentUser().addTopic(topicName);
+	public void savePost(Post post, String topicName) throws IOException {
+		getTopicFileSystemForCurrentUser().writePost(post, topicName);
 	}
 
-	/**
-	 * TODO
-	 *
-	 * @param post
-	 * @param topicName
-	 *
-	 * @throws IOException
-	 */
-	public void savePostToFileSystem(Post post, String topicName) throws IOException {
-		getTopicFileSystemForCurrentUser().savePostToFileSystem(post, topicName);
+	// ==================== PRIVATE METHODS ====================
+
+	private void changeProfile(long profileId) throws NoSuchElementException {
+		if (!topicFileSystemMap.containsKey(profileId))
+			throw new NoSuchElementException("No profile with id " + profileId + " exists");
+
+		currentProfileId = profileId;
 	}
 
 	private TopicFileSystem getTopicFileSystemForCurrentUser() {
 		return topicFileSystemMap.get(currentProfileId);
 	}
 
-	private Path getProfileDirectory(long profileId) {
-		String profileDir = profilesRootDirectory.toAbsolutePath().toString();
-		return Path.of(profileDir, String.valueOf(profileId));
+	private Path getTopicsDirectory(long profileId) {
+		String root = profilesRootDirectory.toAbsolutePath().toString();
+		return Path.of(root, String.valueOf(profileId));
 	}
 
-	private static File getFileInDirectory(Path directory, String filename) {
-		String dir = directory.toAbsolutePath().toString();
-		return Path.of(dir, filename).toFile();
+	private File getProfileMeta() {
+		Path topicsDirectory = getTopicsDirectory(currentProfileId);
+		return Path.of(topicsDirectory.toString(), PROFILE_META).toFile();
 	}
+
+	// ==================== READ/WRITE ====================
 
 	private static byte[] read(File file) throws IOException {
 		try (FileInputStream fis = new FileInputStream(file)) {
