@@ -169,12 +169,17 @@ public class User {
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public void pull(String topicName) throws IOException {
+		LG.sout("User#pull from Topic '%s'", topicName);
+		LG.in();
 		List<Post> newPosts = consumer.pull(topicName);
+		LG.sout("%s", newPosts);
 		currentProfile.updateTopic(topicName, newPosts);
 
 		for (Post post : newPosts) {
-			profileFileSystem.savePostToFileSystem(post, topicName);
+			LG.sout("Saving Post '%s'", post);
+			profileFileSystem.savePost(post, topicName);
 		}
+		LG.out();
 	}
 
 	/**

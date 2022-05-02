@@ -50,12 +50,15 @@ class Consumer extends ClientNode {
 		}
 
 		public List<Post> fetch(String topicName) {
+			LG.sout("Consumer#fetch(%s)", topicName);
+			LG.in();
 			if (!tdMap.containsKey(topicName))
 				throw new NoSuchElementException("No Topic with name " + topicName + " found");
 
 			TopicData  td = tdMap.get(topicName);
 			List<Post> newPosts;
 
+			LG.sout("Pointer: %d", td.pointer);
 			if (td.pointer == -1) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
 				newPosts = td.topic.getAllPosts();
 			else
@@ -63,11 +66,13 @@ class Consumer extends ClientNode {
 
 			// update topic pointer if there is at least one new Post
 			int newPostCount = newPosts.size();
+			LG.sout("New Post Count: %d", newPostCount);
 			if (newPostCount > 1) {
 				long lastPostId = newPosts.get(newPostCount - 1).getPostInfo().getId();
 				tdMap.get(topicName).pointer = lastPostId;
 			}
 
+			LG.out();
 			return newPosts;
 		}
 

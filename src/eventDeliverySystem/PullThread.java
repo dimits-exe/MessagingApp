@@ -32,11 +32,15 @@ class PullThread extends Thread {
 
 	@Override
 	public void run() {
+		LG.sout("%s#run()", getName());
+		LG.in();
 		start = true;
 
 		try /* (ois) */ {
 
 			final int postCount = ois.readInt();
+			LG.sout("postCount=%d", postCount);
+			LG.in();
 
 			for (int i = 0; i < postCount; i++) {
 
@@ -47,6 +51,8 @@ class PullThread extends Thread {
 					e.printStackTrace();
 					return;
 				}
+
+				LG.sout("postInfo=%s", postInfo);
 
 				final List<Packet> packets = new LinkedList<>();
 				Packet             packet;
@@ -63,8 +69,12 @@ class PullThread extends Thread {
 				final Packet[] packetArray = new Packet[packets.size()];
 				packets.toArray(packetArray);
 				final Post newPost = Post.fromPackets(packetArray, postInfo);
+				LG.sout("newPost=%s", newPost);
 				topic.post(newPost);
 			}
+
+			LG.out();
+			LG.sout("/%s#run()", getName());
 
 			success = true;
 
@@ -75,6 +85,7 @@ class PullThread extends Thread {
 		}
 
 		end = true;
+		LG.out();
 	}
 
 	/**

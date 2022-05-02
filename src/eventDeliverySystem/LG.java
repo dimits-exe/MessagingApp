@@ -11,9 +11,43 @@ import java.net.Socket;
  */
 public class LG {
 
+	private static int tab = 0;
+
 	public static void sout(String format, Object... args) {
-		System.out.printf(format + "\n", args);
+		System.out.printf("\t".repeat(tab) + format + "\n", args);
 		System.out.flush();
+	}
+
+	public static void in() {
+		tab++;
+	}
+
+	public static void out() {
+		tab--;
+	}
+
+	public static void tab(String format, Object... args) {
+		in();
+		sout(format, args);
+		out();
+	}
+
+	public static void ttab(String format, Object... args) {
+		in();
+		in();
+		sout(format, args);
+		out();
+		out();
+	}
+
+	public static void tttab(String format, Object... args) {
+		in();
+		in();
+		in();
+		sout(format, args);
+		out();
+		out();
+		out();
 	}
 
 	public static void args(String... args) {

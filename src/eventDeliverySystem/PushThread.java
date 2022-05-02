@@ -35,21 +35,28 @@ class PushThread extends Thread {
 
 	@Override
 	public void run() {
+		LG.sout("%s#run()", getName());
+		LG.in();
 		start = true;
 
 		try /* (oos) */ {
 
 			final int postCount = keepAlive ? Integer.MAX_VALUE : posts.size();
+			LG.sout("postCount=%d", postCount);
+			LG.in();
 			oos.writeInt(postCount);
 
 			for (Post post : posts) {
 				final PostInfo postInfo = post.getPostInfo();
+				LG.sout("postInfo=%s", postInfo);
 				oos.writeObject(postInfo);
 
 				final Packet[] packets = Packet.fromPost(post);
 				for (Packet packet : packets)
 					oos.writeObject(packet);
 			}
+
+			LG.out();
 
 			success = true;
 
@@ -60,6 +67,8 @@ class PushThread extends Thread {
 		}
 
 		end = true;
+		LG.out();
+		LG.sout("/%s#run()", getName());
 	}
 
 	/**

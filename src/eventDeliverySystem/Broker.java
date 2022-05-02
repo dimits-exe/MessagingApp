@@ -50,12 +50,14 @@ class Broker implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		LG.sout("Broker#main start");
+		LG.sout("Broker#main()");
+		LG.in();
 		LG.args(args);
 		Broker broker = new Broker();
 		Thread thread = new Thread(broker, "Broker-" + args[0]);
 		thread.start();
-		LG.sout("Broker#main end");
+		LG.out();
+		LG.sout("/Broker#main()");
 	}
 
 	@Override
@@ -211,9 +213,11 @@ class Broker implements Runnable {
 				String topicName;
 				Thread thread = null;
 
+				LG.in();
 				switch (message.getType()) {
 				case DATA_PACKET_SEND:
 					topicName = (String) message.getValue();
+					LG.sout("Receiving packets for Topic '%s'", topicName);
 					topic = getTopic(topicName);
 					thread = new PullThread(ois, topic);
 					break;
@@ -221,13 +225,17 @@ class Broker implements Runnable {
 				case INITIALISE_CONSUMER:
 					TopicToken topicToken = (TopicToken) message.getValue();
 					topicName = topicToken.getName();
-					long idOfLast = topicToken.getLastId();
-
+					LG.sout("Registering consumer for Topic '%s'", topicName);
+					LG.in();
 					registerConsumerForTopic(topicName, socket);
 
 					// send existing topics that the consumer does not have
+					long idOfLast = topicToken.getLastId();
+					LG.sout("idOfLast=%d", idOfLast);
 					List<Post> postsToSend = getTopic(topicName).getPostsSince(idOfLast);
+					LG.sout("postsToSend=%s", postsToSend);
 					thread = new PushThread(oos, postsToSend, true); // keep consumer's thread alive
+					LG.out();
 					break;
 
 				case PUBLISHER_DISCOVERY_REQUEST:
@@ -238,8 +246,10 @@ class Broker implements Runnable {
 				
 				case CREATE_TOPIC:
 					topicName = (String) message.getValue();
-					
+					LG.sout("Creating Topic '%s'", topicName);
+
 					boolean topicExists = topicsByName.containsKey(topicName);
+					LG.sout("Exists '%s'", topicExists);
 					if (!topicExists)
 						addTopic(new Topic(topicName));
 					
@@ -259,6 +269,7 @@ class Broker implements Runnable {
 					throw new IllegalArgumentException(
 					        "You forgot to put a case for the new Message enum");
 				}
+				LG.out();
 
 				thread.start();
 
@@ -295,14 +306,18 @@ class Broker implements Runnable {
 		@Override
 		public void run() {
 
-			LG.sout("Sending CI to publisher");
+			LG.sout("PublichserDiscoveryThread#run()");
+			LG.in();
 
 			try (oos) {
+				LG.sout("topicName=%s", topicName);
 				ConnectionInfo brokerInfo = Broker.this.getAssignedBroker(topicName);
+				LG.sout("brokerInfo=%s", brokerInfo);
 				oos.writeObject(brokerInfo);
 			} catch (IOException e) {
 				// do nothing
 			}
+			LG.out();
 		}
 	}
 

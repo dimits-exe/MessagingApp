@@ -75,8 +75,9 @@ class Publisher extends ClientNode {
 	 */
 	public void push(Post post, String topicName) {
 
-		LG.sout("Pushing: %s", post);
+		LG.sout("Publisher#push(%s, %s)", post, topicName);
 
+		LG.in();
 		Runnable job = () -> {
 
 			boolean success;
@@ -117,6 +118,7 @@ class Publisher extends ClientNode {
 				}
 			} while (!success);
 		};
+		LG.out();
 
 		new Thread(job).start();
 	}

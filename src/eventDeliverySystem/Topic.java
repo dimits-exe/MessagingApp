@@ -155,9 +155,13 @@ class Topic {
 	 * @throws NoSuchElementException if no Post in this Topic has the given ID
 	 */
 	public List<Post> getPostsSince(long lastPostId) throws NoSuchElementException {
+		LG.sout("Topic#getPostsSince(%d)", lastPostId);
+		LG.in();
 
 		Stack<Post> postsClone = new Stack<>();
 		postsClone.addAll(postStack);
+
+		LG.sout("postsClone=%s", postsClone);
 
 		LinkedList<Post> postsAfterGivenPost = new LinkedList<>();
 
@@ -165,6 +169,9 @@ class Topic {
 			while (!postsClone.isEmpty())
 				postsAfterGivenPost.add(postsClone.pop());
 
+			LG.sout("postsAfterGivenPost=%s", postsAfterGivenPost);
+
+			LG.out();
 			return postsAfterGivenPost;
 		}
 
@@ -172,6 +179,7 @@ class Topic {
 			while (postsClone.peek().getPostInfo().getId() != lastPostId)
 				postsAfterGivenPost.add(postsClone.pop());
 
+			LG.out();
 			return postsAfterGivenPost;
 		} catch (EmptyStackException e) {
 			throw new NoSuchElementException(
