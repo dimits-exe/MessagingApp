@@ -25,16 +25,47 @@ public class User {
 
 	// TODO: remove
 	@SuppressWarnings("javadoc")
-	public static User forAlex() throws IOException {
-		return loadExisting("", -1,
-		        Path.of("C:\\Users\\alexm\\projects\\Java\\MessagingApp\\users\\"), 1);
+	public static User forAlex(boolean existing, boolean local) throws IOException {
+		String ip   = "127.0.0.1";
+		int    port = 29783;
+		Path   path = Path.of("C:\\Users\\alexm\\projects\\Java\\MessagingApp\\users\\");
+
+		long   id   = 12345L;
+		String name = "alex";
+
+		if (existing) {
+			if (local)
+				return loadExistingLocal(path, id);
+			return loadExisting(ip, port, path, id);
+		}
+
+		if (local)
+			return createNewLocal(path, name);
+
+		return createNew(ip, port, path, name);
 	}
 
 	// TODO: remove
 	@SuppressWarnings("javadoc")
-	public static User forDimits() throws IOException {
-		throw new RuntimeException("User::47, go write the method lmao");
-		// return loadExisting("", -1, Path.of("C:\\Your\\Path\\Here\\"), 2);
+	public static User forDimits(boolean existing, boolean local) throws IOException {
+		throw new RuntimeException("User::51, fill in the nulls");
+
+		//		String ip   = null;
+		//		int    port = -1;
+		//		Path   path = null;
+		//		long   id   = -1;
+		//		String name = null;
+		//
+		//		if (existing) {
+		//			if (local)
+		//				return loadExistingLocal(path, id);
+		//			return loadExisting(ip, port, path, id);
+		//		}
+		//
+		//		if (local)
+		//			return createNewLocal(path, name);
+		//
+		//		return createNew(ip, port, path, name);
 	}
 
 	/**
@@ -138,9 +169,8 @@ public class User {
 	}
 
 	/**
-	 * Attempts to create a new Topic and add it to the Profile. If this operation
-	 * succeeds, the new Topic is pushed. If it is not pushed successfully, the
-	 * Profile's Topic is deleted.
+	 * Attempts to create a new Topic. If this operation succeeds, the new Topic is
+	 * pushed. If it is not pushed successfully, the Profile's Topic is deleted.
 	 *
 	 * @param topicName the name of the Topic to create
 	 *
@@ -149,13 +179,7 @@ public class User {
 	 * @throw IllegalArgumentException if a Topic with the same name already exists
 	 */
 	public boolean createTopic(String topicName) {
-		currentProfile.addTopic(topicName);
-
-		boolean success = publisher.createTopic(topicName);
-		if (!success)
-			currentProfile.removeTopic(topicName);
-
-		return success;
+		return publisher.createTopic(topicName);
 	}
 
 	/**
@@ -196,12 +220,80 @@ public class User {
 	public void listenForTopic(Topic topic) throws IOException {
 		consumer.listenForTopic(topic);
 		currentProfile.addTopic(topic);
-		profileFileSystem.addTopic(topic.getName());
+		profileFileSystem.createTopic(topic.getName());
 	}
 
 	// ==================== LOCAL VERSIONS OF METHODS ====================
 
 	// TODO: remove all local methods once done
+
+	/**
+	 * Retrieve the user's data and the saved posts. Calling any of the non-local
+	 * methods on this User will result in a NullPointerException.
+	 *
+	 * @param profilesRootDirectory the root directory of all the Profiles in the
+	 *                              file system
+	 * @param profileId             the id of the existing profile
+	 *
+	 * @return the new User that only works with the local methods
+	 *
+	 * @throws IOException if an I/O error occurs while interacting with the file
+	 *                     system or while establishing connection to the server
+	 */
+	public static User loadExistingLocal(Path profilesRootDirectory, long profileId)
+	        throws IOException {
+		User user = new User(profilesRootDirectory);
+		user.switchToExistingProfileLocal(profileId);
+		return user;
+	}
+
+	/**
+	 * Creates a new User in the file system and returns a new User object. Calling
+	 * any of the non-local methods on this User will result in a
+	 * NullPointerException.
+	 *
+	 * @param profilesRootDirectory the root directory of all the Profiles in the
+	 *                              file system
+	 * @param name                  the name of the new Profile
+	 *
+	 * @return the new User that only works with the local methods
+	 *
+	 * @throws IOException if an I/O error occurs while interacting with the file
+	 *                     system or while establishing connection to the server
+	 */
+	public static User createNewLocal(Path profilesRootDirectory, String name) throws IOException {
+		User user = new User(profilesRootDirectory);
+		user.switchToNewProfileLocal(name);
+		return user;
+	}
+
+	private User(Path profilesRootDirectory) {
+		this.profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
+		this.publisher = null;
+		this.consumer = null;
+	}
+
+	/**
+	 * Switches this User to manage a new Profile.
+	 *
+	 * @param profileName the name of the new Profile
+	 *
+	 * @throws IOException if an I/O error occurs while creating the new Profile
+	 */
+	public void switchToNewProfileLocal(String profileName) throws IOException {
+		currentProfile = profileFileSystem.createNewProfile(profileName);
+	}
+
+	/**
+	 * Switches this User to manage an existing.
+	 *
+	 * @param profileId the id of an existing Profile
+	 *
+	 * @throws IOException if an I/O error occurs while loading the existing Profile
+	 */
+	public void switchToExistingProfileLocal(long profileId) throws IOException {
+		currentProfile = profileFileSystem.loadProfile(profileId);
+	}
 
 	/**
 	 * Does nothing.
@@ -217,19 +309,14 @@ public class User {
 	}
 
 	/**
-	 * Attempts to create a new Topic and add it to the Profile. If this operation
-	 * succeeds, it is written to the file system.
+	 * Attempts to create a new Topic. If this operation succeeds, it is written to
+	 * the file system.
 	 *
-	 * @param topicName the name of the Topic to create
+	 * @param topicName the name of the Topic to create (not used in local)
 	 *
 	 * @return {@code true} if it was successfully created, {@code false} otherwise
-	 *
-	 * @throws IOException if an I/O Error occurs while writing the newly created
-	 *                     Topic to the file system
 	 */
-	public boolean createTopicLocal(String topicName) throws IOException {
-		currentProfile.addTopic(topicName);
-		profileFileSystem.addTopic(topicName);
+	public boolean createTopicLocal(String topicName) {
 		return true;
 	}
 
@@ -247,7 +334,7 @@ public class User {
 		currentProfile.updateTopic(topicName, newPosts);
 
 		for (Post post : newPosts) {
-			profileFileSystem.savePostToFileSystem(post, topicName);
+			profileFileSystem.savePost(post, topicName);
 		}
 	}
 
@@ -265,6 +352,6 @@ public class User {
 	 */
 	public void listenForTopicLocal(Topic topic) throws IOException {
 		currentProfile.addTopic(topic);
-		profileFileSystem.addTopic(topic.getName());
+		profileFileSystem.createTopic(topic.getName());
 	}
 }
