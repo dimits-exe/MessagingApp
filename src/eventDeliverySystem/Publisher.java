@@ -138,9 +138,10 @@ class Publisher extends ClientNode {
 		ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
 		boolean        success;
 
-		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort());
-		        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-		        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
+		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
+			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+			oos.flush();
+			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
 			oos.writeObject(new Message(CREATE_TOPIC, topicName));
 			success = ois.readBoolean();
