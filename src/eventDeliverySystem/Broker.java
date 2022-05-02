@@ -113,7 +113,7 @@ class Broker implements Runnable {
 		LG.sout("Broker#run end");
 	}
 
-	
+
 	/**
 	 * Return the broker that's responsible for the requested topic.
 	 *
@@ -138,14 +138,7 @@ class Broker implements Runnable {
 			throw new UncheckedIOException(e);
 		}
 	}
-	
-	/**
-	 * Adds a new topic to the Broker's <String, Topic> map.
-	 * @param topic the topic to be added
-	 */
-	private void addTopic(Topic topic) {
-		topicsByName.put(topic.getName(), topic);
-	}
+
 
 	// ============== UNUSED =======================
 
@@ -243,7 +236,7 @@ class Broker implements Runnable {
 					topicName = (String) message.getValue();
 					thread = new PublisherDiscoveryThread(oos, topicName);
 					break;
-				
+
 				case CREATE_TOPIC:
 					topicName = (String) message.getValue();
 					LG.sout("Creating Topic '%s'", topicName);
@@ -252,34 +245,35 @@ class Broker implements Runnable {
 					LG.sout("Exists '%s'", topicExists);
 					if (!topicExists)
 						addTopic(new Topic(topicName));
-					
+
 					oos.writeBoolean(!topicExists);
 					break;
-				
+
 				case BROKER_CONNECTION:
 					// we don't add the socket directly because it might be from the default
 					// broker who is notifying us of another connection
 					ConnectionInfo newBroker = (ConnectionInfo) message.getValue();
 					brokerConnections.add(new Socket(newBroker.getAddress(), newBroker.getPort()));
 					//TODO: if leader send the connection to all other brokers
-						
-					return;
-					
+					break;
+
 				default:
 					throw new IllegalArgumentException(
 					        "You forgot to put a case for the new Message enum");
 				}
 				LG.out();
 
-				thread.start();
+				// not all MessageTypes require a thread
+				if (thread != null)
+					thread.start();
 
 			} catch (IOException ioe) {
 				// do nothing
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
-				}
-			}
+		}
+	}
 
 	/**
 	 * A Thread for discovering the actual broker for a Topic.
@@ -310,7 +304,7 @@ class Broker implements Runnable {
 			LG.sout("PublichserDiscoveryThread#run()");
 			LG.in();
 
-			try (oos) {
+			try /* (oos) */ {
 				LG.sout("topicName=%s", topicName);
 				ConnectionInfo brokerInfo = Broker.this.getAssignedBroker(topicName);
 				LG.sout("brokerInfo=%s", brokerInfo);
@@ -323,6 +317,16 @@ class Broker implements Runnable {
 	}
 
 	// ==================== PRIVATE METHODS ====================
+
+	/**
+	 * Adds a new topic to the Broker's <String, Topic> map.
+	 *
+	 * @param topic the topic to be added
+	 */
+	private void addTopic(Topic topic) {
+		topicsByName.put(topic.getName(), topic);
+		consumerConnectionsPerTopic.put(topic.getName(), new HashSet<>());
+	}
 
 	private void addPublisherCI(Socket socket) {
 		publisherConnectionInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
