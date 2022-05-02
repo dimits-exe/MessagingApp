@@ -25,6 +25,7 @@ class PullThread extends Thread {
 	 * @param topic  the Topic in which the new Posts will be added
 	 */
 	public PullThread(ObjectInputStream stream, Topic topic) {
+		super("PullThread-" + topic.getName());
 		ois = stream;
 		this.topic = topic;
 		success = start = end = false;

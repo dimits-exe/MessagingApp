@@ -120,7 +120,7 @@ class Publisher extends ClientNode {
 		};
 		LG.out();
 
-		new Thread(job).start();
+		new Thread(job, "PublisherWorkerThread").start();
 	}
 
 	/**

@@ -27,6 +27,7 @@ class PushThread extends Thread {
 	 *                  PushThread pushes, {@code false} otherwise.
 	 */
 	public PushThread(ObjectOutputStream stream, List<Post> posts, boolean keepAlive) {
+		super("PushThread-" + posts.size() + "-" + keepAlive);
 		oos = stream;
 		this.posts = posts;
 		this.keepAlive = keepAlive;

@@ -103,8 +103,8 @@ class Broker implements Runnable {
 
 			}; //brokerRequestThread
 
-			new Thread(clientRequestThread).start();
-			new Thread(brokerRequestThread).start();
+			new Thread(clientRequestThread, "ClientRequestThread").start();
+			new Thread(brokerRequestThread, "BrokerRequestThread").start();
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -191,7 +191,7 @@ class Broker implements Runnable {
 		private Socket socket;
 
 		public ClientRequestHandler(Socket socket) {
-			super("ClientRequestHandler-" + clientRequestCounter++);
+			super("ClientRequestHandler-" + socket.getInetAddress() + "-" + socket.getLocalPort());
 			this.socket = socket;
 		}
 
@@ -299,6 +299,7 @@ class Broker implements Runnable {
 		 * @param topicName the name of the Topic
 		 */
 		public PublisherDiscoveryThread(ObjectOutputStream stream, String topicName) {
+			super("PublisherDiscoveryThread-" + topicName);
 			oos = stream;
 			this.topicName = topicName;
 		}

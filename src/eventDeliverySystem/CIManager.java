@@ -37,6 +37,7 @@ class CIManager implements AutoCloseable {
 		 *                     Server Socket.
 		 */
 		public ServerThread() throws IOException {
+			super("ServerThread");
 			serverSocket = new ServerSocket(PORT_MANAGER.getNewAvailablePort());
 		}
 
