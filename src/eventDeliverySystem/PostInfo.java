@@ -33,9 +33,9 @@ class PostInfo implements Serializable {
 	}
 
 	/**
-	 * Returns this PostInfo's posterId.
+	 * Returns the ID of the Poster of the Post associated with this PostInfo.
 	 *
-	 * @return the posterId
+	 * @return the Poster's id.
 	 */
 	public long getPosterId() {
 		return posterId;
@@ -51,9 +51,9 @@ class PostInfo implements Serializable {
 	}
 
 	/**
-	 * Returns this PostInfo's id.
+	 * Returns the ID of the Post associated with this PostInfo.
 	 *
-	 * @return the id
+	 * @return the Post's id
 	 */
 	public long getId() {
 		return id;
