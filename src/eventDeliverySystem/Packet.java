@@ -33,9 +33,10 @@ class Packet implements Serializable {
 		int srcPointer = 0;
 		for (int i = 0; i < packetCount; i++) {
 			final boolean isFinal = i == (packetCount - 1);
-			final byte[]  payload = new byte[Packet.PACKET_SIZE];
 
-			final int length = Math.min(Packet.PACKET_SIZE, src.length - srcPointer);
+			final int    length  = Math.min(Packet.PACKET_SIZE, src.length - srcPointer);
+			final byte[] payload = new byte[length];
+
 			System.arraycopy(src, srcPointer, payload, 0, length);
 			srcPointer += length;
 
@@ -75,9 +76,9 @@ class Packet implements Serializable {
 	}
 
 	/**
-	 * Returns this Packet's id.
+	 * Returns the id of the Post this Packet is a part of.
 	 *
-	 * @return the id, which corresponds to the id of the associated Post being sent
+	 * @return the id of its associated Post
 	 */
 	public long getPostId() {
 		return postId;
