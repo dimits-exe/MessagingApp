@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import eventDeliverySystem.PushThread.Protocol;
 
@@ -24,93 +26,196 @@ import eventDeliverySystem.PushThread.Protocol;
  * Brokers act as part of a distributed server that services Publishers and
  * Consumers.
  */
-class Broker implements Runnable {
+class Broker implements Runnable, AutoCloseable{
 
-	private static final PortManager portManager     = new PortManager();
-	private static final int         MAX_CONNECTIONS = 64;
-	private static int clientRequestCounter = 0;
+	private static final PortManager 		portManager     = new PortManager();
+	private static final int         		MAX_CONNECTIONS = 64;
 
-	private ServerSocket clientRequestSocket;
-	private ServerSocket brokerRequestSocket;
-
-	private final Set<ConnectionInfo>      publisherConnectionInfo;
+	private final Set<ConnectionInfo>      	publisherConnectionInfo;
 	private final Map<String, Set<ObjectOutputStream>> consumerOOSPerTopic;
+	private final Map<String, BrokerTopic> 	topicsByName;
+	private final List<Socket> 				brokerConnections;
+	
+	private final ServerSocket 				clientRequestSocket;
+	private final ServerSocket 				brokerRequestSocket;
+	
+	@SuppressWarnings("unused")
+	private ConnectionInfo currentLeader;
+	
+	
+	/**
+	 * Starts a new broker as a process on the local machine.
+	 * If args are provided the broker will attempt to connect to the leader broker.
+	 * If not, the broker is considered the leader broker.
+	 * When starting the server subsystem the first broker MUST be the leader.
+	 * 
+	 * @param args empty if the broker is the leader, the IP address and port of the leader otherwise.
+	 * @throws UnknownHostException if the IP address isn't valid 
+	 */
+	public static void main(String[] args) throws UnknownHostException {
+		LG.sout("Broker#main start");
+		LG.args(args);
+		
+		// argument processing
+		String ip = "";
+		int port = -1;
+		boolean isLeader = true;
+		
+		if(args.length == 2) {
+			ip = args[0];
+			port = Integer.parseInt(args[1]);
+			isLeader = false;
+		}
+		
+		// broker thread naming
+		String brokerId;
+		if(isLeader)
+			brokerId = "Main";
+		else
+			brokerId = Integer.toString(ThreadLocalRandom.current().nextInt(1,1000));
+		
+		
+		// broker execution
+		try(Broker broker = isLeader? new Broker() : new Broker(ip, port);) { //java 8 forces me to do this
+			Thread thread = new Thread(broker, "Broker-" + brokerId);
+			thread.start();
+			LG.sout("Broker#main end");
+			thread.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
 
-	private final Map<String, BrokerTopic> topicsByName;
-
-	private final List<Socket> brokerConnections;
-
-	/** Create a new Broker */
+	
+	/**
+	 * Create a new leader broker. This is necessarily the first step to initialize
+	 * the server network.
+	 */
 	public Broker() {
-		// TODO: establish connection with broker
 		this.publisherConnectionInfo = Collections.synchronizedSet(new HashSet<>());
 		this.consumerOOSPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
-	}
-
-	public static void main(String[] args) {
-		LG.sout("Broker#main()");
-		LG.in();
-		LG.args(args);
-		Broker broker = new Broker();
-		Thread thread = new Thread(broker, "Broker-" + args[0]);
-		thread.start();
-		LG.out();
-		LG.sout("/Broker#main()");
-	}
-
-	@Override
-	public void run() {
+		
 		try {
 			clientRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
 			brokerRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
-			LG.sout("Broker connected at:");
-			LG.socket("Client", clientRequestSocket);
-			LG.socket("Broker", brokerRequestSocket);
+		} catch (IOException e) {
+			throw new UncheckedIOException("Could not opne server socket :", e);
+		}
+		
+		currentLeader = new ConnectionInfo(brokerRequestSocket);
+		
+		LG.sout("Broker connected at:");
+		LG.socket("Client", clientRequestSocket);
+		LG.socket("Broker", brokerRequestSocket);
+	}
+	
+	@Override
+	public void run() {
+		
+		// Start handling client requests
+		Runnable clientRequestThread = () -> {
+			LG.sout("Start: clientRequestThread");
+			while (true) {
+				try {
+					@SuppressWarnings("resource")
+					Socket socket = clientRequestSocket.accept();
+					new ClientRequestHandler(socket).start();
 
-			// Start handling client requests
-			Runnable clientRequestThread = () -> {
-				LG.sout("Start: clientRequestThread");
-				while (true) {
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(-1); // serious error when waiting, close broker
+				}
+			}
+		};
+
+		
+		Runnable brokerRequestThread = new Runnable() {
+
+			@SuppressWarnings("resource")
+			@Override
+			public void run() {
+				LG.sout("Start: BrokerRequestThread");
+				while(true) {
 					try {
-						// TODO: figure out how to close this one
-						Socket socket = clientRequestSocket.accept();
-						new ClientRequestHandler(socket).start();
-
+						brokerConnections.add(brokerRequestSocket.accept());
 					} catch (IOException e) {
 						e.printStackTrace();
-						System.exit(-1); // serious error when waiting, close broker
+						System.exit(-1); 	// serious error when waiting, close broker
 					}
 				}
-			};
+			}
 
-			//TODO: properly implement
-			Runnable brokerRequestThread = new Runnable() {
+		}; //brokerRequestThread
 
-				@Override
-				public void run() {
-					LG.sout("Start: BrokerRequestThread");
-					while(true) {
-						try {
-							brokerConnections.add(brokerRequestSocket.accept());
-						} catch (IOException e) {
-							e.printStackTrace();
-							System.exit(-1); 	// serious error when waiting, close broker
-						}
-					}
-				}
-
-			}; //brokerRequestThread
-
-			new Thread(clientRequestThread, "ClientRequestThread").start();
-			new Thread(brokerRequestThread, "BrokerRequestThread").start();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		new Thread(clientRequestThread, "ClientRequestThread").start();
+		new Thread(brokerRequestThread, "BrokerRequestThread").start();
 
 		LG.sout("Broker#run end");
+	}
+	
+	
+	/**
+	 * Create a non-leader broker and connect it to the server network.
+	 * @param leaderIP the IP of the leader broker
+	 * @param leaderPort the port of the leader broker
+	 * @throws UncheckedIOException if the connection to the leader broker fails
+	 */
+	@SuppressWarnings("resource")
+	public Broker(String leaderIP, int leaderPort) {
+		this();
+		try {
+			Socket leaderConnection = new Socket(leaderIP, leaderPort);
+			brokerConnections.add(leaderConnection);
+			currentLeader = new ConnectionInfo(leaderConnection);
+		} catch (IOException ioe) {
+			throw new UncheckedIOException("Couldn't connect to leader broker ", ioe);
+		}
+
+	}
+	
+	/**
+	 * Closes all active connections to the broker.
+	 */
+	@Override
+	public void close() {
+		try {
+			for(Set<ObjectOutputStream> consumers : consumerOOSPerTopic.values())
+				for(ObjectOutputStream consumer : consumers)
+					consumer.close();
+			
+			for(Socket broker : brokerConnections)
+				broker.close();
+			
+		} catch(IOException ioe) {
+			ioe.printStackTrace();
+		}	
+	}
+	
+	
+	// ==================== PRIVATE METHODS ====================
+	
+	/**
+	 * Adds a new topic to the Broker's <String, Topic> map.
+	 *
+	 * @param topicName the name of the Topic to be added
+	 */
+	private void addTopic(String topicName) {
+		topicsByName.put(topicName, new BrokerTopic(topicName));
+		consumerOOSPerTopic.put(topicName, new HashSet<>());
+	}
+
+
+	private void addPublisherCI(Socket socket) {
+		publisherConnectionInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
+	}
+
+	private BrokerTopic getTopic(String topicName) {
+		BrokerTopic topic = topicsByName.get(topicName);
+		if (topic == null)
+			throw new NoSuchElementException("There is no Topic with name " + topicName);
+		return topic;
 	}
 
 
@@ -140,43 +245,6 @@ class Broker implements Runnable {
 	}
 
 
-	// ============== UNUSED =======================
-
-	/**
-	 * Sends a message to all brokers.
-	 *
-	 * @param m the message
-	 */
-	@SuppressWarnings("unused")
-	private void multicastMessage(Message m) {
-		for (Socket connection : brokerConnections) {
-			try (ObjectOutputStream out = new ObjectOutputStream(connection.getOutputStream())) {
-				out.writeObject(m);
-			} catch (IOException ioe) {
-				System.err.println("Message transmission failed: " + ioe.toString());
-			}
-		}
-	}
-
-	/**
-	 * Update internal data structures once a new connection has been established
-	 * with another broker.
-	 *
-	 * @param newBroker the information of the connected broker
-	 */
-	@SuppressWarnings("unused")
-	private void newBrokerConnected(Socket newBroker) {
-		if (brokerConnections.contains(newBroker))
-			return;
-
-		brokerConnections.add(newBroker);
-		brokerConnections.sort((s1, s2) -> {
-			int ipc = s1.getInetAddress().getHostName()
-			        .compareTo(s2.getInetAddress().getHostName());
-			return ipc != 0 ? ipc : s2.getPort() - s1.getPort();
-		});
-	}
-
 	// ========== THREADS ==========
 
 	private class ClientRequestHandler extends Thread {
@@ -204,29 +272,28 @@ class Broker implements Runnable {
 				// fuck variables in switch statements
 				BrokerTopic topic;
 				String topicName;
-				Thread thread = null;
 
 				LG.in();
 				switch (message.getType()) {
-				case DATA_PACKET_SEND:
+				case DATA_PACKET_SEND:			
 					topicName = (String) message.getValue();
 					LG.sout("Receiving packets for Topic '%s'", topicName);
 					LG.in();
 					topic = getTopic(topicName);
-					// thread = new PullThread(ois, topic);
-
-					// TODO: fix
-					long oldIdOfLast = topic.getLastPostId();
+					new PullThread(ois, topic).start();
+					/*
 					thread = new PullThread(ois, topic);
 					thread.run();
-
-					List<Post> newPosts = topic.getPostsSince(oldIdOfLast);
+					
+					//TODO: send packets to all consumers
+					
 					LG.sout("newPosts.size()=%d", newPosts.size());
 					for (ObjectOutputStream oos1 : consumerOOSPerTopic.get(topicName)) {
 						Thread pushThread = new PushThread(oos1, newPosts, Protocol.WITHOUT_COUNT);
 						pushThread.start();
 					}
 					thread = null;
+					*/
 					LG.out();
 					break;
 
@@ -249,14 +316,14 @@ class Broker implements Runnable {
 
 					LG.sout("piList=%s", piList);
 					LG.sout("packetMap=%s", packetMap);
-					thread = new PushThread(oos, piList, packetMap, Protocol.KEEP_ALIVE);
+					new PushThread(oos, piList, packetMap, Protocol.KEEP_ALIVE).start();
 					LG.out();
 					break;
 
 				case PUBLISHER_DISCOVERY_REQUEST:
 					addPublisherCI(socket);
 					topicName = (String) message.getValue();
-					thread = new PublisherDiscoveryThread(oos, topicName);
+					new PublisherDiscoveryThread(oos, topicName).start();
 					break;
 
 				case CREATE_TOPIC:
@@ -285,10 +352,6 @@ class Broker implements Runnable {
 					        "You forgot to put a case for the new Message enum");
 				}
 				LG.out();
-
-				// not all MessageTypes require a thread
-				if (thread != null)
-					thread.start();
 
 			} catch (IOException ioe) {
 				// do nothing
@@ -337,28 +400,5 @@ class Broker implements Runnable {
 			}
 			LG.out();
 		}
-	}
-
-	// ==================== PRIVATE METHODS ====================
-
-	/**
-	 * Adds a new topic to the Broker's <String, Topic> map.
-	 *
-	 * @param topicName the name of the Topic to be added
-	 */
-	private void addTopic(String topicName) {
-		topicsByName.put(topicName, new BrokerTopic(topicName));
-		consumerOOSPerTopic.put(topicName, new HashSet<>());
-	}
-
-	private void addPublisherCI(Socket socket) {
-		publisherConnectionInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
-	}
-
-	private BrokerTopic getTopic(String topicName) {
-		BrokerTopic topic = topicsByName.get(topicName);
-		if (topic == null)
-			throw new NoSuchElementException("There is no Topic with name " + topicName);
-		return topic;
 	}
 }
