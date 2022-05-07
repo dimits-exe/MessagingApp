@@ -169,17 +169,28 @@ public class User {
 	}
 
 	/**
-	 * Attempts to create a new Topic. If this operation succeeds, the new Topic is
-	 * pushed. If it is not pushed successfully, the Profile's Topic is deleted.
+	 * Attempts to push a new Topic. If this succeeds,
+	 * {@link #listenForTopic(String)} is called.
 	 *
 	 * @param topicName the name of the Topic to create
 	 *
 	 * @return {@code true} if it was successfully created, {@code false} otherwise
 	 *
+	 * @throws IOException if an I/O error occurs while interacting with the file
+	 *                     system
+	 *
 	 * @throw IllegalArgumentException if a Topic with the same name already exists
 	 */
-	public boolean createTopic(String topicName) {
-		return publisher.createTopic(topicName);
+	public boolean createTopic(String topicName) throws IOException {
+		LG.sout("User#createTopic(%s)", topicName);
+		LG.in();
+		boolean success = publisher.createTopic(topicName);
+		LG.sout("success=%s", success);
+		if (success)
+			listenForTopic(topicName);
+
+		LG.out();
+		return success;
 	}
 
 	/**
@@ -196,7 +207,7 @@ public class User {
 		LG.sout("User#pull from Topic '%s'", topicName);
 		LG.in();
 		List<Post> newPosts = consumer.pull(topicName);
-		LG.sout("%s", newPosts);
+		LG.sout("newPosts=%s", newPosts);
 		currentProfile.updateTopic(topicName, newPosts);
 
 		for (Post post : newPosts) {
@@ -207,20 +218,21 @@ public class User {
 	}
 
 	/**
-	 * Registers a new Topic for which new Posts will be pulled. The pulled topics
-	 * will be added to the Profile and saved to the file system.
+	 * Registers a new Topic for which new Posts will be pulled and adds it to the
+	 * Profile and file system. The pulled topics will be added to the Profile and
+	 * saved to the file system.
 	 *
-	 * @param topic the Topic to listen for
+	 * @param topicName the name of the Topic to listen for
 	 *
 	 * @throws IOException              if an I/O error occurs while interacting
 	 *                                  with the file system
 	 * @throws NullPointerException     if topic == null
 	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
-	public void listenForTopic(Topic topic) throws IOException {
-		consumer.listenForTopic(topic);
-		currentProfile.addTopic(topic);
-		profileFileSystem.createTopic(topic.getName());
+	public void listenForTopic(String topicName) throws IOException {
+		consumer.listenForTopic(topicName);
+		currentProfile.addTopic(topicName);
+		profileFileSystem.createTopic(topicName);
 	}
 
 	// ==================== LOCAL VERSIONS OF METHODS ====================
