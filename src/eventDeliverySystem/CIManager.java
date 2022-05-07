@@ -38,7 +38,7 @@ class CIManager implements AutoCloseable {
 		 */
 		public ServerThread() throws IOException {
 			super("ServerThread");
-			serverSocket = new ServerSocket(PORT_MANAGER.getNewAvailablePort());
+			serverSocket = new ServerSocket(CIManager.PORT_MANAGER.getNewAvailablePort());
 		}
 
 		@Override
@@ -54,19 +54,19 @@ class CIManager implements AutoCloseable {
 						        socket1.getInputStream())) {
 							try {
 								defaultBrokerCI = (ConnectionInfo) ois1.readObject();
-							} catch (ClassNotFoundException e1) {
+							} catch (final ClassNotFoundException e1) {
 								e1.printStackTrace();
 								return;
 							} finally {
 								ois1.close();
 							}
-						} catch (IOException e1) {
+						} catch (final IOException e1) {
 							// io exception while getting streams, keep trying
 							ipForNewDefaultBrokerException = true;
 							System.err.printf(
 							        "IOException while getting new ConnectionInfo for default broker%n");
 						}
-					} catch (IOException e2) {
+					} catch (final IOException e2) {
 						// server socket was closed (presumably by calling close()), stop this thread's execution
 						System.err.printf(
 						        "IOException while waiting for connection for new default broker%n");
@@ -114,14 +114,16 @@ class CIManager implements AutoCloseable {
 	 * @return the ConnectionInfo for that Topic
 	 */
 	public ConnectionInfo getConnectionInfoForTopic(String topicName) {
-		LG.sout("Getting CI for topic: %s", topicName);
-		ConnectionInfo address = map.get(topicName);
-		LG.sout("%s", address);
+		LG.sout("getConnectionInfoForTopic(%s)", topicName);
+		LG.in();
+		final ConnectionInfo address = map.get(topicName);
+		LG.sout("address=%s", address);
 
 		if (address != null)
 			return address;
 
 		updateCIForTopic(topicName);
+		LG.out();
 		return map.get(topicName);
 	}
 
@@ -133,7 +135,10 @@ class CIManager implements AutoCloseable {
 	 * @param topicName the Topic for which to invalidate the ConnectionInfo
 	 */
 	public void invalidate(String topicName) {
+		LG.sout("invalidate(%s)", topicName);
+		LG.in();
 		map.remove(topicName);
+		LG.out();
 	}
 
 	@Override
@@ -142,7 +147,8 @@ class CIManager implements AutoCloseable {
 	}
 
 	private synchronized void updateCIForTopic(String topicName) {
-		LG.sout("Updating CI for topic: %s", topicName);
+		LG.sout("updateCIForTopic(%s)", topicName);
+		LG.in();
 		boolean ipForTopicBrokerException;
 		do {
 			ipForTopicBrokerException = false;
@@ -150,6 +156,8 @@ class CIManager implements AutoCloseable {
 			try (Socket socket = getSocketToDefaultBroker();
 			        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
 
+				// TODO: replace with BROKER_DISCOVERY_REQUEST
+				// TODO: separate INITIALISE_CONSUMER and INITIALISE_PUBLISHER in Broker
 				oos.writeObject(new Message(PUBLISHER_DISCOVERY_REQUEST, topicName));
 				oos.flush();
 
@@ -157,15 +165,17 @@ class CIManager implements AutoCloseable {
 					ConnectionInfo actualBrokerCIForTopic;
 					try {
 						actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
-					} catch (ClassNotFoundException e) {
+					} catch (final ClassNotFoundException e) {
 						e.printStackTrace();
 						return;
 					}
 
+					LG.sout("actualBrokerCIForTopic=%s", actualBrokerCIForTopic);
+
 					map.put(topicName, actualBrokerCIForTopic);
 				}
 
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				ipForTopicBrokerException = true;
 
 				System.err
@@ -176,12 +186,13 @@ class CIManager implements AutoCloseable {
 				try {
 					// wait until notified by server thread that the default broker has been changed
 					wait();
-				} catch (InterruptedException e1) {
+				} catch (final InterruptedException e1) {
 					System.err
 					        .printf("Interrupted after IOException while getting ConnectionInfo for Topic from default broker%n");
 				}
 			}
 		} while (ipForTopicBrokerException);
+		LG.out();
 	}
 
 	private Socket getSocketToDefaultBroker() throws IOException {
