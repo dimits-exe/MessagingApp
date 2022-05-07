@@ -1,15 +1,11 @@
 package eventDeliverySystem;
 
 import java.io.Serializable;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.EmptyStackException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Stack;
 
 /**
@@ -18,9 +14,8 @@ import java.util.Stack;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-class Topic {
+class Topic extends AbstractTopic {
 
-	// used to transmit the request for all posts via socket messages
 	private static final int FETCH_ALL_POSTS = -1;
 
 	/**
@@ -31,6 +26,7 @@ class Topic {
 	 * @author Dimitris Tsirmpas
 	 */
 	static class TopicToken implements Serializable {
+
 		private static final long serialVersionUID = 1L;
 
 		private final String topicName;
@@ -38,13 +34,7 @@ class Topic {
 
 		private TopicToken(Topic topic) {
 			this.topicName = topic.getName();
-			long tempId;
-			try {
-				tempId = topic.postStack.peek().getPostInfo().getId();
-			} catch (EmptyStackException e) {
-				tempId = Topic.FETCH_ALL_POSTS;
-			}
-			this.lastId = tempId;
+			this.lastId = topic.getLastPostId();
 		}
 
 		/**
@@ -71,14 +61,11 @@ class Topic {
 	 * broker.
 	 *
 	 * @return the update token
-	 *
-	 * @see TopicToken
 	 */
 	public TopicToken getToken() {
 		return new TopicToken(this);
 	}
 
-	private final String name;
 	private final Stack<Post> postStack;
 
 	/**
@@ -87,7 +74,7 @@ class Topic {
 	 * @param name the Topic's unique name
 	 */
 	public Topic(String name) {
-		this.name = name;
+		super(name);
 		this.postStack = new Stack<>();
 	}
 
@@ -97,27 +84,44 @@ class Topic {
 	 * @param name  the Topic's unique name
 	 * @param posts the Posts to add to the Topic
 	 */
-	public Topic(String name, List<Post> posts) {
+	public Topic(String name, Collection<Post> posts) {
 		this(name);
 		post(posts);
 	}
 
 	/**
-	 * Returns this Topic's name.
+	 * Returns the ID of the most recent post in this Topic.
 	 *
-	 * @return the name
+	 * @return the most recent Post's ID or {@link Topic#FETCH_ALL_POSTS} if there
+	 *         are no Posts in this Topic
 	 */
-	public String getName() {
-		return name;
+	public long getLastPostId() {
+		if (postStack.isEmpty())
+			return Topic.FETCH_ALL_POSTS;
+
+		return postStack.peek().getPostInfo().getId();
 	}
 
-	/**
-	 * Adds a Post to this Topic.
-	 *
-	 * @param post the Post
-	 */
-	public void post(Post post) {
-		postStack.push(post);
+	private final List<Packet> currPackets = new LinkedList<>();
+	private PostInfo           currPI;
+
+	@Override
+	public void post(PostInfo postInfo) {
+		if (!currPackets.isEmpty())
+			throw new IllegalStateException("Recieved PostInfo while more Packets remain");
+
+		currPI = postInfo;
+	}
+
+	@Override
+	public void post(Packet packet) {
+		currPackets.add(packet);
+
+		if (packet.isFinal()) {
+			Packet[] data = currPackets.toArray(new Packet[currPackets.size()]);
+			post(Post.fromPackets(data, currPI));
+			currPackets.clear();
+		}
 	}
 
 	/**
@@ -131,16 +135,12 @@ class Topic {
 	}
 
 	/**
-	 * Returns the ID of the most recent Post in this Topic.
+	 * Adds a Post to this Topic.
 	 *
-	 * @return the ID of the most recent Post or {@code -1} if there are no Posts in
-	 *         this Topic
+	 * @param post the Post
 	 */
-	public long getLastPostId() {
-		if (postStack.isEmpty())
-			return -1;
-
-		return postStack.peek().getPostInfo().getId();
+	private void post(Post post) {
+		postStack.push(post);
 	}
 
 	/**
@@ -196,50 +196,17 @@ class Topic {
 		return getPostsSince(Topic.FETCH_ALL_POSTS);
 	}
 
-	/**
-	 * Returns the hash that a Topic with a given name would have. Since a Topic's
-	 * hash is determined solely by its name, this method returns the same result as
-	 * Topic#hashCode(), when given the name of the Topic, and can be used when an
-	 * instance of Topic is not available, but its name is known.
-	 *
-	 * @param topicName the name of the Topic for which to compute the hash
-	 *
-	 * @return a hash code value for this Topic
-	 */
-	public static int hashForTopic(String topicName) {
-		try {
-			MessageDigest a = MessageDigest.getInstance("md5");
-			byte[]        b = a.digest(topicName.getBytes());
-
-			// big brain stuff
-			final int FOUR = 4;
-			int       c    = FOUR;
-			int       d    = b.length / c;
-			byte[]    e    = new byte[c];
-			for (int f = 0; f < e.length; f++)
-				for (int g = 0; g < d; g++)
-					e[f] ^= (b[(d * f) + g]);
-
-			BigInteger h = new BigInteger(e);
-			return h.intValueExact();
-
-		} catch (NoSuchAlgorithmException | ArithmeticException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	@Override
 	public int hashCode() {
-		return Topic.hashForTopic(name);
+		return super.hashCode();
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (!(obj instanceof Topic))
+		if (!super.equals(obj))
 			return false;
-		Topic other = (Topic) obj;
-		return Objects.equals(name, other.name); // same name == same Topic, can't have duplicate names
+		return (obj instanceof Topic);
 	}
 }

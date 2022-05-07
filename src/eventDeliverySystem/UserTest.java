@@ -56,8 +56,8 @@ public class UserTest {
 
 			Topic topic = new Topic("cats");
 			Topic topic2 = new Topic("cats2");
-			user.listenForTopic(topic);
-			user.listenForTopic(topic2);
+			user.listenForTopic("cats");
+			user.listenForTopic("cats2");
 
 			System.out.println("sleep");
 			synchronized (m) {

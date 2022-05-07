@@ -3,6 +3,7 @@ package eventDeliverySystem;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A Thread that writes some Posts to a stream.
@@ -11,9 +12,33 @@ import java.util.List;
  */
 class PushThread extends Thread {
 
-	private final ObjectOutputStream oos;
-	private final List<Post>         posts;
-	private final boolean            keepAlive;
+	/**
+	 * Defines the different Protocol' used to push data.
+	 *
+	 * @author Alex Mandelias
+	 */
+	enum Protocol {
+
+		/** Tell Pull Thread to receive a set amount of data and stop */
+		NORMAL,
+
+		/**
+		 * Tell Pull Thread to always wait to receive data. Subsequent Push Threads to
+		 * the same output stream should use the 'WITHOUT_COUNT' protocol.
+		 */
+		KEEP_ALIVE,
+
+		/**
+		 * Just send the data, don't send the amount of data. Should be used in
+		 * conjunction with 'KEEP_ALIVE', for pushing after the Pull Thread has started.
+		 */
+		WITHOUT_COUNT;
+	}
+
+	private final ObjectOutputStream  oos;
+	private final List<PostInfo>      postInfos;
+	private final Map<Long, Packet[]> packets;
+	private final Protocol            protocol;
 
 	private boolean success, start, end;
 
@@ -21,16 +46,20 @@ class PushThread extends Thread {
 	 * Constructs the Thread that, when run, will write some Posts to a stream.
 	 *
 	 * @param stream    the output stream to which to write the Posts
-	 * @param posts     the Posts to write
-	 * @param keepAlive {@code true} if the PullThread associated with pulling the
-	 *                  data should not terminate after reading the data that this
-	 *                  PushThread pushes, {@code false} otherwise.
+	 * @param postInfos the PostInfo objects to write to the stream
+	 * @param packets   the array of Packets to write for each PostInfo object
+	 * @param protocol  the protocol to use when pushing, which alters the behaviour
+	 *                  of the Pull Thread
+	 *
+	 * @see Protocol
 	 */
-	public PushThread(ObjectOutputStream stream, List<Post> posts, boolean keepAlive) {
-		super("PushThread-" + posts.size() + "-" + keepAlive);
+	public PushThread(ObjectOutputStream stream, List<PostInfo> postInfos,
+	        Map<Long, Packet[]> packets, Protocol protocol) {
+		super("PushThread-" + postInfos.size() + "-" + protocol);
 		oos = stream;
-		this.posts = posts;
-		this.keepAlive = keepAlive;
+		this.postInfos = postInfos;
+		this.packets = packets;
+		this.protocol = protocol;
 		success = start = end = false;
 	}
 
@@ -42,18 +71,25 @@ class PushThread extends Thread {
 
 		try /* (oos) */ {
 
-			final int postCount = keepAlive ? Integer.MAX_VALUE : posts.size();
-			LG.sout("postCount=%d", postCount);
+			LG.sout("protocol=%s, posts.size()=%d", protocol, postInfos.size());
 			LG.in();
-			oos.writeInt(postCount);
 
-			for (Post post : posts) {
-				final PostInfo postInfo = post.getPostInfo();
+			if (protocol != Protocol.WITHOUT_COUNT) {
+				final int postCount;
+				if (protocol == Protocol.KEEP_ALIVE)
+					postCount = Integer.MAX_VALUE;
+				else
+					postCount = postInfos.size();
+
+				oos.writeInt(postCount);
+			}
+
+			for (final PostInfo postInfo : postInfos) {
 				LG.sout("postInfo=%s", postInfo);
 				oos.writeObject(postInfo);
 
-				final Packet[] packets = Packet.fromPost(post);
-				for (Packet packet : packets)
+				final Packet[] packetArray = packets.get(postInfo.getId());
+				for (final Packet packet : packetArray)
 					oos.writeObject(packet);
 			}
 
@@ -61,7 +97,7 @@ class PushThread extends Thread {
 
 			success = true;
 
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.err.printf("IOException in PushThread#run()%n");
 			e.printStackTrace();
 			success = false;

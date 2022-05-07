@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.Topic.TopicToken;
+import eventDeliverySystem.PushThread.Protocol;
 
 /**
  * TODO: fix.
@@ -34,9 +34,9 @@ class Broker implements Runnable {
 	private ServerSocket brokerRequestSocket;
 
 	private final Set<ConnectionInfo>      publisherConnectionInfo;
-	private final Map<String, Set<Socket>> consumerConnectionsPerTopic;
+	private final Map<String, Set<ObjectOutputStream>> consumerOOSPerTopic;
 
-	private final Map<String, Topic> topicsByName;
+	private final Map<String, BrokerTopic> topicsByName;
 
 	private final List<Socket> brokerConnections;
 
@@ -44,7 +44,7 @@ class Broker implements Runnable {
 	public Broker() {
 		// TODO: establish connection with broker
 		this.publisherConnectionInfo = Collections.synchronizedSet(new HashSet<>());
-		this.consumerConnectionsPerTopic = Collections.synchronizedMap(new HashMap<>());
+		this.consumerOOSPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
 	}
@@ -122,7 +122,7 @@ class Broker implements Runnable {
 	 * @return the {@link ConnectionInfo} of the assigned broker
 	 */
 	private ConnectionInfo getAssignedBroker(String topicName) {
-		int brokerIndex = Topic.hashForTopic(topicName) % (brokerConnections.size() + 1);
+		int brokerIndex = AbstractTopic.hashForTopic(topicName) % (brokerConnections.size() + 1);
 
 		// last index (out of range normally) => this broker is responsible for the topic
 		// this rule should work because the default broker is the only broker that processes
@@ -202,7 +202,7 @@ class Broker implements Runnable {
 				LG.sout("Creating thread for message type: %s", message.getType());
 
 				// fuck variables in switch statements
-				Topic  topic;
+				BrokerTopic topic;
 				String topicName;
 				Thread thread = null;
 
@@ -211,23 +211,45 @@ class Broker implements Runnable {
 				case DATA_PACKET_SEND:
 					topicName = (String) message.getValue();
 					LG.sout("Receiving packets for Topic '%s'", topicName);
+					LG.in();
 					topic = getTopic(topicName);
+					// thread = new PullThread(ois, topic);
+
+					// TODO: fix
+					long oldIdOfLast = topic.getLastPostId();
 					thread = new PullThread(ois, topic);
+					thread.run();
+
+					List<Post> newPosts = topic.getPostsSince(oldIdOfLast);
+					LG.sout("newPosts.size()=%d", newPosts.size());
+					for (ObjectOutputStream oos1 : consumerOOSPerTopic.get(topicName)) {
+						Thread pushThread = new PushThread(oos1, newPosts, Protocol.WITHOUT_COUNT);
+						pushThread.start();
+					}
+					thread = null;
+					LG.out();
 					break;
 
 				case INITIALISE_CONSUMER:
-					TopicToken topicToken = (TopicToken) message.getValue();
+					Topic.TopicToken topicToken = (Topic.TopicToken) message.getValue();
 					topicName = topicToken.getName();
 					LG.sout("Registering consumer for Topic '%s'", topicName);
 					LG.in();
-					registerConsumerForTopic(topicName, socket);
+					if (!topicsByName.containsKey(topicName))
+						addTopic(topicName);
+
+					consumerOOSPerTopic.get(topicName).add(oos);
 
 					// send existing topics that the consumer does not have
 					long idOfLast = topicToken.getLastId();
 					LG.sout("idOfLast=%d", idOfLast);
-					List<Post> postsToSend = getTopic(topicName).getPostsSince(idOfLast);
-					LG.sout("postsToSend=%s", postsToSend);
-					thread = new PushThread(oos, postsToSend, true); // keep consumer's thread alive
+					List<PostInfo> piList = new LinkedList<>();
+					Map<Long, Packet[]> packetMap = new HashMap<>();
+					getTopic(topicName).getAllPosts(piList, packetMap);
+
+					LG.sout("piList=%s", piList);
+					LG.sout("packetMap=%s", packetMap);
+					thread = new PushThread(oos, piList, packetMap, Protocol.KEEP_ALIVE);
 					LG.out();
 					break;
 
@@ -244,7 +266,7 @@ class Broker implements Runnable {
 					boolean topicExists = topicsByName.containsKey(topicName);
 					LG.sout("Exists '%s'", topicExists);
 					if (!topicExists)
-						addTopic(new Topic(topicName));
+						addTopic(topicName);
 
 					oos.writeBoolean(!topicExists);
 					oos.flush();
@@ -322,23 +344,19 @@ class Broker implements Runnable {
 	/**
 	 * Adds a new topic to the Broker's <String, Topic> map.
 	 *
-	 * @param topic the topic to be added
+	 * @param topicName the name of the Topic to be added
 	 */
-	private void addTopic(Topic topic) {
-		topicsByName.put(topic.getName(), topic);
-		consumerConnectionsPerTopic.put(topic.getName(), new HashSet<>());
+	private void addTopic(String topicName) {
+		topicsByName.put(topicName, new BrokerTopic(topicName));
+		consumerOOSPerTopic.put(topicName, new HashSet<>());
 	}
 
 	private void addPublisherCI(Socket socket) {
 		publisherConnectionInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
 	}
 
-	private void registerConsumerForTopic(String topicName, Socket socket) {
-		consumerConnectionsPerTopic.get(topicName).add(socket);
-	}
-
-	private Topic getTopic(String topicName) {
-		Topic topic = topicsByName.get(topicName);
+	private BrokerTopic getTopic(String topicName) {
+		BrokerTopic topic = topicsByName.get(topicName);
 		if (topic == null)
 			throw new NoSuchElementException("There is no Topic with name " + topicName);
 		return topic;

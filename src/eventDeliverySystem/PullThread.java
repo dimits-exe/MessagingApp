@@ -2,8 +2,6 @@ package eventDeliverySystem;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * A Thread that reads some Posts from a stream and then posts them to a Topic.
@@ -13,7 +11,7 @@ import java.util.List;
 class PullThread extends Thread {
 
 	private final ObjectInputStream ois;
-	private final Topic             topic;
+	private final AbstractTopic     topic;
 
 	private boolean success, start, end;
 
@@ -24,7 +22,7 @@ class PullThread extends Thread {
 	 * @param stream the input stream from which to read the Posts
 	 * @param topic  the Topic in which the new Posts will be added
 	 */
-	public PullThread(ObjectInputStream stream, Topic topic) {
+	public PullThread(ObjectInputStream stream, AbstractTopic topic) {
 		super("PullThread-" + topic.getName());
 		ois = stream;
 		this.topic = topic;
@@ -54,39 +52,34 @@ class PullThread extends Thread {
 				}
 
 				LG.sout("postInfo=%s", postInfo);
+				topic.post(postInfo);
 
-				final List<Packet> packets = new LinkedList<>();
-				Packet             packet;
+				Packet packet;
 				do {
 					try {
 						packet = (Packet) ois.readObject();
-					} catch (final ClassNotFoundException e) {
+					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
 						return;
 					}
-					packets.add(packet);
+					topic.post(packet);
 				} while (!packet.isFinal());
-
-				final Packet[] packetArray = new Packet[packets.size()];
-				packets.toArray(packetArray);
-				final Post newPost = Post.fromPackets(packetArray, postInfo);
-				LG.sout("newPost=%s", newPost);
-				topic.post(newPost);
 			}
 
 			LG.out();
-			LG.sout("/%s#run()", getName());
 
 			success = true;
 
 		} catch (final IOException e) {
-			System.err.printf("IOException in PullThread#run()%n");
 			e.printStackTrace();
 			success = false;
 		}
 
+		LG.sout("success=%s", success);
+
 		end = true;
 		LG.out();
+		LG.sout("/%s#run()", getName());
 	}
 
 	/**
