@@ -10,6 +10,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Map;
+
+import eventDeliverySystem.PushThread.Protocol;
 
 /**
  * A client-side process which is responsible for creating Topics and pushing
@@ -92,23 +95,27 @@ class Publisher extends ClientNode {
 
 				LG.sout("Actual Broker CI: %s", actualBrokerCI);
 
-				try (Socket socket = new Socket(actualBrokerCI.getAddress(),
-				        actualBrokerCI.getPort())) {
+				try {
+					Socket socket = new Socket(actualBrokerCI.getAddress(),
+					        actualBrokerCI.getPort());
 
 					PushThread pushThread;
-					try (ObjectOutputStream oos = new ObjectOutputStream(
-					        socket.getOutputStream())) {
+					// try  {
+					ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 
-						oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
+					oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
 
-						pushThread = new PushThread(oos, List.of(post), false);
-						pushThread.start();
-						try {
-							pushThread.join();
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
+					PostInfo                postInfo  = post.getPostInfo();
+					List<PostInfo>          postInfos = List.of(postInfo);
+					Map<Long, Packet[]> packets   = Map.of(postInfo.getId(), Packet.fromPost(post));
+					pushThread = new PushThread(oos, postInfos, packets, Protocol.NORMAL);
+					pushThread.start();
+					try {
+						pushThread.join();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
+					// }
 
 					success = pushThread.success();
 
