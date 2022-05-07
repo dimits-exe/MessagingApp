@@ -9,6 +9,7 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,15 +28,14 @@ import java.util.Set;
 class Consumer extends ClientNode {
 
 	private static class TopicData {
-
-		private Topic  topic;
-		private long   pointer;
-		private Socket broker;
+		private final Topic topic;
+		private long        pointer;
+		private Socket      socket;
 
 		public TopicData(Topic topic) {
 			this.topic = topic;
 			pointer = topic.getLastPostId();
-			broker = null;
+			socket = null;
 		}
 	}
 
@@ -43,59 +43,70 @@ class Consumer extends ClientNode {
 
 		private final Map<String, TopicData> tdMap = new HashMap<>();
 
-		public TopicManager(Set<Topic> topics) {
-			for (Topic topic : topics) {
-				add(topic);
-			}
-		}
-
+		/**
+		 * Returns all Posts from a Topic which have not been previously fetched.
+		 *
+		 * @param topicName the name of the Topic
+		 *
+		 * @return a List with all the Posts not yet fetched
+		 *
+		 * @throws NoSuchElementException if no Topic with the given name exists
+		 */
 		public List<Post> fetch(String topicName) {
 			LG.sout("Consumer#fetch(%s)", topicName);
 			LG.in();
 			if (!tdMap.containsKey(topicName))
 				throw new NoSuchElementException("No Topic with name " + topicName + " found");
 
-			TopicData  td = tdMap.get(topicName);
-			List<Post> newPosts;
+			final TopicData td = tdMap.get(topicName);
+			List<Post>      newPosts;
 
-			LG.sout("Pointer: %d", td.pointer);
+			LG.sout("td.pointer=%d", td.pointer);
 			if (td.pointer == -1) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
 				newPosts = td.topic.getAllPosts();
 			else
 				newPosts = td.topic.getPostsSince(td.pointer);
 
 			// update topic pointer if there is at least one new Post
-			int newPostCount = newPosts.size();
-			LG.sout("New Post Count: %d", newPostCount);
-			if (newPostCount > 1) {
-				long lastPostId = newPosts.get(newPostCount - 1).getPostInfo().getId();
-				tdMap.get(topicName).pointer = lastPostId;
+			final int newPostCount = newPosts.size();
+			LG.sout("newPostCount=%d", newPostCount);
+			if (newPostCount > 0) {
+				final long lastPostId = newPosts.get(0).getPostInfo().getId();
+				td.pointer = lastPostId;
 			}
 
 			LG.out();
 			return newPosts;
 		}
 
-		public void addSocket(Topic topic, Socket broker) {
-			String topicName = topic.getName();
+		/**
+		 * Adds a Topic to this Manager and registers its socket from where to fetch.
+		 *
+		 * @param topic  the Topic
+		 * @param socket the socket from where it will fetch
+		 *
+		 * @throws IllegalArgumentException if this Manager already has a socket for a
+		 *                                  Topic with the same name.
+		 */
+		public void addSocket(Topic topic, Socket socket) {
+			add(topic);
+			final TopicData td = tdMap.get(topic.getName());
+			td.socket = socket;
+		}
+
+		private void add(Topic topic) {
+			final String topicName = topic.getName();
 			if (tdMap.containsKey(topicName))
 				throw new IllegalArgumentException(
 				        "Topic with name " + topicName + " already exists");
 
-			add(topic);
-
-			TopicData td = tdMap.get(topic.getName());
-			td.broker = broker;
-		}
-
-		private void add(Topic topic) {
-			tdMap.put(topic.getName(), new TopicData(topic));
+			tdMap.put(topicName, new TopicData(topic));
 		}
 
 		@Override
 		public void close() throws IOException {
-			for (TopicData td : tdMap.values())
-				td.broker.close();
+			for (final TopicData td : tdMap.values())
+				td.socket.close();
 
 			tdMap.clear();
 		}
@@ -156,8 +167,8 @@ class Consumer extends ClientNode {
 	 */
 	private Consumer(InetAddress ip, int port, Set<Topic> topics) throws IOException {
 		super(ip, port);
-		topicManager = new TopicManager(topics);
-		topics.forEach(this::listenForTopic);
+		topicManager = new TopicManager();
+		setTopics(topics);
 	}
 
 	/**
@@ -170,11 +181,19 @@ class Consumer extends ClientNode {
 	 */
 	public void setTopics(Set<Topic> newTopics) throws IOException {
 		topicManager.close();
-		newTopics.forEach(this::listenForTopic);
+
+		for (final Topic topic : newTopics) {
+			final String topicName = topic.getName();
+			listenForTopic(topicName);
+
+			final List<Post> posts = topic.getAllPosts();
+			Collections.reverse(posts);
+			topicManager.tdMap.get(topicName).topic.post(posts);
+		}
 	}
 
 	/**
-	 * Returns all Posts which have not been previously pulled, from a Topic.
+	 * Returns all Posts from a Topic which have not been previously pulled.
 	 *
 	 * @param topicName the name of the Topic
 	 *
@@ -187,20 +206,25 @@ class Consumer extends ClientNode {
 	}
 
 	/**
-	 * Registers a new Topic for this Consumer to automatically pull new Posts from.
+	 * Registers a new Topic for this Consumer to continuously fetch new Posts from.
 	 *
-	 * @param topic the Topic to pull from
+	 * @param topicName the name of the Topic to fetch from
+	 *
+	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
+	 *                                  with the same name
 	 */
-	public void listenForTopic(Topic topic) {
-		String topicName = topic.getName();
-		Socket socket    = null;
+	public void listenForTopic(String topicName) {
+		LG.sout("listenForTopic=%s", topicName);
+		LG.in();
+		final Topic topic  = new Topic(topicName);
+		Socket      socket = null;
 
 		while (true) {
-			ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
+			final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
 			try {
 				socket = new Socket(ci.getAddress(), ci.getPort());
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				// invalidate and ask again for topicName
 				topicCIManager.invalidate(topicName);
 				continue;
@@ -211,16 +235,17 @@ class Consumer extends ClientNode {
 		}
 
 		try {
-			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream()); // socket can't be null
+			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream()); // socket can't be null
 			oos.flush();
-			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
 			oos.writeObject(new Message(INITIALISE_CONSUMER, topic.getToken()));
 
 			new PullThread(ois, topic).start();
 
-		} catch (IOException e1) {
+		} catch (final IOException e1) {
 			throw new UncheckedIOException(e1); // 'socket' closes at closeImpl()
 		}
+		LG.out();
 	}
 }
