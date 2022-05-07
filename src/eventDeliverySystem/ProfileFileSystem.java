@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -52,7 +53,8 @@ class ProfileFileSystem {
 	 */
 	public Collection<String> getProfileIDs() {
 		File[] profileDirectories = profilesRootDirectory.toFile().listFiles(File::isDirectory);
-		return new HashSet<>(Stream.of(profileDirectories).map(td -> td.getName()).toList());
+		Stream<String> nameStream = Stream.of(profileDirectories).map(td -> td.getName());
+		return new HashSet<>(nameStream.collect(Collectors.toList()));
 	}
 
 	/**
