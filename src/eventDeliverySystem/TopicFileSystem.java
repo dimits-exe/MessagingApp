@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -48,7 +49,8 @@ public class TopicFileSystem {
 	 */
 	public Collection<String> getTopicNames() {
 		File[] topicDirectories = topicsRootDirectory.toFile().listFiles(File::isDirectory);
-		return new HashSet<>(Stream.of(topicDirectories).map(td -> td.getName()).toList());
+		Stream<String> nameStream = Stream.of(topicDirectories).map(td -> td.getName());
+		return new HashSet<>(nameStream.collect(Collectors.toList()));
 	}
 
 	/**
