@@ -1,14 +1,19 @@
-package eventDeliverySystem;
+package eventDeliverySystem.thread;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+
+import eventDeliverySystem.AbstractTopic;
+import eventDeliverySystem.LG;
+import eventDeliverySystem.Packet;
+import eventDeliverySystem.PostInfo;
 
 /**
  * A Thread that reads some Posts from a stream and then posts them to a Topic.
  *
  * @author Alex Mandelias
  */
-class PullThread extends Thread {
+public class PullThread extends Thread {
 
 	private final ObjectInputStream ois;
 	private final AbstractTopic     topic;

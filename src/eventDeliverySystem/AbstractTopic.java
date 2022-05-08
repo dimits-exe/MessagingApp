@@ -12,7 +12,7 @@ import java.util.Set;
  *
  * @author Alex Mandelias
  */
-abstract class AbstractTopic {
+public abstract class AbstractTopic {
 
 	private final String          name;
 	private final Set<Subscriber> subscribers;

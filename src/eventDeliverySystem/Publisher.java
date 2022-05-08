@@ -12,7 +12,8 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
-import eventDeliverySystem.PushThread.Protocol;
+import eventDeliverySystem.thread.PushThread;
+import eventDeliverySystem.thread.PushThread.Protocol;
 
 /**
  * A client-side process which is responsible for creating Topics and pushing

@@ -16,7 +16,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-import eventDeliverySystem.PushThread.Protocol;
+import eventDeliverySystem.thread.BrokerPushThread;
+import eventDeliverySystem.thread.PullThread;
+import eventDeliverySystem.thread.PushThread;
+import eventDeliverySystem.thread.PushThread.Protocol;
 
 /**
  * A remote component that forms the backbone of the EventDeliverySystem.

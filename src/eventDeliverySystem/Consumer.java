@@ -17,6 +17,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import eventDeliverySystem.User.UserSub;
+import eventDeliverySystem.thread.PullThread;
 
 /**
  * A client-side process which is responsible for listening for a set of Topics
@@ -27,7 +28,7 @@ import eventDeliverySystem.User.UserSub;
  *
  * @see Broker
  */
-class Consumer extends ClientNode implements Subscriber {
+public class Consumer extends ClientNode implements Subscriber {
 	private final UserSub      usersub;
 	private final TopicManager topicManager;
 
@@ -160,7 +161,7 @@ class Consumer extends ClientNode implements Subscriber {
 		try {
 			if(socket == null)
 				throw new RuntimeException("No connection could be established with the Broker");
-			
+
 			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream()); // socket can't be null
 			oos.flush();
 			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
@@ -187,7 +188,7 @@ class Consumer extends ClientNode implements Subscriber {
 		if (packet.isFinal())
 			usersub.notify(topicName);
 	}
-	
+
 	private static class TopicData {
 		private final Topic topic;
 		private long        pointer;

@@ -1,23 +1,27 @@
-package eventDeliverySystem;
+package eventDeliverySystem.thread;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Map;
 
+import eventDeliverySystem.LG;
+import eventDeliverySystem.Packet;
+import eventDeliverySystem.PostInfo;
+
 /**
  * A Thread that writes some Posts to a stream.
  *
  * @author Alex Mandelias
  */
-class PushThread extends Thread {
+public class PushThread extends Thread {
 
 	/**
 	 * Defines the different Protocol' used to push data.
 	 *
 	 * @author Alex Mandelias
 	 */
-	enum Protocol {
+	public enum Protocol {
 
 		/** Tell Pull Thread to receive a set amount of data and stop */
 		NORMAL,
