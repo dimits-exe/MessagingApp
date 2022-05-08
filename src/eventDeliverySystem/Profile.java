@@ -19,6 +19,7 @@ class Profile {
 	private final String             name;
 	private final long               id;
 	private final Map<String, Topic> topics;
+	private final Map<String, Integer> unreadTopics;
 
 	/**
 	 * Creates a new, empty, Profile with the specified name and a random unique ID.
@@ -47,6 +48,7 @@ class Profile {
 		this.name = name;
 		this.id = id;
 		this.topics = topics;
+		unreadTopics = new HashMap<>();
 	}
 
 	/**
@@ -108,6 +110,7 @@ class Profile {
 			throw new IllegalArgumentException("Topic with name " + topicName + " already exists");
 
 		topics.put(topicName, topic);
+		unreadTopics.put(topicName, 0);
 	}
 
 	/**
@@ -136,6 +139,14 @@ class Profile {
 	public void removeTopic(String topicName) {
 		if (topics.remove(topicName) == null)
 			throw new NoSuchElementException("No Topic with name " + topicName + " found");
+	}
+
+	public void markUnread(String topicName) {
+		unreadTopics.put(topicName, unreadTopics.get(topicName) + 1);
+	}
+
+	public void clearUnread(String topicName) {
+		unreadTopics.put(topicName, 0);
 	}
 
 	@Override
