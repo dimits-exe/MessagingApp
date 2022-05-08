@@ -35,46 +35,46 @@ class Broker implements Runnable, AutoCloseable{
 	private final Map<String, Set<ObjectOutputStream>> consumerOOSPerTopic;
 	private final Map<String, BrokerTopic> 	topicsByName;
 	private final List<Socket> 				brokerConnections;
-	
+
 	private final ServerSocket 				clientRequestSocket;
 	private final ServerSocket 				brokerRequestSocket;
-	
+
 	@SuppressWarnings("unused")
 	private ConnectionInfo currentLeader;
-	
-	
+
+
 	/**
 	 * Starts a new broker as a process on the local machine.
 	 * If args are provided the broker will attempt to connect to the leader broker.
 	 * If not, the broker is considered the leader broker.
 	 * When starting the server subsystem the first broker MUST be the leader.
-	 * 
+	 *
 	 * @param args empty if the broker is the leader, the IP address and port of the leader otherwise.
-	 * @throws UnknownHostException if the IP address isn't valid 
+	 * @throws UnknownHostException if the IP address isn't valid
 	 */
 	public static void main(String[] args) throws UnknownHostException {
 		LG.sout("Broker#main start");
 		LG.args(args);
-		
+
 		// argument processing
 		String ip = "";
 		int port = -1;
 		boolean isLeader = true;
-		
+
 		if(args.length == 2) {
 			ip = args[0];
 			port = Integer.parseInt(args[1]);
 			isLeader = false;
 		}
-		
+
 		// broker thread naming
 		String brokerId;
 		if(isLeader)
 			brokerId = "Main";
 		else
 			brokerId = Integer.toString(ThreadLocalRandom.current().nextInt(1,1000));
-		
-		
+
+
 		// broker execution
 		try(Broker broker = isLeader? new Broker() : new Broker(ip, port);) { //java 8 forces me to do this
 			Thread thread = new Thread(broker, "Broker-" + brokerId);
@@ -86,7 +86,7 @@ class Broker implements Runnable, AutoCloseable{
 		}
 	}
 
-	
+
 	/**
 	 * Create a new leader broker. This is necessarily the first step to initialize
 	 * the server network.
@@ -96,24 +96,24 @@ class Broker implements Runnable, AutoCloseable{
 		this.consumerOOSPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
-		
+
 		try {
 			clientRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
 			brokerRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
 		} catch (IOException e) {
 			throw new UncheckedIOException("Could not opne server socket :", e);
 		}
-		
+
 		currentLeader = new ConnectionInfo(brokerRequestSocket);
-		
+
 		LG.sout("Broker connected at:");
 		LG.socket("Client", clientRequestSocket);
 		LG.socket("Broker", brokerRequestSocket);
 	}
-	
+
 	@Override
 	public void run() {
-		
+
 		// Start handling client requests
 		Runnable clientRequestThread = () -> {
 			LG.sout("Start: clientRequestThread");
@@ -130,7 +130,7 @@ class Broker implements Runnable, AutoCloseable{
 			}
 		};
 
-		
+
 		Runnable brokerRequestThread = new Runnable() {
 
 			@SuppressWarnings("resource")
@@ -154,8 +154,8 @@ class Broker implements Runnable, AutoCloseable{
 
 		LG.sout("Broker#run end");
 	}
-	
-	
+
+
 	/**
 	 * Create a non-leader broker and connect it to the server network.
 	 * @param leaderIP the IP of the leader broker
@@ -174,7 +174,7 @@ class Broker implements Runnable, AutoCloseable{
 		}
 
 	}
-	
+
 	/**
 	 * Closes all active connections to the broker.
 	 */
@@ -184,18 +184,18 @@ class Broker implements Runnable, AutoCloseable{
 			for(Set<ObjectOutputStream> consumers : consumerOOSPerTopic.values())
 				for(ObjectOutputStream consumer : consumers)
 					consumer.close();
-			
+
 			for(Socket broker : brokerConnections)
 				broker.close();
-			
+
 		} catch(IOException ioe) {
 			ioe.printStackTrace();
-		}	
+		}
 	}
-	
-	
+
+
 	// ==================== PRIVATE METHODS ====================
-	
+
 	/**
 	 * Adds a new topic to the Broker's <String, Topic> map.
 	 *
@@ -275,25 +275,13 @@ class Broker implements Runnable, AutoCloseable{
 
 				LG.in();
 				switch (message.getType()) {
-				case DATA_PACKET_SEND:			
+				case DATA_PACKET_SEND:
 					topicName = (String) message.getValue();
 					LG.sout("Receiving packets for Topic '%s'", topicName);
 					LG.in();
 					topic = getTopic(topicName);
 					new PullThread(ois, topic).start();
-					/*
-					thread = new PullThread(ois, topic);
-					thread.run();
-					
-					//TODO: send packets to all consumers
-					
-					LG.sout("newPosts.size()=%d", newPosts.size());
-					for (ObjectOutputStream oos1 : consumerOOSPerTopic.get(topicName)) {
-						Thread pushThread = new PushThread(oos1, newPosts, Protocol.WITHOUT_COUNT);
-						pushThread.start();
-					}
-					thread = null;
-					*/
+
 					LG.out();
 					break;
 
@@ -306,13 +294,14 @@ class Broker implements Runnable, AutoCloseable{
 						addTopic(topicName);
 
 					consumerOOSPerTopic.get(topicName).add(oos);
+					new BrokerPushThread(topicsByName.get(topicName), oos).start();
 
 					// send existing topics that the consumer does not have
 					long idOfLast = topicToken.getLastId();
 					LG.sout("idOfLast=%d", idOfLast);
 					List<PostInfo> piList = new LinkedList<>();
 					Map<Long, Packet[]> packetMap = new HashMap<>();
-					getTopic(topicName).getAllPosts(piList, packetMap);
+					getTopic(topicName).getPostsSince(idOfLast, piList, packetMap);
 
 					LG.sout("piList=%s", piList);
 					LG.sout("packetMap=%s", packetMap);
