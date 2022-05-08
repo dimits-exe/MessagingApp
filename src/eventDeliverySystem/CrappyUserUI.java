@@ -24,6 +24,9 @@ class CrappyUserUI extends JFrame {
 		ui.setVisible(true);
 	}
 
+	// java CrappyUserUI -c 'onoma'
+	// java CrappyUserUI -l 'id'
+
 	private final User user;
 
 	// TODO: remove

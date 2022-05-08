@@ -8,9 +8,8 @@ import java.util.ListIterator;
 import java.util.Map;
 
 /**
- * A Topic that stores data as required by Brokers.
- * <p>
- * TODO: add more details maybe
+ * An extension of the Abstract Topic that stores data as required by Brokers.
+ * The Posts are stored disassembled as PostInfo and Packet objects.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
@@ -62,12 +61,14 @@ public class BrokerTopic extends AbstractTopic {
 	}
 
 	/**
-	 * TODO alex pls grapse ti ginetai edo, den exo idea ti exeis kanei
-	 * <p>
-	 * <b>FIRST POSTINFO IS EARLIER, LAST IS LATEST</b>
+	 * Fills the List and the Map with all of the PostInfo and Packet objects in
+	 * this Topic. The first PostInfo object in the list is the earlier and the last
+	 * is the latest.
 	 *
-	 * @param emptyPostInfoList
-	 * @param emptyPacketsPerPostInfoMap
+	 * @param emptyPostInfoList          the empty list where the PostInfo objects
+	 *                                   will be added
+	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every
+	 *                                   PostInfo object will be added
 	 */
 	public void getAllPosts(List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
@@ -77,13 +78,16 @@ public class BrokerTopic extends AbstractTopic {
 	}
 
 	/**
-	 * TODO alex pls grapse ti ginetai edo, den exo idea ti exeis kanei
-	 * <p>
-	 * <b>FIRST POSTINFO IS EARLIER, LAST IS LATEST</b>
+	 * Fills the List and the Map with all of the PostInfo and Packet objects in
+	 * this Topic starting from a certain PostInfo object. The first PostInfo object
+	 * in the list is the earlier and the last is the latest.
 	 *
-	 * @param postId
-	 * @param emptyPostInfoList
-	 * @param emptyPacketsPerPostInfoMap
+	 * @param postId                     the id of the PostInfo after which to
+	 *                                   return the object
+	 * @param emptyPostInfoList          the empty list where the PostInfo objects
+	 *                                   will be added
+	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every
+	 *                                   PostInfo object will be added
 	 */
 	public void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
@@ -94,10 +98,10 @@ public class BrokerTopic extends AbstractTopic {
 		}
 
 		int index = indexPerPostInfoId.get(postId);
-		for (ListIterator<PostInfo> piiter = postInfoList.listIterator(index); piiter
-		        .hasNext();) {
+		ListIterator<PostInfo> postInfoIter;
+		for (postInfoIter = postInfoList.listIterator(index); postInfoIter.hasNext();) {
 
-			PostInfo curr = piiter.next();
+			PostInfo curr = postInfoIter.next();
 
 			emptyPostInfoList.add(curr);
 

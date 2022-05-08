@@ -20,8 +20,7 @@ class Topic extends AbstractTopic {
 	static final long FETCH_ALL_POSTS = -1L;
 
 	/**
-	 * Get an update token that can be used to smartly update the topic by the
-	 * broker.
+	 * Returns a token that can be used to smartly update the topic by the Broker.
 	 *
 	 * @return the update token
 	 */
@@ -106,11 +105,7 @@ class Topic extends AbstractTopic {
 		postStack.push(post);
 	}
 
-	/**
-	 * TODO
-	 * <p>
-	 * <b>retains latest</b>
-	 */
+	/** Clears this Topic by removing all but the latest Posts */
 	public void clear() {
 		Post first = postStack.pop();
 		postStack.clear();
@@ -183,7 +178,7 @@ class Topic extends AbstractTopic {
 			return false;
 		return (obj instanceof Topic);
 	}
-	
+
 	/**
 	 * Encapsulates a Token that uniquely identifies a Post in a Topic and is used
 	 * to transfer only the necessary information between the server and the client.

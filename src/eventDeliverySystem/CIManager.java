@@ -183,7 +183,7 @@ class CIManager implements AutoCloseable {
 					// wait until notified by server thread that the default broker has been changed
 					synchronized(this){
 						wait();
-					}					
+					}
 				} catch (final InterruptedException e1) {
 					System.err.printf(
 							"Interrupted after IOException while getting ConnectionInfo for Topic from default broker%n");

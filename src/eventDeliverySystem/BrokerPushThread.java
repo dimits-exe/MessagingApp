@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 /**
  * A thread that receives packets for a certain Topic
  * and streams them to a Consumer.
- * 
+ *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  *
@@ -29,10 +29,15 @@ class BrokerPushThread extends Thread implements Subscriber {
 	private final ObjectOutputStream oos;
 
 	/**
-	 * @param topic
-	 * @param stream
+	 * Constructs the Thread that, when run, will write some Posts to a stream. This
+	 * Thread is subscribed to a Topic and is notified each time there is new data
+	 * in the Topic.
+	 *
+	 * @param topic  the Topic to subscribe to
+	 * @param stream the output stream to which to write the data
 	 */
 	public BrokerPushThread(AbstractTopic topic, ObjectOutputStream stream) {
+		super("BrokerPushThread-" + topic.getName());
 		topic.subscribe(this);
 		queue = new ConcurrentLinkedDeque<>();
 		currentPostId = -1;

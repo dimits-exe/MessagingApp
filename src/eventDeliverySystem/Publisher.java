@@ -78,7 +78,7 @@ class Publisher extends ClientNode {
 	 */
 	public void push(Post post, String topicName) {
 
-		// TODO: add queue instead of making many separate Runnable jobs to ensure
+		// MAYBE-TODO: add queue instead of making many separate Runnable jobs to ensure
 		// 1 - non-blocking push
 		// 2 - synchronisation
 
@@ -100,7 +100,6 @@ class Publisher extends ClientNode {
 					        actualBrokerCI.getPort());
 
 					PushThread pushThread;
-					// try  {
 					ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 
 					oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
@@ -115,7 +114,6 @@ class Publisher extends ClientNode {
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-					// }
 
 					success = pushThread.success();
 

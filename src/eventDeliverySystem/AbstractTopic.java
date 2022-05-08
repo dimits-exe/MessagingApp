@@ -64,8 +64,8 @@ abstract class AbstractTopic {
 	 */
 	public final void post(PostInfo postInfo) {
 		postHook(postInfo);
-			for (Subscriber sub : subscribers)
-				sub.notify(postInfo, name);
+		for (Subscriber sub : subscribers)
+			sub.notify(postInfo, name);
 	}
 
 	/**
@@ -79,8 +79,22 @@ abstract class AbstractTopic {
 			sub.notify(packet, name);
 	}
 
+	/**
+	 * Allows each subclass to specify how the template method is implemented.
+	 *
+	 * @param postInfo the PostInfo
+	 *
+	 * @see AbstractTopic#post(PostInfo)
+	 */
 	abstract protected void postHook(PostInfo postInfo);
 
+	/**
+	 * Allows each subclass to specify how the template method is implemented.
+	 *
+	 * @param packet the Packet
+	 *
+	 * @see AbstractTopic#post(Packet)
+	 */
 	abstract protected void postHook(Packet packet);
 
 	/**

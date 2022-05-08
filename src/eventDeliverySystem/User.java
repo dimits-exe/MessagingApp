@@ -113,30 +113,6 @@ public class User {
 		return user;
 	}
 
-	// TODO: remove
-	private CrappyUserUI.UserUISub uuisub;
-
-	// TODO: remove
-	public void setUserUISub(CrappyUserUI.UserUISub uuisub) {
-		this.uuisub = uuisub;
-	}
-
-	/**
-	 *
-	 * @author user
-	 *
-	 */
-	class UserSub {
-		public void notify(String topicName) {
-			User.this.currentProfile.markUnread(topicName);
-			LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
-
-			// TODO: remove
-			if (uuisub != null)
-				uuisub.notify(topicName);
-		}
-	}
-
 	private User(String serverIP, int port, Path profilesRootDirectory)
 	        throws IOException {
 		this.profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
@@ -262,6 +238,41 @@ public class User {
 		profileFileSystem.createTopic(topicName);
 	}
 
+	// temporary stuff because we don't have android
+
+	// TODO: remove
+	private CrappyUserUI.UserUISub uuisub;
+
+	// TODO: remove
+	public void setUserUISub(CrappyUserUI.UserUISub uuisub) {
+		this.uuisub = uuisub;
+	}
+
+	// end of temporary stuff because we don't have android
+
+	/**
+	 * An object that can be used to notify this User about an event for a Topic.
+	 *
+	 * @author Alex Mandelias
+	 */
+	class UserSub {
+
+		private UserSub() {}
+
+		/**
+		 * Notifies this User about an event for a Topic.
+		 *
+		 * @param topicName the name of the Topic
+		 */
+		public void notify(String topicName) {
+			User.this.currentProfile.markUnread(topicName);
+			LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
+
+			// TODO: remove
+			if (uuisub != null)
+				uuisub.notify(topicName);
+		}
+	}
 
 	// ==================== LOCAL VERSIONS OF METHODS ====================
 
@@ -394,4 +405,5 @@ public class User {
 		currentProfile.addTopic(topic);
 		profileFileSystem.createTopic(topic.getName());
 	}
+
 }

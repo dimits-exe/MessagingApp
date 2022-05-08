@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +25,8 @@ import eventDeliverySystem.PushThread.Protocol;
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
+ *
+ * @see ClientNode
  */
 public class Broker implements Runnable, AutoCloseable{
 
@@ -39,10 +40,6 @@ public class Broker implements Runnable, AutoCloseable{
 	private final ServerSocket 				clientRequestSocket;
 	private final ServerSocket 				brokerRequestSocket;
 
-	@SuppressWarnings("unused")
-	private ConnectionInfo currentLeader;
-
-
 	/**
 	 * Starts a new broker as a process on the local machine.
 	 * If args are provided the broker will attempt to connect to the leader broker.
@@ -50,9 +47,8 @@ public class Broker implements Runnable, AutoCloseable{
 	 * When starting the server subsystem the first broker MUST be the leader.
 	 *
 	 * @param args empty if the broker is the leader, the IP address and port of the leader otherwise.
-	 * @throws UnknownHostException if the IP address isn't valid
 	 */
-	public static void main(String[] args) throws UnknownHostException {
+	public static void main(String[] args) {
 		LG.sout("Broker#main start");
 		LG.args(args);
 
@@ -106,13 +102,11 @@ public class Broker implements Runnable, AutoCloseable{
 			throw new UncheckedIOException("Could not opne server socket :", e);
 		}
 
-		currentLeader = new ConnectionInfo(brokerRequestSocket);
-
 		LG.sout("Broker connected at:");
 		LG.socket("Client", clientRequestSocket);
 		LG.socket("Broker", brokerRequestSocket);
 	}
-	
+
 	/**
 	 * Begins listening for and new requests by clients and connection requests
 	 * from other brokers.
@@ -174,7 +168,6 @@ public class Broker implements Runnable, AutoCloseable{
 		try {
 			Socket leaderConnection = new Socket(leaderIP, leaderPort);
 			brokerConnections.add(leaderConnection);
-			currentLeader = new ConnectionInfo(leaderConnection);
 		} catch (IOException ioe) {
 			throw new UncheckedIOException("Couldn't connect to leader broker ", ioe);
 		}
@@ -226,11 +219,11 @@ public class Broker implements Runnable, AutoCloseable{
 
 
 	/**
-	 * Return the broker that's responsible for the requested topic.
+	 * Return the broker that's responsible for the requested Topic.
 	 *
 	 * @param topicName the name of the Topic
 	 *
-	 * @return the {@link ConnectionInfo} of the assigned broker
+	 * @return the {@link ConnectionInfo} for the assigned broker
 	 */
 	private ConnectionInfo getAssignedBroker(String topicName) {
 		int brokerIndex = AbstractTopic.hashForTopic(topicName) % (brokerConnections.size() + 1);
@@ -252,11 +245,11 @@ public class Broker implements Runnable, AutoCloseable{
 
 
 	// ========== THREADS ==========
-	
+
 	/**
-	 * A thread which continuously reads new client requests and 
+	 * A thread which continuously reads new client requests and
 	 * assigns worker threads to fulfill them when necessary.
-	 * 
+	 *
 	 * @author Alex Mandelias
 	 * @author Dimitris Tsirmpas
 	 *

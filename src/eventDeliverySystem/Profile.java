@@ -140,16 +140,18 @@ public class Profile {
 	}
 
 	/**
-	 * Mark a Topic as unread.
-	 * @param topicName the topic's name
+	 * Marks a Topic as unread.
+	 *
+	 * @param topicName the name of the Topic
 	 */
 	public void markUnread(String topicName) {
 		unreadTopics.put(topicName, unreadTopics.get(topicName) + 1);
 	}
 
 	/**
-	 * Mark all posts in a Topic as read.
-	 * @param topicName the topic's name
+	 * Marks all posts in a Topic as read.
+	 *
+	 * @param topicName the name of the Topic
 	 */
 	public void clearUnread(String topicName) {
 		unreadTopics.put(topicName, 0);
