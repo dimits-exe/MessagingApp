@@ -166,11 +166,7 @@ class ProfileFileSystem {
 	private static byte[] read(File file) throws IOException {
 		try (FileInputStream fis = new FileInputStream(file)) {
 			return fis.readAllBytes();
-		} catch (FileNotFoundException e) {
-			System.err.printf("File %s could not be found", file);
 		}
-
-		return null;
 	}
 
 	private static void write(File file, byte[] data) throws IOException {

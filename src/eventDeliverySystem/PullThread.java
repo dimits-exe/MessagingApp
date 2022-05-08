@@ -35,7 +35,7 @@ class PullThread extends Thread {
 		LG.in();
 		start = true;
 
-		try /* (ois) */ {
+		try {
 
 			final int postCount = ois.readInt();
 			LG.sout("postCount=%d", postCount);

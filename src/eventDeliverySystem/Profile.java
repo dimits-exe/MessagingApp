@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-class Profile {
+public class Profile {
 
 	private final String             name;
 	private final long               id;
@@ -81,6 +81,7 @@ class Profile {
 	}
 
 	// TODO: maybe not throw IllegalArgumentException and return boolean?
+	// no, this isn't C lmao
 
 	/**
 	 * Adds a new, unique, Topic to this Profile.
@@ -140,11 +141,19 @@ class Profile {
 		if (topics.remove(topicName) == null)
 			throw new NoSuchElementException("No Topic with name " + topicName + " found");
 	}
-
+	
+	/**
+	 * Mark a Topic as unread.
+	 * @param topicName the topic's name
+	 */
 	public void markUnread(String topicName) {
 		unreadTopics.put(topicName, unreadTopics.get(topicName) + 1);
 	}
-
+	
+	/**
+	 * Mark all posts in a Topic as read.
+	 * @param topicName the topic's name
+	 */
 	public void clearUnread(String topicName) {
 		unreadTopics.put(topicName, 0);
 	}

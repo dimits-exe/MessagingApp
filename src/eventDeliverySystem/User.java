@@ -120,7 +120,12 @@ public class User {
 	public void setUserUISub(CrappyUserUI.UserUISub uuisub) {
 		this.uuisub = uuisub;
 	}
-
+	
+	/**
+	 * 
+	 * @author user
+	 *
+	 */
 	class UserSub {
 		public void notify(String topicName) {
 			User.this.currentProfile.markUnread(topicName);

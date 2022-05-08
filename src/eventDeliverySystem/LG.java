@@ -4,7 +4,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * TODO
+ * A logger that prints output and debug messages to an output stream.
  *
  *
  * @author Alex Mandelias

@@ -101,7 +101,7 @@ class Post {
 	 * @param data     the contents of this post
 	 * @param postInfo the PostInfo object associated with this Post
 	 */
-	Post(byte[] data, PostInfo postInfo) {
+	public Post(byte[] data, PostInfo postInfo) {
 		this.data = data;
 		this.postInfo = postInfo;
 	}

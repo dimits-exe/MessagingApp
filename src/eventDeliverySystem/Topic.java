@@ -20,44 +20,6 @@ class Topic extends AbstractTopic {
 	static final long FETCH_ALL_POSTS = -1L;
 
 	/**
-	 * Encapsulates a Token that uniquely identifies a Post in a Topic and is used
-	 * to transfer only the necessary information between the server and the client.
-	 *
-	 * @author Alex Mandelias
-	 * @author Dimitris Tsirmpas
-	 */
-	static class TopicToken implements Serializable {
-
-		private static final long serialVersionUID = 1L;
-
-		private final String topicName;
-		private final long   lastId;
-
-		private TopicToken(Topic topic) {
-			this.topicName = topic.getName();
-			this.lastId = topic.getLastPostId();
-		}
-
-		/**
-		 * Returns this TopicToken's topicName.
-		 *
-		 * @return the topicName
-		 */
-		public String getName() {
-			return topicName;
-		}
-
-		/**
-		 * Returns this TopicToken's lastId.
-		 *
-		 * @return the lastId
-		 */
-		public long getLastId() {
-			return lastId;
-		}
-	}
-
-	/**
 	 * Get an update token that can be used to smartly update the topic by the
 	 * broker.
 	 *
@@ -220,5 +182,43 @@ class Topic extends AbstractTopic {
 		if (!super.equals(obj))
 			return false;
 		return (obj instanceof Topic);
+	}
+	
+	/**
+	 * Encapsulates a Token that uniquely identifies a Post in a Topic and is used
+	 * to transfer only the necessary information between the server and the client.
+	 *
+	 * @author Alex Mandelias
+	 * @author Dimitris Tsirmpas
+	 */
+	static class TopicToken implements Serializable {
+
+		private static final long serialVersionUID = 1L;
+
+		private final String topicName;
+		private final long   lastId;
+
+		private TopicToken(Topic topic) {
+			this.topicName = topic.getName();
+			this.lastId = topic.getLastPostId();
+		}
+
+		/**
+		 * Returns this TopicToken's topicName.
+		 *
+		 * @return the topicName
+		 */
+		public String getName() {
+			return topicName;
+		}
+
+		/**
+		 * Returns this TopicToken's lastId.
+		 *
+		 * @return the lastId
+		 */
+		public long getLastId() {
+			return lastId;
+		}
 	}
 }

@@ -28,95 +28,6 @@ import eventDeliverySystem.User.UserSub;
  * @see Broker
  */
 class Consumer extends ClientNode implements Subscriber {
-
-	private static class TopicData {
-		private final Topic topic;
-		private long        pointer;
-		private Socket      socket;
-
-		public TopicData(Topic topic) {
-			this.topic = topic;
-			pointer = topic.getLastPostId();
-			socket = null;
-		}
-	}
-
-	private static class TopicManager implements AutoCloseable {
-
-		private final Map<String, TopicData> tdMap = new HashMap<>();
-
-		/**
-		 * Returns all Posts from a Topic which have not been previously fetched.
-		 *
-		 * @param topicName the name of the Topic
-		 *
-		 * @return a List with all the Posts not yet fetched, sorted from latest to
-		 *         earliest
-		 *
-		 * @throws NoSuchElementException if no Topic with the given name exists
-		 */
-		public List<Post> fetch(String topicName) {
-			LG.sout("Consumer#fetch(%s)", topicName);
-			LG.in();
-			if (!tdMap.containsKey(topicName))
-				throw new NoSuchElementException("No Topic with name " + topicName + " found");
-
-			final TopicData td = tdMap.get(topicName);
-			List<Post>      newPosts;
-
-			LG.sout("td.pointer=%d", td.pointer);
-			if (td.pointer == Topic.FETCH_ALL_POSTS) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
-				newPosts = td.topic.getAllPosts();
-			else
-				newPosts = td.topic.getPostsSince(td.pointer);
-
-			// update topic pointer if there is at least one new Post
-			final int newPostCount = newPosts.size();
-			LG.sout("newPostCount=%d", newPostCount);
-			if (newPostCount > 0) {
-				final long lastPostId = newPosts.get(0).getPostInfo().getId();
-				td.pointer = lastPostId;
-			}
-
-			td.topic.clear();
-
-			LG.out();
-			return newPosts;
-		}
-
-		/**
-		 * Adds a Topic to this Manager and registers its socket from where to fetch.
-		 *
-		 * @param topic  the Topic
-		 * @param socket the socket from where it will fetch
-		 *
-		 * @throws IllegalArgumentException if this Manager already has a socket for a
-		 *                                  Topic with the same name.
-		 */
-		public void addSocket(Topic topic, Socket socket) {
-			add(topic);
-			final TopicData td = tdMap.get(topic.getName());
-			td.socket = socket;
-		}
-
-		private void add(Topic topic) {
-			final String topicName = topic.getName();
-			if (tdMap.containsKey(topicName))
-				throw new IllegalArgumentException(
-				        "Topic with name " + topicName + " already exists");
-
-			tdMap.put(topicName, new TopicData(topic));
-		}
-
-		@Override
-		public void close() throws IOException {
-			for (final TopicData td : tdMap.values())
-				td.socket.close();
-
-			tdMap.clear();
-		}
-	}
-
 	private final UserSub      usersub;
 	private final TopicManager topicManager;
 
@@ -223,6 +134,7 @@ class Consumer extends ClientNode implements Subscriber {
 	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
 	 *                                  with the same name
 	 */
+	@SuppressWarnings("resource") // 'socket' closes at closeImpl()
 	public void listenForTopic(String topicName) {
 		LG.sout("listenForTopic=%s", topicName);
 		LG.in();
@@ -246,6 +158,9 @@ class Consumer extends ClientNode implements Subscriber {
 		}
 
 		try {
+			if(socket == null)
+				throw new RuntimeException("No connection could be established with the Broker");
+			
 			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream()); // socket can't be null
 			oos.flush();
 			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
@@ -255,7 +170,7 @@ class Consumer extends ClientNode implements Subscriber {
 			new PullThread(ois, topic).start();
 
 		} catch (final IOException e1) {
-			throw new UncheckedIOException(e1); // 'socket' closes at closeImpl()
+			throw new UncheckedIOException(e1);
 		}
 		LG.out();
 	}
@@ -271,5 +186,93 @@ class Consumer extends ClientNode implements Subscriber {
 		LG.sout("Consumer#notify(%s)", packet);
 		if (packet.isFinal())
 			usersub.notify(topicName);
+	}
+	
+	private static class TopicData {
+		private final Topic topic;
+		private long        pointer;
+		private Socket      socket;
+
+		public TopicData(Topic topic) {
+			this.topic = topic;
+			pointer = topic.getLastPostId();
+			socket = null;
+		}
+	}
+
+	private static class TopicManager implements AutoCloseable {
+
+		private final Map<String, TopicData> tdMap = new HashMap<>();
+
+		/**
+		 * Returns all Posts from a Topic which have not been previously fetched.
+		 *
+		 * @param topicName the name of the Topic
+		 *
+		 * @return a List with all the Posts not yet fetched, sorted from latest to
+		 *         earliest
+		 *
+		 * @throws NoSuchElementException if no Topic with the given name exists
+		 */
+		public List<Post> fetch(String topicName) {
+			LG.sout("Consumer#fetch(%s)", topicName);
+			LG.in();
+			if (!tdMap.containsKey(topicName))
+				throw new NoSuchElementException("No Topic with name " + topicName + " found");
+
+			final TopicData td = tdMap.get(topicName);
+			List<Post>      newPosts;
+
+			LG.sout("td.pointer=%d", td.pointer);
+			if (td.pointer == Topic.FETCH_ALL_POSTS) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
+				newPosts = td.topic.getAllPosts();
+			else
+				newPosts = td.topic.getPostsSince(td.pointer);
+
+			// update topic pointer if there is at least one new Post
+			final int newPostCount = newPosts.size();
+			LG.sout("newPostCount=%d", newPostCount);
+			if (newPostCount > 0) {
+				final long lastPostId = newPosts.get(0).getPostInfo().getId();
+				td.pointer = lastPostId;
+			}
+
+			td.topic.clear();
+
+			LG.out();
+			return newPosts;
+		}
+
+		/**
+		 * Adds a Topic to this Manager and registers its socket from where to fetch.
+		 *
+		 * @param topic  the Topic
+		 * @param socket the socket from where it will fetch
+		 *
+		 * @throws IllegalArgumentException if this Manager already has a socket for a
+		 *                                  Topic with the same name.
+		 */
+		public void addSocket(Topic topic, Socket socket) {
+			add(topic);
+			final TopicData td = tdMap.get(topic.getName());
+			td.socket = socket;
+		}
+
+		private void add(Topic topic) {
+			final String topicName = topic.getName();
+			if (tdMap.containsKey(topicName))
+				throw new IllegalArgumentException(
+				        "Topic with name " + topicName + " already exists");
+
+			tdMap.put(topicName, new TopicData(topic));
+		}
+
+		@Override
+		public void close() throws IOException {
+			for (final TopicData td : tdMap.values())
+				td.socket.close();
+
+			tdMap.clear();
+		}
 	}
 }

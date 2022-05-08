@@ -2,12 +2,12 @@ package eventDeliverySystem;
 
 import java.io.Serializable;
 
+// fige apo edo alex esy apla allaxes to enum :sunglasses:
 /**
  * A wrapper holding an object and specifying its type using an enum used for
  * Internet transportation. Used to facilitate uniform communication between all
  * remote components of the system.
  *
- * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
 class Message implements Serializable {

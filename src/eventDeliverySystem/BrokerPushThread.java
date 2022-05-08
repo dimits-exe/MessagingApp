@@ -11,6 +11,14 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+/**
+ * A thread that receives packets for a certain Topic
+ * and streams them to a Consumer.
+ * 
+ * @author Alex Mandelias
+ * @author Dimitris Tsirmpas
+ *
+ */
 class BrokerPushThread extends Thread implements Subscriber {
 
 	private long                          currentPostId;
@@ -20,6 +28,10 @@ class BrokerPushThread extends Thread implements Subscriber {
 	private final Queue<Object>      queue;
 	private final ObjectOutputStream oos;
 
+	/**
+	 * @param topic
+	 * @param stream
+	 */
 	public BrokerPushThread(AbstractTopic topic, ObjectOutputStream stream) {
 		topic.subscribe(this);
 		queue = new ConcurrentLinkedDeque<>();
@@ -47,7 +59,6 @@ class BrokerPushThread extends Thread implements Subscriber {
 					oos.writeObject(queue.remove());
 				} catch (IOException e) {
 					e.printStackTrace();
-					// TODO Auto-generated catch block
 				}
 			} while (!queue.isEmpty());
 		}
@@ -78,7 +89,6 @@ class BrokerPushThread extends Thread implements Subscriber {
 	@Override
 	public void notify(Packet packet, String topicName) {
 		LG.sout("BrokerPushThread#notify(%s)", packet);
-		// queue.add(packet);
 
 		// if no post is being streamed
 		if (currentPostId == -1) {

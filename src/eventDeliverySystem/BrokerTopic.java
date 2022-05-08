@@ -62,7 +62,7 @@ public class BrokerTopic extends AbstractTopic {
 	}
 
 	/**
-	 * TODO
+	 * TODO alex pls grapse ti ginetai edo, den exo idea ti exeis kanei
 	 * <p>
 	 * <b>FIRST POSTINFO IS EARLIER, LAST IS LATEST</b>
 	 *
@@ -77,7 +77,7 @@ public class BrokerTopic extends AbstractTopic {
 	}
 
 	/**
-	 * TODO
+	 * TODO alex pls grapse ti ginetai edo, den exo idea ti exeis kanei
 	 * <p>
 	 * <b>FIRST POSTINFO IS EARLIER, LAST IS LATEST</b>
 	 *

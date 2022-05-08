@@ -20,13 +20,14 @@ import java.util.concurrent.ThreadLocalRandom;
 import eventDeliverySystem.PushThread.Protocol;
 
 /**
- * TODO: fix.
- * <p>
  * A remote component that forms the backbone of the EventDeliverySystem.
  * Brokers act as part of a distributed server that services Publishers and
  * Consumers.
+ * 
+ * @author Alex Mandelias
+ * @author Dimitris Tsirmpas
  */
-class Broker implements Runnable, AutoCloseable{
+public class Broker implements Runnable, AutoCloseable{
 
 	private static final PortManager 		portManager     = new PortManager();
 	private static final int         		MAX_CONNECTIONS = 64;
@@ -110,7 +111,11 @@ class Broker implements Runnable, AutoCloseable{
 		LG.socket("Client", clientRequestSocket);
 		LG.socket("Broker", brokerRequestSocket);
 	}
-
+	
+	/**
+	 * Begins listening for and new requests by clients and connection requests
+	 * from other brokers.
+	 */
 	@Override
 	public void run() {
 
@@ -208,7 +213,7 @@ class Broker implements Runnable, AutoCloseable{
 
 
 	private void addPublisherCI(Socket socket) {
-		publisherConnectionInfo.add(new ConnectionInfo(socket.getInetAddress(), socket.getPort()));
+		publisherConnectionInfo.add(new ConnectionInfo(socket));
 	}
 
 	private BrokerTopic getTopic(String topicName) {
@@ -246,7 +251,15 @@ class Broker implements Runnable, AutoCloseable{
 
 
 	// ========== THREADS ==========
-
+	
+	/**
+	 * A thread which continuously reads new client requests and 
+	 * assigns worker threads to fulfill them when necessary.
+	 * 
+	 * @author Alex Mandelias
+	 * @author Dimitris Tsirmpas
+	 *
+	 */
 	private class ClientRequestHandler extends Thread {
 
 		private Socket socket;
@@ -333,7 +346,6 @@ class Broker implements Runnable, AutoCloseable{
 					// broker who is notifying us of another connection
 					ConnectionInfo newBroker = (ConnectionInfo) message.getValue();
 					brokerConnections.add(new Socket(newBroker.getAddress(), newBroker.getPort()));
-					//TODO: if leader send the connection to all other brokers
 					break;
 
 				default:
@@ -379,7 +391,7 @@ class Broker implements Runnable, AutoCloseable{
 			LG.sout("PublichserDiscoveryThread#run()");
 			LG.in();
 
-			try /* (oos) */ {
+			try {
 				LG.sout("topicName=%s", topicName);
 				ConnectionInfo brokerInfo = Broker.this.getAssignedBroker(topicName);
 				LG.sout("brokerInfo=%s", brokerInfo);

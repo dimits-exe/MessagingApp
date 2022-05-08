@@ -72,18 +72,35 @@ public class TopicFileSystem {
 		File head = getHead(topicName);
 		create(head);
 	}
-
+	
+	/**
+	 * Deletes a {@link Topic} from the local File System.
+	 * @param topicName the topic's name
+	 * @throws IOException if the topic could not be deleted.
+	 */
 	public void deleteTopic(String topicName) throws IOException {
 		// TODO: auto-generated method stub
 
 	}
-
+	
+	/**
+	 * Adds a new {@link Post} to an existing {@link Topic}.
+	 * @param post the new Post
+	 * @param topicName the topic's name
+	 * @throws IOException if the Post couldn't be written to the File System
+	 */
 	public void writePost(Post post, String topicName) throws IOException {
 		File fileForPost = writePost0(post, topicName);
 		writePointerForPost(post, topicName);
 		updateHeadForPost(fileForPost, topicName);
 	}
-
+	
+	/**
+	 * Reads a {@link Topic} from the File System and returns it.
+	 * @param topicName the topic's name
+	 * @return a Topic object containing the Posts read from the File System
+	 * @throws IOException if the Topic couldn't be loaded.
+	 */
 	public Topic readTopic(String topicName) throws IOException {
 		List<Post> loadedPosts = new LinkedList<>();
 
@@ -97,7 +114,12 @@ public class TopicFileSystem {
 
 		return new Topic(topicName, loadedPosts);
 	}
-
+	
+	/**
+	 * Reads all Topics from the File System and returns them.
+	 * @return a Collection including all the Posts loaded from the File System
+	 * @throws IOException if the Topics couldn't be loaded.
+	 */
 	public Collection<Topic> readAllTopics() throws IOException {
 		Set<Topic> topics = new HashSet<>();
 		for (String topicName : getTopicNames())

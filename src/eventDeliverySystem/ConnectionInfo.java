@@ -9,6 +9,7 @@ import java.net.Socket;
  * An immutable pair of <IPAddress, Port> representing a unique connection
  * in the web.
  *
+ * @author Dimitris Tsirmpas
  */
 final class ConnectionInfo implements Serializable {
 
