@@ -20,12 +20,12 @@ import javax.swing.WindowConstants;
 @SuppressWarnings("javadoc")
 public class SystemTest {
 
+
 	@SuppressWarnings("resource")
-	public static void main(String[] args)
-	        throws NumberFormatException, IOException {
-		String ip = "192.168.2.12";
-		int port = 29973;
-		Topic newTopic = new Topic("opa");
+	public static void main(String[] args) throws NumberFormatException, IOException {
+		String ip       = "192.168.2.12";
+		int    port     = 29973;
+		Topic  newTopic = new Topic("opa");
 
 		Profile poster1 = new Profile("alex");
 		sout("poster");
@@ -39,7 +39,8 @@ public class SystemTest {
 		File img1  = new File("C:\\Users\\user\\Pictures\\discord\\ilektra.PNG");
 		File img2  = new File("C:\\Users\\user\\Pictures\\discord\\sus.PNG");
 		Post post1 = Post.fromFile(img1, poster1.getId());
-		Post post2 = Post.fromFile(img2, poster1.getId());
+		Post post2 = Post.fromFile(img2,
+		        poster1.getId());
 		sout("img");
 
 		p.createTopic(newTopic.getName());
@@ -47,7 +48,7 @@ public class SystemTest {
 		p.push(post2, newTopic.getName());
 		sout("post");
 
-		Consumer c = new Consumer(ip, port, t);
+		Consumer c = new Consumer(ip, port, null);
 		sout("consumer");
 
 		System.out.println("Type anything lol:");
@@ -56,13 +57,11 @@ public class SystemTest {
 		List<Post> posts = c.pull(newTopic.getName());
 		sout("Pulled " + posts.size() + " posts");
 
-		JFrame frame = new JFrame();
+		JFrame frame     = new JFrame();
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
-		for(Post post : posts) {
-			mainPanel.add(getImageRepresantation(post));
-		}
+		for (Post post : posts) { mainPanel.add(getImageRepresantation(post)); }
 
 		frame.add(mainPanel);
 		frame.setSize(1000, 1000);
@@ -80,6 +79,7 @@ public class SystemTest {
 
 		@SuppressWarnings("serial")
 		JPanel panel = new JPanel() {
+
 			@Override
 			public void paintComponent(Graphics g) {
 				super.paintComponent(g);
@@ -89,6 +89,7 @@ public class SystemTest {
 
 		return panel;
 	}
+
 
 	private static void sout(String format, Object... args) {
 		System.out.printf(format + "\n", args);
