@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Stack;
 
-import eventDeliverySystem.LG;
+import eventDeliverySystem.util.LG;
 
 /**
  * Encapsulates the contents of a conversation / Topic.

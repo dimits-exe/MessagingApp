@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import eventDeliverySystem.Subscriber;
+import eventDeliverySystem.util.Subscriber;
 
 /**
  * Abstract superclass of all Topics.

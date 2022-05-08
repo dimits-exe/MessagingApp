@@ -16,9 +16,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.Broker;
-import eventDeliverySystem.LG;
-import eventDeliverySystem.Subscriber;
 import eventDeliverySystem.User;
 import eventDeliverySystem.User.UserSub;
 import eventDeliverySystem.datastructures.ConnectionInfo;
@@ -27,7 +24,10 @@ import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.datastructures.Topic;
+import eventDeliverySystem.server.Broker;
 import eventDeliverySystem.thread.PullThread;
+import eventDeliverySystem.util.LG;
+import eventDeliverySystem.util.Subscriber;
 
 /**
  * A client-side process which is responsible for listening for a set of Topics

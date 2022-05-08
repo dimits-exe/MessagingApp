@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import eventDeliverySystem.Broker;
 import eventDeliverySystem.datastructures.ConnectionInfo;
+import eventDeliverySystem.server.Broker;
 
 /**
  * A superclass for all client-side Nodes that connect to and send / receive

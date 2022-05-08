@@ -12,15 +12,15 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
-import eventDeliverySystem.Broker;
-import eventDeliverySystem.LG;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
+import eventDeliverySystem.server.Broker;
 import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Protocol;
+import eventDeliverySystem.util.LG;
 
 /**
  * A client-side process which is responsible for creating Topics and pushing

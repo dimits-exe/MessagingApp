@@ -3,10 +3,10 @@ package eventDeliverySystem.thread;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-import eventDeliverySystem.LG;
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
+import eventDeliverySystem.util.LG;
 
 /**
  * A Thread that reads some Posts from a stream and then posts them to a Topic.

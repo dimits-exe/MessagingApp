@@ -10,10 +10,10 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
-import eventDeliverySystem.LG;
-import eventDeliverySystem.PortManager;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
+import eventDeliverySystem.util.LG;
+import eventDeliverySystem.util.PortManager;
 
 /**
  * Wrapper for a cache that communicates with the default broker to store,

@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.util;
 
 import java.net.ServerSocket;
 import java.net.Socket;

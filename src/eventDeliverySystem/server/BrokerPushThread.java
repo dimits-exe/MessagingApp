@@ -1,4 +1,4 @@
-package eventDeliverySystem.thread;
+package eventDeliverySystem.server;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -11,11 +11,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import eventDeliverySystem.LG;
-import eventDeliverySystem.Subscriber;
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
+import eventDeliverySystem.util.LG;
+import eventDeliverySystem.util.Subscriber;
 
 /**
  * A thread that receives packets for a certain Topic
@@ -25,7 +25,7 @@ import eventDeliverySystem.datastructures.PostInfo;
  * @author Dimitris Tsirmpas
  *
  */
-public class BrokerPushThread extends Thread implements Subscriber {
+class BrokerPushThread extends Thread implements Subscriber {
 
 	private long                          currentPostId;
 	private final Deque<PostInfo>         postInfos;

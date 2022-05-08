@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.server;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,7 +18,7 @@ import eventDeliverySystem.datastructures.PostInfo;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class BrokerTopic extends AbstractTopic {
+class BrokerTopic extends AbstractTopic {
 
 	private final List<PostInfo>          postInfoList;
 	private final Map<Long, List<Packet>> packetsPerPostInfoMap;

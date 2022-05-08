@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.util;
 
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;

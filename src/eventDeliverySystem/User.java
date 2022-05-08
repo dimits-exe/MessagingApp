@@ -13,6 +13,7 @@ import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.Topic;
 import eventDeliverySystem.filesystem.Profile;
 import eventDeliverySystem.filesystem.ProfileFileSystem;
+import eventDeliverySystem.util.LG;
 
 
 /**
