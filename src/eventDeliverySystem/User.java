@@ -23,14 +23,17 @@ public class User {
 	private final Publisher publisher;
 	private final Consumer  consumer;
 
+	private static final String LOCALHOST   = "127.0.0.1";
+	private static final int    BROKER_PORT = 29470;
+
 	// TODO: remove
 	@SuppressWarnings("javadoc")
 	public static User forAlex(boolean existing, boolean local) throws IOException {
-		String ip   = "127.0.0.1";
-		int    port = 29783;
+		String ip   = LOCALHOST;
+		int    port = BROKER_PORT;
 		Path   path = Path.of("C:\\Users\\alexm\\projects\\Java\\MessagingApp\\users\\");
 
-		long   id   = 12345L;
+		long   id   = 4355701369199818913L;
 		String name = "alex";
 
 		if (existing) {
@@ -48,24 +51,23 @@ public class User {
 	// TODO: remove
 	@SuppressWarnings("javadoc")
 	public static User forDimits(boolean existing, boolean local) throws IOException {
-		throw new RuntimeException("User::51, fill in the nulls");
+		String ip   = LOCALHOST;
+		int    port = BROKER_PORT;
+		Path   path = Path.of("C:\\Users\\alexm\\projects\\Java\\MessagingApp\\users\\");
 
-		//		String ip   = null;
-		//		int    port = -1;
-		//		Path   path = null;
-		//		long   id   = -1;
-		//		String name = null;
-		//
-		//		if (existing) {
-		//			if (local)
-		//				return loadExistingLocal(path, id);
-		//			return loadExisting(ip, port, path, id);
-		//		}
-		//
-		//		if (local)
-		//			return createNewLocal(path, name);
-		//
-		//		return createNew(ip, port, path, name);
+		long   id   = -2731238523881095591L;
+		String name = "dimtis";
+
+		if (existing) {
+			if (local)
+				return loadExistingLocal(path, id);
+			return loadExisting(ip, port, path, id);
+		}
+
+		if (local)
+			return createNewLocal(path, name);
+
+		return createNew(ip, port, path, name);
 	}
 
 	/**
@@ -234,6 +236,7 @@ public class User {
 		currentProfile.addTopic(topicName);
 		profileFileSystem.createTopic(topicName);
 	}
+
 
 	// ==================== LOCAL VERSIONS OF METHODS ====================
 
