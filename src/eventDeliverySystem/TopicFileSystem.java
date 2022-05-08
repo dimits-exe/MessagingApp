@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 public class TopicFileSystem {
 
 	private static final Pattern pattern = Pattern
-	        .compile("(?<postId>\\-?\\d+)\\-(?<posterId>\\d+)\\.(?<extension>.*)");
+	        .compile("(?<postId>\\-?\\d+)\\-(?<posterId>\\-?\\d+)\\.(?<extension>.*)");
 	private static final String  format  = "%d-%d.%s";
 
 	private static final String HEAD = "HEAD";
