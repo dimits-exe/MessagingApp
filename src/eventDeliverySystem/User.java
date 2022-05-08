@@ -113,13 +113,32 @@ public class User {
 		return user;
 	}
 
+	// TODO: remove
+	private CrappyUserUI.UserUISub uuisub;
+
+	// TODO: remove
+	public void setUserUISub(CrappyUserUI.UserUISub uuisub) {
+		this.uuisub = uuisub;
+	}
+
+	class UserSub {
+		public void notify(String topicName) {
+			User.this.currentProfile.markUnread(topicName);
+			LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
+
+			// TODO: remove
+			if (uuisub != null)
+				uuisub.notify(topicName);
+		}
+	}
+
 	private User(String serverIP, int port, Path profilesRootDirectory)
 	        throws IOException {
 		this.profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 
 		try {
 			this.publisher = new Publisher(serverIP, port);
-			this.consumer = new Consumer(serverIP, port, Collections.emptySet());
+			this.consumer = new Consumer(serverIP, port, new UserSub());
 		} catch (IOException e) {
 			throw new IOException("Could not establish connection with server", e);
 		}

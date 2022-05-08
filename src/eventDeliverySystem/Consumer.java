@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import eventDeliverySystem.User.UserSub;
+
 /**
  * A client-side process which is responsible for listening for a set of Topics
  * and pulling Posts from them by connecting to a remote server.
@@ -25,7 +27,7 @@ import java.util.Set;
  *
  * @see Broker
  */
-class Consumer extends ClientNode {
+class Consumer extends ClientNode implements Subscriber {
 
 	private static class TopicData {
 		private final Topic topic;
@@ -48,7 +50,8 @@ class Consumer extends ClientNode {
 		 *
 		 * @param topicName the name of the Topic
 		 *
-		 * @return a List with all the Posts not yet fetched
+		 * @return a List with all the Posts not yet fetched, sorted from latest to
+		 *         earliest
 		 *
 		 * @throws NoSuchElementException if no Topic with the given name exists
 		 */
@@ -62,7 +65,7 @@ class Consumer extends ClientNode {
 			List<Post>      newPosts;
 
 			LG.sout("td.pointer=%d", td.pointer);
-			if (td.pointer == -1) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
+			if (td.pointer == Topic.FETCH_ALL_POSTS) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
 				newPosts = td.topic.getAllPosts();
 			else
 				newPosts = td.topic.getPostsSince(td.pointer);
@@ -74,6 +77,8 @@ class Consumer extends ClientNode {
 				final long lastPostId = newPosts.get(0).getPostInfo().getId();
 				td.pointer = lastPostId;
 			}
+
+			td.topic.clear();
 
 			LG.out();
 			return newPosts;
@@ -112,9 +117,8 @@ class Consumer extends ClientNode {
 		}
 	}
 
+	private final UserSub      usersub;
 	private final TopicManager topicManager;
-
-	// TODO: inform user when a new Post for a Topic arrives
 
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
@@ -122,8 +126,7 @@ class Consumer extends ClientNode {
 	 * @param serverIP   the IP of the default broker, interpreted by
 	 *                   {@link InetAddress#getByName(String)}.
 	 * @param serverPort the port of the default broker
-	 * @param topics     the Topics for which this Consumer listens, which may
-	 *                   already contain some Posts
+	 * @param usersub    the UserSub object that will be notified when data arrives
 	 *
 	 * @throws UnknownHostException if no IP address for the host could be found, or
 	 *                              if a scope_id was specified for a global IPv6
@@ -131,9 +134,9 @@ class Consumer extends ClientNode {
 	 * @throws IOException          if an I/O error occurs while establishing
 	 *                              connection to the server
 	 */
-	public Consumer(String serverIP, int serverPort, Set<Topic> topics)
+	public Consumer(String serverIP, int serverPort, UserSub usersub)
 	        throws IOException {
-		this(InetAddress.getByName(serverIP), serverPort, topics);
+		this(InetAddress.getByName(serverIP), serverPort, usersub);
 	}
 
 	/**
@@ -142,33 +145,31 @@ class Consumer extends ClientNode {
 	 * @param serverIP   the IP of the default broker, interpreted by
 	 *                   {@link InetAddress#getByAddress(byte[])}.
 	 * @param serverPort the port of the default broker
-	 * @param topics     the Topics for which this Consumer listens, which may
-	 *                   already contain some Posts
+	 * @param usersub    the UserSub object that will be notified when data arrives
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 * @throws IOException          if an I/O error occurs while establishing
 	 *                              connection to the server
 	 */
-	public Consumer(byte[] serverIP, int serverPort, Set<Topic> topics)
+	public Consumer(byte[] serverIP, int serverPort, UserSub usersub)
 	        throws IOException {
-		this(InetAddress.getByAddress(serverIP), serverPort, topics);
+		this(InetAddress.getByAddress(serverIP), serverPort, usersub);
 	}
 
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
 	 *
-	 * @param ip     the InetAddress of the default broker
-	 * @param port   the port of the default broker
-	 * @param topics the Topics for which this Consumer listens, which may already
-	 *               contain some Posts
+	 * @param ip      the InetAddress of the default broker
+	 * @param port    the port of the default broker
+	 * @param usersub the UserSub object that will be notified when data arrives
 	 *
 	 * @throws IOException if an I/O error occurs while establishing connection to
 	 *                     the server
 	 */
-	private Consumer(InetAddress ip, int port, Set<Topic> topics) throws IOException {
+	private Consumer(InetAddress ip, int port, UserSub usersub) throws IOException {
 		super(ip, port);
 		topicManager = new TopicManager();
-		setTopics(topics);
+		this.usersub = usersub;
 	}
 
 	/**
@@ -186,9 +187,17 @@ class Consumer extends ClientNode {
 			final String topicName = topic.getName();
 			listenForTopic(topicName);
 
-			final List<Post> posts = topic.getAllPosts();
+			// TODO: contemplate life choices
+			final List<Post> posts    = topic.getAllPosts();
+
+			final long idOfLast;
+			if (posts.size() != 0)
+				idOfLast = posts.get(0).getPostInfo().getId();
+			else
+				idOfLast = Topic.FETCH_ALL_POSTS;
 			Collections.reverse(posts);
 			topicManager.tdMap.get(topicName).topic.post(posts);
+			topicManager.tdMap.get(topicName).pointer = idOfLast;
 		}
 	}
 
@@ -197,7 +206,8 @@ class Consumer extends ClientNode {
 	 *
 	 * @param topicName the name of the Topic
 	 *
-	 * @return a List with all the Posts not yet pulled
+	 * @return a List with all the Posts not yet pulled, sorted from latest to
+	 *         earliest
 	 *
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
@@ -217,6 +227,7 @@ class Consumer extends ClientNode {
 		LG.sout("listenForTopic=%s", topicName);
 		LG.in();
 		final Topic topic  = new Topic(topicName);
+		topic.subscribe(this);
 		Socket      socket = null;
 
 		while (true) {
@@ -247,5 +258,18 @@ class Consumer extends ClientNode {
 			throw new UncheckedIOException(e1); // 'socket' closes at closeImpl()
 		}
 		LG.out();
+	}
+
+	@Override
+	public void notify(PostInfo postInfo, String topicName) {
+		LG.sout("Consumer#notify(%s)", postInfo);
+		// do nothing
+	}
+
+	@Override
+	public void notify(Packet packet, String topicName) {
+		LG.sout("Consumer#notify(%s)", packet);
+		if (packet.isFinal())
+			usersub.notify(topicName);
 	}
 }

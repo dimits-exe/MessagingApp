@@ -3,12 +3,11 @@ package eventDeliverySystem;
 import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
@@ -21,34 +20,28 @@ import javax.swing.WindowConstants;
 class CrappyUserUI extends JFrame {
 
 	public static void main(String[] args) throws IOException {
-		CrappyUserUI ui = new CrappyUserUI(true, false);
+		CrappyUserUI ui = new CrappyUserUI(true, args[0].equals("alex"));
 		ui.setVisible(true);
 	}
 
 	private final User user;
 
-	public CrappyUserUI(boolean existing, boolean local) throws IOException {
-		super("help");
-		Map<String, Integer> m;
-
-		String ip   = "127.0.0.1";
-		int    port = 29872;
-		Path   path = Path.of("C:\\Users\\alexm\\projects\\Java\\MessagingApp\\users\\");
-
-		long   id   = 4355701369199818913L;
-		String name = "alex";
-
-		if (existing) {
-			if (local)
-				user = User.loadExistingLocal(path, id);
-			else
-				user = User.loadExisting(ip, port, path, id);
-		} else {
-			if (local)
-				user = User.createNewLocal(path, name);
-			else
-				user = User.createNew(ip, port, path, name);
+	// TODO: remove
+	class UserUISub {
+		public void notify(String topicName) {
+			JOptionPane.showMessageDialog(CrappyUserUI.this,
+			        String.format("YOU HAVE A NEW MESSAGE AT '%s'", topicName));
 		}
+	}
+
+	public CrappyUserUI(boolean existing, boolean alex) throws IOException {
+		super(alex ? "alex" : "dimits");
+		if (alex)
+			user = User.forAlex(existing, false);
+		else
+			user = User.forDimits(existing, false);
+
+		user.setUserUISub(new UserUISub());
 
 		setSize(800, 600);
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
