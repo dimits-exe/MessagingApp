@@ -227,7 +227,8 @@ public class User {
 	public void pull(String topicName) throws IOException {
 		LG.sout("User#pull from Topic '%s'", topicName);
 		LG.in();
-		List<Post> newPosts = consumer.pull(topicName);
+		List<Post> newPosts = consumer.pull(topicName); // sorted from latest to earliest
+		Collections.reverse(newPosts);
 		LG.sout("newPosts=%s", newPosts);
 		currentProfile.updateTopic(topicName, newPosts);
 
