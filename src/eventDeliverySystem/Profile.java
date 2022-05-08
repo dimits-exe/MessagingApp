@@ -2,9 +2,11 @@ package eventDeliverySystem;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -74,14 +76,9 @@ public class Profile {
 	 *
 	 * @return the topics
 	 */
-	public Map<String, Topic> getTopics() {
-		// TODO: should this return a copy (a deep copy)?
-		// In this case we need to have a Topic(Topic) copy-constructor
-		return topics;
+	public Set<Topic> getTopics() {
+		return new HashSet<>(topics.values());
 	}
-
-	// TODO: maybe not throw IllegalArgumentException and return boolean?
-	// no, this isn't C lmao
 
 	/**
 	 * Adds a new, unique, Topic to this Profile.
@@ -141,7 +138,7 @@ public class Profile {
 		if (topics.remove(topicName) == null)
 			throw new NoSuchElementException("No Topic with name " + topicName + " found");
 	}
-	
+
 	/**
 	 * Mark a Topic as unread.
 	 * @param topicName the topic's name
@@ -149,7 +146,7 @@ public class Profile {
 	public void markUnread(String topicName) {
 		unreadTopics.put(topicName, unreadTopics.get(topicName) + 1);
 	}
-	
+
 	/**
 	 * Mark all posts in a Topic as read.
 	 * @param topicName the topic's name

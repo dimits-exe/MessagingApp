@@ -120,9 +120,9 @@ public class User {
 	public void setUserUISub(CrappyUserUI.UserUISub uuisub) {
 		this.uuisub = uuisub;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @author user
 	 *
 	 */
@@ -167,7 +167,7 @@ public class User {
 	 */
 	public void switchToNewProfile(String profileName) throws IOException {
 		currentProfile = profileFileSystem.createNewProfile(profileName);
-		consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
+		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
 	}
 
 	/**
@@ -179,7 +179,7 @@ public class User {
 	 */
 	public void switchToExistingProfile(long profileId) throws IOException {
 		currentProfile = profileFileSystem.loadProfile(profileId);
-		consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
+		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
 	}
 
 	/**
