@@ -3,23 +3,28 @@ package eventDeliverySystem;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * TODO
- *
+ * Abstract superclass of all Topics.
  *
  * @author Alex Mandelias
  */
 abstract class AbstractTopic {
 
-	private final String name;
+	private final String          name;
+	private final Set<Subscriber> subscribers;
 
 	/**
-	 * TODO
+	 * Constructs an empty Topic with no subscribers.
+	 *
+	 * @param name the name of the new Topic
 	 */
 	public AbstractTopic(String name) {
 		this.name = name;
+		subscribers = new HashSet<>();
 	}
 
 	/**
@@ -27,21 +32,56 @@ abstract class AbstractTopic {
 	 *
 	 * @return the name
 	 */
-	public String getName() {
+	public final String getName() {
 		return name;
 	}
 
 	/**
-	 * Returns the ID of the most recent Packet in this Topic.
+	 * Adds a Subscriber to this Topic.
 	 *
-	 * @return the most recent Packet's ID or {@link Topic#FETCH_ALL_POSTS}
-	 *         if there are no Packets in this Topic
+	 * @param sub the Subscriber to add
 	 */
-	// public abstract long getLastId();
+	public final void subscribe(Subscriber sub) {
+		subscribers.add(sub);
+	}
 
-	abstract public void post(PostInfo postInfo);
+	/**
+	 * Removes a Subscriber to this Topic.
+	 *
+	 * @param sub the Subscriber to remove
+	 *
+	 * @return {@code true} if the Subscriber was subscribed to this Topic,
+	 *         {@code false} otherwise
+	 */
+	public final boolean unsubscribe(Subscriber sub) {
+		return subscribers.remove(sub);
+	}
 
-	abstract public void post(Packet packet);
+	/**
+	 * Posts a PostInfo to this Topic and notifies all subscribers.
+	 *
+	 * @param postInfo the PostInfo
+	 */
+	public final void post(PostInfo postInfo) {
+		postHook(postInfo);
+			for (Subscriber sub : subscribers)
+				sub.notify(postInfo, name);
+	}
+
+	/**
+	 * Posts a Packet to this Topic and notifies all subscribers.
+	 *
+	 * @param packet the Packet
+	 */
+	public final void post(Packet packet) {
+		postHook(packet);
+		for (Subscriber sub : subscribers)
+			sub.notify(packet, name);
+	}
+
+	abstract protected void postHook(PostInfo postInfo);
+
+	abstract protected void postHook(Packet packet);
 
 	/**
 	 * Returns the hash that a Topic with a given name would have. Since a Topic's

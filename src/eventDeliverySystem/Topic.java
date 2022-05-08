@@ -16,7 +16,8 @@ import java.util.Stack;
  */
 class Topic extends AbstractTopic {
 
-	private static final int FETCH_ALL_POSTS = -1;
+	/** Constant to be used when no post exists and an ID is needed */
+	static final long FETCH_ALL_POSTS = -1L;
 
 	/**
 	 * Encapsulates a Token that uniquely identifies a Post in a Topic and is used
@@ -106,7 +107,7 @@ class Topic extends AbstractTopic {
 	private PostInfo           currPI;
 
 	@Override
-	public void post(PostInfo postInfo) {
+	public void postHook(PostInfo postInfo) {
 		if (!currPackets.isEmpty())
 			throw new IllegalStateException("Recieved PostInfo while more Packets remain");
 
@@ -114,7 +115,7 @@ class Topic extends AbstractTopic {
 	}
 
 	@Override
-	public void post(Packet packet) {
+	public void postHook(Packet packet) {
 		currPackets.add(packet);
 
 		if (packet.isFinal()) {
@@ -141,6 +142,17 @@ class Topic extends AbstractTopic {
 	 */
 	private void post(Post post) {
 		postStack.push(post);
+	}
+
+	/**
+	 * TODO
+	 * <p>
+	 * <b>retains latest</b>
+	 */
+	public void clear() {
+		Post first = postStack.pop();
+		postStack.clear();
+		postStack.push(first);
 	}
 
 	/**
