@@ -31,7 +31,7 @@ public final class ConnectionInfo implements Serializable {
 	 * @param connection the socket whose details will be used.
 	 */
 	public ConnectionInfo(Socket connection) {
-		this(connection.getInetAddress(), connection.getPort());
+		this(connection.getInetAddress(), connection.getLocalPort());
 	}
 
 	/**

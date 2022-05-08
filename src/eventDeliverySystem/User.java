@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import app.CrappyUserUI;
 import eventDeliverySystem.client.Consumer;
 import eventDeliverySystem.client.Publisher;
 import eventDeliverySystem.datastructures.Post;
@@ -30,53 +31,6 @@ public class User {
 
 	private final Publisher publisher;
 	private final Consumer  consumer;
-
-	private static final String LOCALHOST   = "127.0.0.1";
-	private static final int    BROKER_PORT = 29470;
-
-	// TODO: remove
-	@SuppressWarnings("javadoc")
-	public static User forAlex(boolean existing, boolean local) throws IOException {
-		String ip   = LOCALHOST;
-		int    port = BROKER_PORT;
-		Path   path = Path.of("C:\\Users\\alexm\\projects\\Java\\MessagingApp\\users\\");
-
-		long   id   = 4355701369199818913L;
-		String name = "alex";
-
-		if (existing) {
-			if (local)
-				return loadExistingLocal(path, id);
-			return loadExisting(ip, port, path, id);
-		}
-
-		if (local)
-			return createNewLocal(path, name);
-
-		return createNew(ip, port, path, name);
-	}
-
-	// TODO: remove
-	@SuppressWarnings("javadoc")
-	public static User forDimits(boolean existing, boolean local) throws IOException {
-		String ip   = LOCALHOST;
-		int    port = BROKER_PORT;
-		Path   path = Path.of("C:\\Users\\alexm\\projects\\Java\\MessagingApp\\users\\");
-
-		long   id   = -2731238523881095591L;
-		String name = "dimtis";
-
-		if (existing) {
-			if (local)
-				return loadExistingLocal(path, id);
-			return loadExisting(ip, port, path, id);
-		}
-
-		if (local)
-			return createNewLocal(path, name);
-
-		return createNew(ip, port, path, name);
-	}
 
 	/**
 	 * Retrieve the user's data and the saved posts, establish connection to the

@@ -18,9 +18,6 @@ import eventDeliverySystem.util.LG;
  */
 public class Topic extends AbstractTopic {
 
-	/** Constant to be used when no post exists and an ID is needed */
-	public static final long FETCH_ALL_POSTS = -1L;
-
 	/**
 	 * Returns a token that can be used to smartly update the topic by the Broker.
 	 *
@@ -56,12 +53,12 @@ public class Topic extends AbstractTopic {
 	/**
 	 * Returns the ID of the most recent post in this Topic.
 	 *
-	 * @return the most recent Post's ID or {@link Topic#FETCH_ALL_POSTS} if there
+	 * @return the most recent Post's ID or {@link AbstractTopic#FETCH_ALL_POSTS} if there
 	 *         are no Posts in this Topic
 	 */
 	public long getLastPostId() {
 		if (postStack.isEmpty())
-			return Topic.FETCH_ALL_POSTS;
+			return AbstractTopic.FETCH_ALL_POSTS;
 
 		return postStack.peek().getPostInfo().getId();
 	}
@@ -109,9 +106,11 @@ public class Topic extends AbstractTopic {
 
 	/** Clears this Topic by removing all but the latest Posts */
 	public void clear() {
-		Post first = postStack.pop();
-		postStack.clear();
-		postStack.push(first);
+		if (!postStack.isEmpty()) {
+			Post first = postStack.pop();
+			postStack.clear();
+			postStack.push(first);
+		}
 	}
 
 	/**
@@ -136,7 +135,7 @@ public class Topic extends AbstractTopic {
 
 		LinkedList<Post> postsAfterGivenPost = new LinkedList<>();
 
-		if (lastPostId == Topic.FETCH_ALL_POSTS) {
+		if (lastPostId == AbstractTopic.FETCH_ALL_POSTS) {
 			while (!postsClone.isEmpty())
 				postsAfterGivenPost.add(postsClone.pop());
 
@@ -164,7 +163,7 @@ public class Topic extends AbstractTopic {
 	 * @return the Posts in this Topic, sorted from latest to earliest
 	 */
 	public List<Post> getAllPosts() {
-		return getPostsSince(Topic.FETCH_ALL_POSTS);
+		return getPostsSince(AbstractTopic.FETCH_ALL_POSTS);
 	}
 
 	@Override

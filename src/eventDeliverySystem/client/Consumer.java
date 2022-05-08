@@ -18,6 +18,7 @@ import java.util.Set;
 
 import eventDeliverySystem.User;
 import eventDeliverySystem.User.UserSub;
+import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
@@ -116,7 +117,7 @@ public class Consumer extends ClientNode implements Subscriber {
 			if (posts.size() != 0)
 				idOfLast = posts.get(0).getPostInfo().getId();
 			else
-				idOfLast = Topic.FETCH_ALL_POSTS;
+				idOfLast = AbstractTopic.FETCH_ALL_POSTS;
 			Collections.reverse(posts);
 			topicManager.tdMap.get(topicName).topic.post(posts);
 			topicManager.tdMap.get(topicName).pointer = idOfLast;
@@ -235,7 +236,7 @@ public class Consumer extends ClientNode implements Subscriber {
 			List<Post>      newPosts;
 
 			LG.sout("td.pointer=%d", td.pointer);
-			if (td.pointer == Topic.FETCH_ALL_POSTS) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
+			if (td.pointer == AbstractTopic.FETCH_ALL_POSTS) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
 				newPosts = td.topic.getAllPosts();
 			else
 				newPosts = td.topic.getPostsSince(td.pointer);

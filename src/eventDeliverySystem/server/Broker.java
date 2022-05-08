@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.ConnectionInfo;
@@ -40,56 +39,14 @@ public class Broker implements Runnable, AutoCloseable{
 
 	private static final int         		MAX_CONNECTIONS = 64;
 
-	private final Set<ConnectionInfo>      	publisherConnectionInfo;
+	private final Set<ConnectionInfo>                  publisherConnectionInfo;
 	private final Map<String, Set<ObjectOutputStream>> consumerOOSPerTopic;
-	private final Map<String, BrokerTopic> 	topicsByName;
-	private final List<Socket> 				brokerConnections;
+	private final Map<String, BrokerTopic>             topicsByName;
+	private final List<Socket>                         brokerConnections;
+	private final List<ConnectionInfo>                 brokerCI;
 
-	private final ServerSocket 				clientRequestSocket;
-	private final ServerSocket 				brokerRequestSocket;
-
-	/**
-	 * Starts a new broker as a process on the local machine.
-	 * If args are provided the broker will attempt to connect to the leader broker.
-	 * If not, the broker is considered the leader broker.
-	 * When starting the server subsystem the first broker MUST be the leader.
-	 *
-	 * @param args empty if the broker is the leader, the IP address and port of the leader otherwise.
-	 */
-	public static void main(String[] args) {
-		LG.sout("Broker#main start");
-		LG.args(args);
-
-		// argument processing
-		String ip = "";
-		int port = -1;
-		boolean isLeader = true;
-
-		if(args.length == 2) {
-			ip = args[0];
-			port = Integer.parseInt(args[1]);
-			isLeader = false;
-		}
-
-		// broker thread naming
-		String brokerId;
-		if(isLeader)
-			brokerId = "Main";
-		else
-			brokerId = Integer.toString(ThreadLocalRandom.current().nextInt(1,1000));
-
-
-		// broker execution
-		try(Broker broker = isLeader? new Broker() : new Broker(ip, port);) { //java 8 forces me to do this
-			Thread thread = new Thread(broker, "Broker-" + brokerId);
-			thread.start();
-			LG.sout("Broker#main end");
-			thread.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-	}
-
+	private final ServerSocket clientRequestSocket;
+	private final ServerSocket brokerRequestSocket;
 
 	/**
 	 * Create a new leader broker. This is necessarily the first step to initialize
@@ -99,6 +56,7 @@ public class Broker implements Runnable, AutoCloseable{
 		this.publisherConnectionInfo = Collections.synchronizedSet(new HashSet<>());
 		this.consumerOOSPerTopic = Collections.synchronizedMap(new HashMap<>());
 		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
+		this.brokerCI = Collections.synchronizedList(new LinkedList<>());
 		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
 
 		try {
@@ -147,7 +105,19 @@ public class Broker implements Runnable, AutoCloseable{
 				LG.sout("Start: BrokerRequestThread");
 				while(true) {
 					try {
-						brokerConnections.add(brokerRequestSocket.accept());
+						Socket socket = brokerRequestSocket.accept();
+						brokerConnections.add(socket);
+
+						ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+						ConnectionInfo    brokerCIForClient;
+						try {
+							brokerCIForClient = (ConnectionInfo) ois.readObject();
+						} catch (ClassNotFoundException e) {
+							e.printStackTrace();
+							return;
+						}
+						brokerCI.add(brokerCIForClient);
+
 					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(-1); 	// serious error when waiting, close broker
@@ -175,6 +145,10 @@ public class Broker implements Runnable, AutoCloseable{
 		this();
 		try {
 			Socket leaderConnection = new Socket(leaderIP, leaderPort);
+			ObjectOutputStream oos = new ObjectOutputStream(leaderConnection.getOutputStream());
+			oos.flush();
+			oos.writeObject(new ConnectionInfo(this.clientRequestSocket));
+			oos.flush();
 			brokerConnections.add(leaderConnection);
 		} catch (IOException ioe) {
 			throw new UncheckedIOException("Couldn't connect to leader broker ", ioe);
@@ -234,21 +208,17 @@ public class Broker implements Runnable, AutoCloseable{
 	 * @return the {@link ConnectionInfo} for the assigned broker
 	 */
 	private ConnectionInfo getAssignedBroker(String topicName) {
-		int brokerIndex = AbstractTopic.hashForTopic(topicName) % (brokerConnections.size() + 1);
+		int brokerIndex = Math.abs(AbstractTopic.hashForTopic(topicName) % (brokerConnections.size() + 1));
 
 		// last index (out of range normally) => this broker is responsible for the topic
 		// this rule should work because the default broker is the only broker that processes
 		// such requests.
 		if(brokerIndex == brokerConnections.size()) {
-			return new ConnectionInfo(clientRequestSocket.getInetAddress(), clientRequestSocket.getLocalPort());
+			return new ConnectionInfo(clientRequestSocket);
 		}
 
 		// else send the broker from the other connections
-		try (final Socket broker = brokerConnections.get(brokerIndex)) {
-			return new ConnectionInfo(broker.getInetAddress(), broker.getPort());
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
+		return brokerCI.get(brokerIndex);
 	}
 
 
@@ -341,13 +311,6 @@ public class Broker implements Runnable, AutoCloseable{
 
 					oos.writeBoolean(!topicExists);
 					oos.flush();
-					break;
-
-				case BROKER_CONNECTION:
-					// we don't add the socket directly because it might be from the default
-					// broker who is notifying us of another connection
-					ConnectionInfo newBroker = (ConnectionInfo) message.getValue();
-					brokerConnections.add(new Socket(newBroker.getAddress(), newBroker.getPort()));
 					break;
 
 				default:

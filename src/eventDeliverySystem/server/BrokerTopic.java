@@ -96,6 +96,10 @@ class BrokerTopic extends AbstractTopic {
 	public void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
 
+		if (postId == AbstractTopic.FETCH_ALL_POSTS) {
+			getAllPosts(emptyPostInfoList, emptyPacketsPerPostInfoMap);
+		}
+
 		// broker is not persistent, consumer may have posts from previous session
 		if (!indexPerPostInfoId.containsKey(postId)) {
 			return;
