@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.datastructures;
 
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -11,13 +11,13 @@ import java.net.Socket;
  *
  * @author Dimitris Tsirmpas
  */
-final class ConnectionInfo implements Serializable {
+public final class ConnectionInfo implements Serializable {
 
 	private static final long serialVersionUID = -3742145900403155967L;
 
 	private final InetAddress address;
 	private final int port;
-	
+
 	/**
 	 * Create a new ConnectionInfo representing the given server socket connection.
 	 * @param connection the server socket whose details will be used.
@@ -25,7 +25,7 @@ final class ConnectionInfo implements Serializable {
 	public ConnectionInfo(ServerSocket connection) {
 		this(connection.getInetAddress(), connection.getLocalPort());
 	}
-	
+
 	/**
 	 * Create a new ConnectionInfo representing the given socket connection.
 	 * @param connection the socket whose details will be used.

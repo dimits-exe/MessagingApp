@@ -16,9 +16,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import eventDeliverySystem.Post;
-import eventDeliverySystem.PostInfo;
-import eventDeliverySystem.Topic;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.PostInfo;
+import eventDeliverySystem.datastructures.Topic;
 
 /**
  * Manages Topics that are saved in directories in the file system.

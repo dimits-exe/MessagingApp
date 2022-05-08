@@ -1,6 +1,6 @@
 package eventDeliverySystem;
 
-import static eventDeliverySystem.Message.MessageType.PUBLISHER_DISCOVERY_REQUEST;
+import static eventDeliverySystem.datastructures.Message.MessageType.PUBLISHER_DISCOVERY_REQUEST;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,6 +9,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+
+import eventDeliverySystem.datastructures.ConnectionInfo;
+import eventDeliverySystem.datastructures.Message;
 
 /**
  * Wrapper for a cache that communicates with the default broker to store,

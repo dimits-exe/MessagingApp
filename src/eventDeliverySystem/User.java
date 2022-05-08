@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.Topic;
 import eventDeliverySystem.filesystem.Profile;
 import eventDeliverySystem.filesystem.ProfileFileSystem;
 

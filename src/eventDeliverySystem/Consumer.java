@@ -1,6 +1,6 @@
 package eventDeliverySystem;
 
-import static eventDeliverySystem.Message.MessageType.INITIALISE_CONSUMER;
+import static eventDeliverySystem.datastructures.Message.MessageType.INITIALISE_CONSUMER;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -17,6 +17,12 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import eventDeliverySystem.User.UserSub;
+import eventDeliverySystem.datastructures.ConnectionInfo;
+import eventDeliverySystem.datastructures.Message;
+import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.PostInfo;
+import eventDeliverySystem.datastructures.Topic;
 import eventDeliverySystem.thread.PullThread;
 
 /**

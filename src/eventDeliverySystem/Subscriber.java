@@ -1,5 +1,9 @@
 package eventDeliverySystem;
 
+import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.PostInfo;
+
 /**
  * An interface denoting any class that needs to be notified
  * about the arrival of a part of or a whole {@link Post}.

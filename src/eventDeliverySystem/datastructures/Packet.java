@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.datastructures;
 
 import java.io.Serializable;
 

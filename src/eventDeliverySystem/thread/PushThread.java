@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import eventDeliverySystem.LG;
-import eventDeliverySystem.Packet;
-import eventDeliverySystem.PostInfo;
+import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.PostInfo;
 
 /**
  * A Thread that writes some Posts to a stream.

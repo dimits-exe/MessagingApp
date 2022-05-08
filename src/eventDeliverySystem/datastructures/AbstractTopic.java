@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.datastructures;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -6,6 +6,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+
+import eventDeliverySystem.Subscriber;
 
 /**
  * Abstract superclass of all Topics.

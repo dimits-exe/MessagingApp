@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import eventDeliverySystem.datastructures.AbstractTopic;
+import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.PostInfo;
+
 /**
  * An extension of the Abstract Topic that stores data as required by Brokers.
  * The Posts are stored disassembled as PostInfo and Packet objects.

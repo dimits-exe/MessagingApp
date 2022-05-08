@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import eventDeliverySystem.datastructures.ConnectionInfo;
+
 /**
  * A superclass for all client-side Nodes that connect to and send / receive
  * data from a remote server.

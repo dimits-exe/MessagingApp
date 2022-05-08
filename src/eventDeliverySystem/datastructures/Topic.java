@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.datastructures;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Stack;
+
+import eventDeliverySystem.LG;
 
 /**
  * Encapsulates the contents of a conversation / Topic.
@@ -17,7 +19,7 @@ import java.util.Stack;
 public class Topic extends AbstractTopic {
 
 	/** Constant to be used when no post exists and an ID is needed */
-	static final long FETCH_ALL_POSTS = -1L;
+	public static final long FETCH_ALL_POSTS = -1L;
 
 	/**
 	 * Returns a token that can be used to smartly update the topic by the Broker.
@@ -186,7 +188,7 @@ public class Topic extends AbstractTopic {
 	 * @author Alex Mandelias
 	 * @author Dimitris Tsirmpas
 	 */
-	static class TopicToken implements Serializable {
+	public static class TopicToken implements Serializable {
 
 		private static final long serialVersionUID = 1L;
 

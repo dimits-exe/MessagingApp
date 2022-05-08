@@ -11,11 +11,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import eventDeliverySystem.AbstractTopic;
 import eventDeliverySystem.LG;
-import eventDeliverySystem.Packet;
-import eventDeliverySystem.PostInfo;
 import eventDeliverySystem.Subscriber;
+import eventDeliverySystem.datastructures.AbstractTopic;
+import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.PostInfo;
 
 /**
  * A thread that receives packets for a certain Topic

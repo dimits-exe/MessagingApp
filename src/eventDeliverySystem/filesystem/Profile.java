@@ -9,8 +9,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-import eventDeliverySystem.Post;
-import eventDeliverySystem.Topic;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.Topic;
 
 /**
  * A data structure holding information about a user and their subscribed

@@ -1,7 +1,7 @@
 package eventDeliverySystem;
 
-import static eventDeliverySystem.Message.MessageType.CREATE_TOPIC;
-import static eventDeliverySystem.Message.MessageType.DATA_PACKET_SEND;
+import static eventDeliverySystem.datastructures.Message.MessageType.CREATE_TOPIC;
+import static eventDeliverySystem.datastructures.Message.MessageType.DATA_PACKET_SEND;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,6 +12,11 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
+import eventDeliverySystem.datastructures.ConnectionInfo;
+import eventDeliverySystem.datastructures.Message;
+import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Protocol;
 

@@ -15,8 +15,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import eventDeliverySystem.Post;
-import eventDeliverySystem.Topic;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.Topic;
 
 /**
  * Manages Profiles that are saved in directories in the file system.
