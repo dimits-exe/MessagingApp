@@ -34,8 +34,6 @@ import eventDeliverySystem.thread.PushThread.Protocol;
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
- *
- * @see ClientNode
  */
 public class Broker implements Runnable, AutoCloseable{
 

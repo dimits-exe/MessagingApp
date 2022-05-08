@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.client;
 
 import static eventDeliverySystem.datastructures.Message.MessageType.PUBLISHER_DISCOVERY_REQUEST;
 
@@ -10,6 +10,8 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
+import eventDeliverySystem.LG;
+import eventDeliverySystem.PortManager;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 

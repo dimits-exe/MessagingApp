@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.client;
 
 import static eventDeliverySystem.datastructures.Message.MessageType.CREATE_TOPIC;
 import static eventDeliverySystem.datastructures.Message.MessageType.DATA_PACKET_SEND;
@@ -12,6 +12,8 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
+import eventDeliverySystem.Broker;
+import eventDeliverySystem.LG;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
@@ -29,7 +31,7 @@ import eventDeliverySystem.thread.PushThread.Protocol;
  *
  * @see Broker
  */
-class Publisher extends ClientNode {
+public class Publisher extends ClientNode {
 
 	/**
 	 * Constructs a Publisher.

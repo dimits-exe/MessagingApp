@@ -11,7 +11,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author Dimitris Tsirmpas
  */
-final class PortManager {
+public class PortManager {
 
 	private static final int LOWEST_PORT = 29170;
 	private static final int HIGHEST_PORT = 29998;

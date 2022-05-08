@@ -1,9 +1,10 @@
-package eventDeliverySystem;
+package eventDeliverySystem.client;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import eventDeliverySystem.Broker;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 
 /**

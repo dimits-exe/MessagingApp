@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.client;
 
 import static eventDeliverySystem.datastructures.Message.MessageType.INITIALISE_CONSUMER;
 
@@ -16,6 +16,10 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import eventDeliverySystem.Broker;
+import eventDeliverySystem.LG;
+import eventDeliverySystem.Subscriber;
+import eventDeliverySystem.User;
 import eventDeliverySystem.User.UserSub;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
