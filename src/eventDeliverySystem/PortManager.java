@@ -16,13 +16,15 @@ final class PortManager {
 	private static final int LOWEST_PORT = 29170;
 	private static final int HIGHEST_PORT = 29998;
 
+	private PortManager() {}
+
 	/**
 	 * Returns a new port for this process in the range {@code 29170-29998} that is
 	 * guaranteed to be available. This method is thread-safe.
 	 *
 	 * @return a new available port
 	 */
-	public synchronized int getNewAvailablePort() {
+	public synchronized static int getNewAvailablePort() {
 		int port;
 		do {
 			port = ThreadLocalRandom.current().nextInt(LOWEST_PORT, HIGHEST_PORT);

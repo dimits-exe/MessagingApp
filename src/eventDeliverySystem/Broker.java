@@ -23,13 +23,12 @@ import eventDeliverySystem.PushThread.Protocol;
  * A remote component that forms the backbone of the EventDeliverySystem.
  * Brokers act as part of a distributed server that services Publishers and
  * Consumers.
- * 
+ *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
 public class Broker implements Runnable, AutoCloseable{
 
-	private static final PortManager 		portManager     = new PortManager();
 	private static final int         		MAX_CONNECTIONS = 64;
 
 	private final Set<ConnectionInfo>      	publisherConnectionInfo;
@@ -99,8 +98,10 @@ public class Broker implements Runnable, AutoCloseable{
 		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
 
 		try {
-			clientRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
-			brokerRequestSocket = new ServerSocket(portManager.getNewAvailablePort(), MAX_CONNECTIONS);
+			clientRequestSocket = new ServerSocket(PortManager.getNewAvailablePort(),
+			        MAX_CONNECTIONS);
+			brokerRequestSocket = new ServerSocket(PortManager.getNewAvailablePort(),
+			        MAX_CONNECTIONS);
 		} catch (IOException e) {
 			throw new UncheckedIOException("Could not opne server socket :", e);
 		}

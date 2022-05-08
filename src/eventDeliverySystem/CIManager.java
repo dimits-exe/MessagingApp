@@ -20,8 +20,6 @@ import java.util.Map;
  */
 class CIManager implements AutoCloseable {
 
-	private static final PortManager PORT_MANAGER = new PortManager();
-
 	private final Map<String, ConnectionInfo> map;
 	private ConnectionInfo                    defaultBrokerCI;
 	private final ServerThread                serverThread;
@@ -38,7 +36,7 @@ class CIManager implements AutoCloseable {
 		 */
 		public ServerThread() throws IOException {
 			super("ServerThread");
-			serverSocket = new ServerSocket(CIManager.PORT_MANAGER.getNewAvailablePort());
+			serverSocket = new ServerSocket(PortManager.getNewAvailablePort());
 		}
 
 		@Override
