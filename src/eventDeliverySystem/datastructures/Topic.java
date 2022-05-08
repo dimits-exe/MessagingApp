@@ -36,7 +36,7 @@ public class Topic extends AbstractTopic {
 	 */
 	public Topic(String name) {
 		super(name);
-		this.postStack = new Stack<>();
+		postStack = new Stack<>();
 	}
 
 	/**
@@ -53,8 +53,8 @@ public class Topic extends AbstractTopic {
 	/**
 	 * Returns the ID of the most recent post in this Topic.
 	 *
-	 * @return the most recent Post's ID or {@link AbstractTopic#FETCH_ALL_POSTS} if there
-	 *         are no Posts in this Topic
+	 * @return the most recent Post's ID or {@link AbstractTopic#FETCH_ALL_POSTS} if
+	 *         there are no Posts in this Topic
 	 */
 	public long getLastPostId() {
 		if (postStack.isEmpty())
@@ -79,7 +79,7 @@ public class Topic extends AbstractTopic {
 		currPackets.add(packet);
 
 		if (packet.isFinal()) {
-			Packet[] data = currPackets.toArray(new Packet[currPackets.size()]);
+			final Packet[] data = currPackets.toArray(new Packet[currPackets.size()]);
 			post(Post.fromPackets(data, currPI));
 			currPackets.clear();
 		}
@@ -91,7 +91,7 @@ public class Topic extends AbstractTopic {
 	 * @param posts the Posts
 	 */
 	public void post(Collection<Post> posts) {
-		for (Post post : posts)
+		for (final Post post : posts)
 			post(post);
 	}
 
@@ -107,7 +107,7 @@ public class Topic extends AbstractTopic {
 	/** Clears this Topic by removing all but the latest Posts */
 	public void clear() {
 		if (!postStack.isEmpty()) {
-			Post first = postStack.pop();
+			final Post first = postStack.pop();
 			postStack.clear();
 			postStack.push(first);
 		}
@@ -128,12 +128,12 @@ public class Topic extends AbstractTopic {
 		LG.sout("Topic#getPostsSince(%d)", lastPostId);
 		LG.in();
 
-		Stack<Post> postsClone = new Stack<>();
+		final Stack<Post> postsClone = new Stack<>();
 		postsClone.addAll(postStack);
 
 		LG.sout("postsClone=%s", postsClone);
 
-		LinkedList<Post> postsAfterGivenPost = new LinkedList<>();
+		final LinkedList<Post> postsAfterGivenPost = new LinkedList<>();
 
 		if (lastPostId == AbstractTopic.FETCH_ALL_POSTS) {
 			while (!postsClone.isEmpty())
@@ -151,7 +151,7 @@ public class Topic extends AbstractTopic {
 
 			LG.out();
 			return postsAfterGivenPost;
-		} catch (EmptyStackException e) {
+		} catch (final EmptyStackException e) {
 			throw new NoSuchElementException(
 			        "No post with id " + lastPostId + " found in the stack");
 		}
@@ -195,8 +195,8 @@ public class Topic extends AbstractTopic {
 		private final long   lastId;
 
 		private TopicToken(Topic topic) {
-			this.topicName = topic.getName();
-			this.lastId = topic.getLastPostId();
+			topicName = topic.getName();
+			lastId = topic.getLastPostId();
 		}
 
 		/**

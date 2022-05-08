@@ -31,17 +31,17 @@ class BrokerTopic extends AbstractTopic {
 	 */
 	public BrokerTopic(String name) {
 		super(name);
-		this.postInfoList = Collections.synchronizedList(new LinkedList<>());
-		this.packetsPerPostInfoMap = new HashMap<>();
-		this.indexPerPostInfoId = new HashMap<>();
+		postInfoList = Collections.synchronizedList(new LinkedList<>());
+		packetsPerPostInfoMap = new HashMap<>();
+		indexPerPostInfoId = new HashMap<>();
 	}
 
 	@Override
 	public void postHook(PostInfo postInfo) {
 		postInfoList.add(postInfo);
 
-		long         postId     = postInfo.getId();
-		List<Packet> packetList = Collections.synchronizedList(new LinkedList<>());
+		final long         postId     = postInfo.getId();
+		final List<Packet> packetList = Collections.synchronizedList(new LinkedList<>());
 
 		synchronized (packetsPerPostInfoMap) {
 			packetsPerPostInfoMap.put(postId, packetList);
@@ -54,7 +54,7 @@ class BrokerTopic extends AbstractTopic {
 
 	@Override
 	public void postHook(Packet packet) {
-		long postId   = packet.getPostId();
+		final long postId = packet.getPostId();
 
 		List<Packet> packetList;
 		synchronized (packetsPerPostInfoMap) {
@@ -96,25 +96,23 @@ class BrokerTopic extends AbstractTopic {
 	public void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
 
-		if (postId == AbstractTopic.FETCH_ALL_POSTS) {
+		if (postId == AbstractTopic.FETCH_ALL_POSTS)
 			getAllPosts(emptyPostInfoList, emptyPacketsPerPostInfoMap);
-		}
 
 		// broker is not persistent, consumer may have posts from previous session
-		if (!indexPerPostInfoId.containsKey(postId)) {
+		if (!indexPerPostInfoId.containsKey(postId))
 			return;
-		}
 
-		int index = indexPerPostInfoId.get(postId);
+		final int              index = indexPerPostInfoId.get(postId);
 		ListIterator<PostInfo> postInfoIter;
 		for (postInfoIter = postInfoList.listIterator(index); postInfoIter.hasNext();) {
 
-			PostInfo curr = postInfoIter.next();
+			final PostInfo curr = postInfoIter.next();
 
 			emptyPostInfoList.add(curr);
 
-			long id = curr.getId();
-			List<Packet> ls = packetsPerPostInfoMap.get(id);
+			final long         id = curr.getId();
+			final List<Packet> ls = packetsPerPostInfoMap.get(id);
 			emptyPacketsPerPostInfoMap.put(id, ls.toArray(new Packet[ls.size()]));
 		}
 	}

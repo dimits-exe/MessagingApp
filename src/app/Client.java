@@ -34,12 +34,12 @@ public class Client {
 	public static void main(String[] args) {
 
 		if (args.length != 5) {
-			System.out.println(usage);
+			System.out.println(Client.usage);
 			return;
 		}
 
-		String type = args[0];
-		boolean existing;
+		final String type = args[0];
+		boolean      existing;
 
 		Object arg;
 
@@ -49,31 +49,31 @@ public class Client {
 		} else if (type.equals("-l")) {
 			try {
 				arg = Long.valueOf(args[1]);
-			} catch (NumberFormatException e) {
+			} catch (final NumberFormatException e) {
 				System.err.printf("Invalid id: %s", args[1]);
 				return;
 			}
 			existing = true;
 		} else {
-			System.out.println(usage);
+			System.out.println(Client.usage);
 			return;
 		}
 
-		String ip   = args[2];
-		int    port;
+		final String ip = args[2];
+		int          port;
 		try {
 			port = Integer.parseInt(args[3]);
-		} catch (NumberFormatException e) {
+		} catch (final NumberFormatException e) {
 			System.err.printf("Invalid port: %s", args[3]);
 			return;
 		}
 
-		Path dir = Path.of(args[4]);
+		final Path dir = Path.of(args[4]);
 
 		CrappyUserUI ui;
 		try {
 			ui = new CrappyUserUI(existing, arg, ip, port, dir);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.err.printf(
 			        "There was an I/O error either while interacting with the file system or connecting to the server");
 			return;

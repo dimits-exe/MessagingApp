@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.User;
 import eventDeliverySystem.User.UserSub;
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.ConnectionInfo;
@@ -111,7 +110,7 @@ public class Consumer extends ClientNode implements Subscriber {
 			listenForTopic(topicName);
 
 			// TODO: contemplate life choices
-			final List<Post> posts    = topic.getAllPosts();
+			final List<Post> posts = topic.getAllPosts();
 
 			final long idOfLast;
 			if (posts.size() != 0)
@@ -150,9 +149,9 @@ public class Consumer extends ClientNode implements Subscriber {
 	public void listenForTopic(String topicName) {
 		LG.sout("listenForTopic=%s", topicName);
 		LG.in();
-		final Topic topic  = new Topic(topicName);
+		final Topic topic = new Topic(topicName);
 		topic.subscribe(this);
-		Socket      socket = null;
+		Socket socket = null;
 
 		while (true) {
 			final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
@@ -170,7 +169,7 @@ public class Consumer extends ClientNode implements Subscriber {
 		}
 
 		try {
-			if(socket == null)
+			if (socket == null)
 				throw new RuntimeException("No connection could be established with the Broker");
 
 			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream()); // socket can't be null

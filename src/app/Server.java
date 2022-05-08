@@ -34,7 +34,7 @@ public class Server {
 	public static void main(String[] args) {
 
 		if ((args.length != 2) && (args.length != 0)) {
-			System.out.print(usage);
+			System.out.print(Server.usage);
 			return;
 		}
 
@@ -49,8 +49,8 @@ public class Server {
 		if (args.length == 2) {
 			ip = args[0];
 			try {
-			port = Integer.parseInt(args[1]);
-			} catch (NumberFormatException e) {
+				port = Integer.parseInt(args[1]);
+			} catch (final NumberFormatException e) {
 				System.err.printf("Invalid port: %s", args[1]);
 				return;
 			}
@@ -66,11 +66,11 @@ public class Server {
 
 		// broker execution
 		try (Broker broker = isLeader ? new Broker() : new Broker(ip, port)) { //java 8 forces me to do this
-			Thread thread = new Thread(broker, "Broker-" + brokerId);
+			final Thread thread = new Thread(broker, "Broker-" + brokerId);
 			thread.start();
 			LG.sout("Broker#main end");
 			thread.join();
-		} catch (InterruptedException e) {
+		} catch (final InterruptedException e) {
 			e.printStackTrace();
 		}
 	}

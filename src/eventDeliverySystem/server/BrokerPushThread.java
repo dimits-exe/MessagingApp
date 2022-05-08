@@ -18,12 +18,11 @@ import eventDeliverySystem.util.LG;
 import eventDeliverySystem.util.Subscriber;
 
 /**
- * A thread that receives packets for a certain Topic
- * and streams them to a Consumer.
+ * A thread that receives packets for a certain Topic and streams them to a
+ * Consumer.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
- *
  */
 class BrokerPushThread extends Thread implements Subscriber {
 
@@ -61,17 +60,17 @@ class BrokerPushThread extends Thread implements Subscriber {
 					synchronized (this) {
 						this.wait();
 					}
-				} catch (InterruptedException e) {}
+				} catch (final InterruptedException e) {}
 			}
 
 			LG.sout("--- queue is no longer empty ---");
-			do {
+			do
 				try {
 					oos.writeObject(queue.remove());
-				} catch (IOException e) {
+				} catch (final IOException e) {
 					e.printStackTrace();
 				}
-			} while (!queue.isEmpty());
+			while (!queue.isEmpty());
 		}
 	}
 
@@ -102,9 +101,8 @@ class BrokerPushThread extends Thread implements Subscriber {
 		LG.sout("BrokerPushThread#notify(%s)", packet);
 
 		// if no post is being streamed
-		if (currentPostId == -1) {
+		if (currentPostId == -1)
 			throw new RuntimeException("currentPostId can't be -1 at this pont");
-		}
 
 		// if packet belongs to post being streamed
 		if (packet.getPostId() == currentPostId) {
@@ -127,15 +125,15 @@ class BrokerPushThread extends Thread implements Subscriber {
 					}
 
 					// take next Post
-					PostInfo curr = postInfos.removeFirst();
+					final PostInfo curr = postInfos.removeFirst();
 					// set as current
 					currentPostId = curr.getId();
 					// start streaming post
 					queue.add(curr);
 
 					// stream all packets in buffer
-					List<Packet> buffer = buffers.get(currentPostId);
-					for (Packet packetInBuffer : buffer) {
+					final List<Packet> buffer = buffers.get(currentPostId);
+					for (final Packet packetInBuffer : buffer) {
 						if (finalReached)
 							throw new RuntimeException(
 							        "this should never happend tomara deikse eleos");
@@ -147,17 +145,15 @@ class BrokerPushThread extends Thread implements Subscriber {
 						finalReached |= packetInBuffer.isFinal();
 					}
 
-					if (finalReached) {
+					if (finalReached)
 						buffers.remove(currentPostId);
-					}
 
 					// keep streaming the next post in buffer if the previous has been fully streamed
 				} while (finalReached);
 			}
-		} else {
+		} else
 			// add packet to buffer because it's not being streamed
 			buffers.get(packet.getPostId()).add(packet);
-		}
 
 		synchronized (this) {
 			this.notify();

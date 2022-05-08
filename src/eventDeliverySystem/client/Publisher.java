@@ -93,39 +93,40 @@ public class Publisher extends ClientNode {
 		LG.sout("Publisher#push(%s, %s)", post, topicName);
 
 		LG.in();
-		Runnable job = () -> {
+		final Runnable job = () -> {
 
 			boolean success;
 
 			do {
-				ConnectionInfo actualBrokerCI = topicCIManager
+				final ConnectionInfo actualBrokerCI = topicCIManager
 				        .getConnectionInfoForTopic(topicName);
 
 				LG.sout("Actual Broker CI: %s", actualBrokerCI);
 
 				try {
-					Socket socket = new Socket(actualBrokerCI.getAddress(),
+					final Socket socket = new Socket(actualBrokerCI.getAddress(),
 					        actualBrokerCI.getPort());
 
-					PushThread pushThread;
-					ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+					PushThread               pushThread;
+					final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 
 					oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
 
-					PostInfo                postInfo  = post.getPostInfo();
-					List<PostInfo>          postInfos = List.of(postInfo);
-					Map<Long, Packet[]> packets   = Map.of(postInfo.getId(), Packet.fromPost(post));
+					final PostInfo            postInfo  = post.getPostInfo();
+					final List<PostInfo>      postInfos = List.of(postInfo);
+					final Map<Long, Packet[]> packets   = Map.of(postInfo.getId(),
+					        Packet.fromPost(post));
 					pushThread = new PushThread(oos, postInfos, packets, Protocol.NORMAL);
 					pushThread.start();
 					try {
 						pushThread.join();
-					} catch (InterruptedException e) {
+					} catch (final InterruptedException e) {
 						e.printStackTrace();
 					}
 
 					success = pushThread.success();
 
-				} catch (IOException e) {
+				} catch (final IOException e) {
 
 					System.err.printf("IOException while connecting to actual broker%n");
 					e.printStackTrace();
@@ -152,18 +153,18 @@ public class Publisher extends ClientNode {
 	 */
 	public boolean createTopic(String topicName) {
 
-		ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
-		boolean        success;
+		final ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+		boolean              success;
 
 		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
-			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();
-			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
 			oos.writeObject(new Message(CREATE_TOPIC, topicName));
 			success = ois.readBoolean();
 
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.err.printf("IOException while creating Topic '%s'%n", topicName);
 			e.printStackTrace();
 			topicCIManager.invalidate(topicName);

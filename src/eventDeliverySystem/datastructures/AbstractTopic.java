@@ -19,7 +19,7 @@ public abstract class AbstractTopic {
 	private final String          name;
 	private final Set<Subscriber> subscribers;
 	/** Constant to be used when no post exists and an ID is needed */
-	public static final long FETCH_ALL_POSTS = -1L;
+	public static final long      FETCH_ALL_POSTS = -1L;
 
 	/**
 	 * Constructs an empty Topic with no subscribers.
@@ -68,7 +68,7 @@ public abstract class AbstractTopic {
 	 */
 	public final void post(PostInfo postInfo) {
 		postHook(postInfo);
-		for (Subscriber sub : subscribers)
+		for (final Subscriber sub : subscribers)
 			sub.notify(postInfo, name);
 	}
 
@@ -79,7 +79,7 @@ public abstract class AbstractTopic {
 	 */
 	public final void post(Packet packet) {
 		postHook(packet);
-		for (Subscriber sub : subscribers)
+		for (final Subscriber sub : subscribers)
 			sub.notify(packet, name);
 	}
 
@@ -113,19 +113,19 @@ public abstract class AbstractTopic {
 	 */
 	public static int hashForTopic(String topicName) {
 		try {
-			MessageDigest a = MessageDigest.getInstance("md5");
-			byte[]        b = a.digest(topicName.getBytes());
+			final MessageDigest a = MessageDigest.getInstance("md5");
+			final byte[]        b = a.digest(topicName.getBytes());
 
 			// big brain stuff
-			final int FOUR = 4;
-			int       c    = FOUR;
-			int       d    = b.length / c;
-			byte[]    e    = new byte[c];
+			final int    FOUR = 4;
+			final int    c    = FOUR;
+			final int    d    = b.length / c;
+			final byte[] e    = new byte[c];
 			for (int f = 0; f < e.length; f++)
 				for (int g = 0; g < d; g++)
 					e[f] ^= (b[(d * f) + g]);
 
-			BigInteger h = new BigInteger(e);
+			final BigInteger h = new BigInteger(e);
 			return h.intValueExact();
 
 		} catch (NoSuchAlgorithmException | ArithmeticException e) {
@@ -144,7 +144,7 @@ public abstract class AbstractTopic {
 			return true;
 		if (!(obj instanceof AbstractTopic))
 			return false;
-		AbstractTopic other = (AbstractTopic) obj;
+		final AbstractTopic other = (AbstractTopic) obj;
 		return Objects.equals(name, other.name); // same name == same Topic, can't have duplicate names
 	}
 }

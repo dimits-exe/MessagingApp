@@ -35,9 +35,9 @@ import eventDeliverySystem.util.PortManager;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class Broker implements Runnable, AutoCloseable{
+public class Broker implements Runnable, AutoCloseable {
 
-	private static final int         		MAX_CONNECTIONS = 64;
+	private static final int MAX_CONNECTIONS = 64;
 
 	private final Set<ConnectionInfo>                  publisherConnectionInfo;
 	private final Map<String, Set<ObjectOutputStream>> consumerOOSPerTopic;
@@ -53,18 +53,18 @@ public class Broker implements Runnable, AutoCloseable{
 	 * the server network.
 	 */
 	public Broker() {
-		this.publisherConnectionInfo = Collections.synchronizedSet(new HashSet<>());
-		this.consumerOOSPerTopic = Collections.synchronizedMap(new HashMap<>());
-		this.brokerConnections = Collections.synchronizedList(new LinkedList<>());
-		this.brokerCI = Collections.synchronizedList(new LinkedList<>());
-		this.topicsByName = Collections.synchronizedMap(new HashMap<>());
+		publisherConnectionInfo = Collections.synchronizedSet(new HashSet<>());
+		consumerOOSPerTopic = Collections.synchronizedMap(new HashMap<>());
+		brokerConnections = Collections.synchronizedList(new LinkedList<>());
+		brokerCI = Collections.synchronizedList(new LinkedList<>());
+		topicsByName = Collections.synchronizedMap(new HashMap<>());
 
 		try {
 			clientRequestSocket = new ServerSocket(PortManager.getNewAvailablePort(),
-			        MAX_CONNECTIONS);
+			        Broker.MAX_CONNECTIONS);
 			brokerRequestSocket = new ServerSocket(PortManager.getNewAvailablePort(),
-			        MAX_CONNECTIONS);
-		} catch (IOException e) {
+			        Broker.MAX_CONNECTIONS);
+		} catch (final IOException e) {
 			throw new UncheckedIOException("Could not opne server socket :", e);
 		}
 
@@ -74,55 +74,54 @@ public class Broker implements Runnable, AutoCloseable{
 	}
 
 	/**
-	 * Begins listening for and new requests by clients and connection requests
-	 * from other brokers.
+	 * Begins listening for and new requests by clients and connection requests from
+	 * other brokers.
 	 */
 	@Override
 	public void run() {
 
 		// Start handling client requests
-		Runnable clientRequestThread = () -> {
+		final Runnable clientRequestThread = () -> {
 			LG.sout("Start: clientRequestThread");
-			while (true) {
+			while (true)
 				try {
 					@SuppressWarnings("resource")
-					Socket socket = clientRequestSocket.accept();
+					final Socket socket = clientRequestSocket.accept();
 					new ClientRequestHandler(socket).start();
 
-				} catch (IOException e) {
+				} catch (final IOException e) {
 					e.printStackTrace();
 					System.exit(-1); // serious error when waiting, close broker
 				}
-			}
 		};
 
 
-		Runnable brokerRequestThread = new Runnable() {
+		final Runnable brokerRequestThread = new Runnable() {
 
 			@SuppressWarnings("resource")
 			@Override
 			public void run() {
 				LG.sout("Start: BrokerRequestThread");
-				while(true) {
+				while (true)
 					try {
-						Socket socket = brokerRequestSocket.accept();
+						final Socket socket = brokerRequestSocket.accept();
 						brokerConnections.add(socket);
 
-						ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-						ConnectionInfo    brokerCIForClient;
+						final ObjectInputStream ois = new ObjectInputStream(
+						        socket.getInputStream());
+						ConnectionInfo          brokerCIForClient;
 						try {
 							brokerCIForClient = (ConnectionInfo) ois.readObject();
-						} catch (ClassNotFoundException e) {
+						} catch (final ClassNotFoundException e) {
 							e.printStackTrace();
 							return;
 						}
 						brokerCI.add(brokerCIForClient);
 
-					} catch (IOException e) {
+					} catch (final IOException e) {
 						e.printStackTrace();
-						System.exit(-1); 	// serious error when waiting, close broker
+						System.exit(-1); // serious error when waiting, close broker
 					}
-				}
 			}
 
 		}; //brokerRequestThread
@@ -136,21 +135,24 @@ public class Broker implements Runnable, AutoCloseable{
 
 	/**
 	 * Create a non-leader broker and connect it to the server network.
-	 * @param leaderIP the IP of the leader broker
+	 *
+	 * @param leaderIP   the IP of the leader broker
 	 * @param leaderPort the port of the leader broker
+	 *
 	 * @throws UncheckedIOException if the connection to the leader broker fails
 	 */
 	@SuppressWarnings("resource")
 	public Broker(String leaderIP, int leaderPort) {
 		this();
 		try {
-			Socket leaderConnection = new Socket(leaderIP, leaderPort);
-			ObjectOutputStream oos = new ObjectOutputStream(leaderConnection.getOutputStream());
+			final Socket             leaderConnection = new Socket(leaderIP, leaderPort);
+			final ObjectOutputStream oos              = new ObjectOutputStream(
+			        leaderConnection.getOutputStream());
 			oos.flush();
-			oos.writeObject(new ConnectionInfo(this.clientRequestSocket));
+			oos.writeObject(new ConnectionInfo(clientRequestSocket));
 			oos.flush();
 			brokerConnections.add(leaderConnection);
-		} catch (IOException ioe) {
+		} catch (final IOException ioe) {
 			throw new UncheckedIOException("Couldn't connect to leader broker ", ioe);
 		}
 
@@ -162,14 +164,14 @@ public class Broker implements Runnable, AutoCloseable{
 	@Override
 	public void close() {
 		try {
-			for(Set<ObjectOutputStream> consumers : consumerOOSPerTopic.values())
-				for(ObjectOutputStream consumer : consumers)
+			for (final Set<ObjectOutputStream> consumers : consumerOOSPerTopic.values())
+				for (final ObjectOutputStream consumer : consumers)
 					consumer.close();
 
-			for(Socket broker : brokerConnections)
+			for (final Socket broker : brokerConnections)
 				broker.close();
 
-		} catch(IOException ioe) {
+		} catch (final IOException ioe) {
 			ioe.printStackTrace();
 		}
 	}
@@ -193,7 +195,7 @@ public class Broker implements Runnable, AutoCloseable{
 	}
 
 	private BrokerTopic getTopic(String topicName) {
-		BrokerTopic topic = topicsByName.get(topicName);
+		final BrokerTopic topic = topicsByName.get(topicName);
 		if (topic == null)
 			throw new NoSuchElementException("There is no Topic with name " + topicName);
 		return topic;
@@ -208,14 +210,14 @@ public class Broker implements Runnable, AutoCloseable{
 	 * @return the {@link ConnectionInfo} for the assigned broker
 	 */
 	private ConnectionInfo getAssignedBroker(String topicName) {
-		int brokerIndex = Math.abs(AbstractTopic.hashForTopic(topicName) % (brokerConnections.size() + 1));
+		final int brokerIndex = Math
+		        .abs(AbstractTopic.hashForTopic(topicName) % (brokerConnections.size() + 1));
 
 		// last index (out of range normally) => this broker is responsible for the topic
 		// this rule should work because the default broker is the only broker that processes
 		// such requests.
-		if(brokerIndex == brokerConnections.size()) {
+		if (brokerIndex == brokerConnections.size())
 			return new ConnectionInfo(clientRequestSocket);
-		}
 
 		// else send the broker from the other connections
 		return brokerCI.get(brokerIndex);
@@ -225,16 +227,15 @@ public class Broker implements Runnable, AutoCloseable{
 	// ========== THREADS ==========
 
 	/**
-	 * A thread which continuously reads new client requests and
-	 * assigns worker threads to fulfill them when necessary.
+	 * A thread which continuously reads new client requests and assigns worker
+	 * threads to fulfill them when necessary.
 	 *
 	 * @author Alex Mandelias
 	 * @author Dimitris Tsirmpas
-	 *
 	 */
 	private class ClientRequestHandler extends Thread {
 
-		private Socket socket;
+		private final Socket socket;
 
 		public ClientRequestHandler(Socket socket) {
 			super("ClientRequestHandler-" + socket.getInetAddress() + "-" + socket.getLocalPort());
@@ -247,16 +248,16 @@ public class Broker implements Runnable, AutoCloseable{
 			LG.ssocket("Starting ClientRequestHandler for Socket", socket);
 
 			try {
-				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				oos.flush();
-				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-				Message message = (Message) ois.readObject();
+				final Message message = (Message) ois.readObject();
 				LG.sout("Creating thread for message type: %s", message.getType());
 
 				// fuck variables in switch statements
 				BrokerTopic topic;
-				String topicName;
+				String      topicName;
 
 				LG.in();
 				switch (message.getType()) {
@@ -271,7 +272,7 @@ public class Broker implements Runnable, AutoCloseable{
 					break;
 
 				case INITIALISE_CONSUMER:
-					Topic.TopicToken topicToken = (Topic.TopicToken) message.getValue();
+					final Topic.TopicToken topicToken = (Topic.TopicToken) message.getValue();
 					topicName = topicToken.getName();
 					LG.sout("Registering consumer for Topic '%s'", topicName);
 					LG.in();
@@ -282,10 +283,10 @@ public class Broker implements Runnable, AutoCloseable{
 					new BrokerPushThread(topicsByName.get(topicName), oos).start();
 
 					// send existing topics that the consumer does not have
-					long idOfLast = topicToken.getLastId();
+					final long idOfLast = topicToken.getLastId();
 					LG.sout("idOfLast=%d", idOfLast);
-					List<PostInfo> piList = new LinkedList<>();
-					Map<Long, Packet[]> packetMap = new HashMap<>();
+					final List<PostInfo> piList = new LinkedList<>();
+					final Map<Long, Packet[]> packetMap = new HashMap<>();
 					getTopic(topicName).getPostsSince(idOfLast, piList, packetMap);
 
 					LG.sout("piList=%s", piList);
@@ -304,7 +305,7 @@ public class Broker implements Runnable, AutoCloseable{
 					topicName = (String) message.getValue();
 					LG.sout("Creating Topic '%s'", topicName);
 
-					boolean topicExists = topicsByName.containsKey(topicName);
+					final boolean topicExists = topicsByName.containsKey(topicName);
 					LG.sout("Exists '%s'", topicExists);
 					if (!topicExists)
 						addTopic(topicName);
@@ -319,9 +320,9 @@ public class Broker implements Runnable, AutoCloseable{
 				}
 				LG.out();
 
-			} catch (IOException ioe) {
+			} catch (final IOException ioe) {
 				// do nothing
-			} catch (ClassNotFoundException e) {
+			} catch (final ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
@@ -358,10 +359,10 @@ public class Broker implements Runnable, AutoCloseable{
 
 			try {
 				LG.sout("topicName=%s", topicName);
-				ConnectionInfo brokerInfo = Broker.this.getAssignedBroker(topicName);
+				final ConnectionInfo brokerInfo = getAssignedBroker(topicName);
 				LG.sout("brokerInfo=%s", brokerInfo);
 				oos.writeObject(brokerInfo);
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				// do nothing
 			}
 			LG.out();

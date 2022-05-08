@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class PortManager {
 
-	private static final int LOWEST_PORT = 29170;
+	private static final int LOWEST_PORT  = 29170;
 	private static final int HIGHEST_PORT = 29998;
 
 	private PortManager() {}
@@ -26,9 +26,10 @@ public class PortManager {
 	 */
 	public synchronized static int getNewAvailablePort() {
 		int port;
-		do {
-			port = ThreadLocalRandom.current().nextInt(LOWEST_PORT, HIGHEST_PORT);
-		} while (!PortManager.isAvailable(port));
+		do
+			port = ThreadLocalRandom.current().nextInt(PortManager.LOWEST_PORT,
+			        PortManager.HIGHEST_PORT);
+		while (!PortManager.isAvailable(port));
 
 		return port;
 	}
@@ -46,10 +47,10 @@ public class PortManager {
 	// https://stackoverflow.com/questions/434718/sockets-discover-port-availability-using-java
 	private static boolean isAvailable(int port) {
 		try (ServerSocket testSocket = new ServerSocket(port)) {
-	        testSocket.setReuseAddress(true);
-	        return true;
-	    } catch (IOException e) {
+			testSocket.setReuseAddress(true);
+			return true;
+		} catch (final IOException e) {
 			return false;
-	    }
+		}
 	}
 }

@@ -49,7 +49,7 @@ public class User {
 	 */
 	public static User loadExisting(String serverIP, int serverPort, Path profilesRootDirectory,
 	        long profileId) throws IOException {
-		User user = new User(serverIP, serverPort, profilesRootDirectory);
+		final User user = new User(serverIP, serverPort, profilesRootDirectory);
 		user.switchToExistingProfile(profileId);
 		return user;
 	}
@@ -70,19 +70,19 @@ public class User {
 	 */
 	public static User createNew(String serverIP, int serverPort, Path profilesRootDirectory,
 	        String name) throws IOException {
-		User user = new User(serverIP, serverPort, profilesRootDirectory);
+		final User user = new User(serverIP, serverPort, profilesRootDirectory);
 		user.switchToNewProfile(name);
 		return user;
 	}
 
 	private User(String serverIP, int port, Path profilesRootDirectory)
 	        throws IOException {
-		this.profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
+		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 
 		try {
-			this.publisher = new Publisher(serverIP, port);
-			this.consumer = new Consumer(serverIP, port, new UserSub());
-		} catch (IOException e) {
+			publisher = new Publisher(serverIP, port);
+			consumer = new Consumer(serverIP, port, new UserSub());
+		} catch (final IOException e) {
 			throw new IOException("Could not establish connection with server", e);
 		}
 	}
@@ -148,7 +148,7 @@ public class User {
 	public boolean createTopic(String topicName) throws IOException {
 		LG.sout("User#createTopic(%s)", topicName);
 		LG.in();
-		boolean success = publisher.createTopic(topicName);
+		final boolean success = publisher.createTopic(topicName);
 		LG.sout("success=%s", success);
 		if (success)
 			listenForTopic(topicName);
@@ -170,12 +170,12 @@ public class User {
 	public void pull(String topicName) throws IOException {
 		LG.sout("User#pull from Topic '%s'", topicName);
 		LG.in();
-		List<Post> newPosts = consumer.pull(topicName); // sorted from latest to earliest
+		final List<Post> newPosts = consumer.pull(topicName); // sorted from latest to earliest
 		Collections.reverse(newPosts);
 		LG.sout("newPosts=%s", newPosts);
 		currentProfile.updateTopic(topicName, newPosts);
 
-		for (Post post : newPosts) {
+		for (final Post post : newPosts) {
 			LG.sout("Saving Post '%s'", post);
 			profileFileSystem.savePost(post, topicName);
 		}
@@ -227,7 +227,7 @@ public class User {
 		 * @param topicName the name of the Topic
 		 */
 		public void notify(String topicName) {
-			User.this.currentProfile.markUnread(topicName);
+			currentProfile.markUnread(topicName);
 			LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
 
 			// TODO: remove
@@ -255,7 +255,7 @@ public class User {
 	 */
 	public static User loadExistingLocal(Path profilesRootDirectory, long profileId)
 	        throws IOException {
-		User user = new User(profilesRootDirectory);
+		final User user = new User(profilesRootDirectory);
 		user.switchToExistingProfileLocal(profileId);
 		return user;
 	}
@@ -275,15 +275,15 @@ public class User {
 	 *                     system or while establishing connection to the server
 	 */
 	public static User createNewLocal(Path profilesRootDirectory, String name) throws IOException {
-		User user = new User(profilesRootDirectory);
+		final User user = new User(profilesRootDirectory);
 		user.switchToNewProfileLocal(name);
 		return user;
 	}
 
 	private User(Path profilesRootDirectory) {
-		this.profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
-		this.publisher = null;
-		this.consumer = null;
+		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
+		publisher = null;
+		consumer = null;
 	}
 
 	/**
@@ -318,7 +318,7 @@ public class User {
 	 */
 	@SuppressWarnings({ "static-method", "unused" })
 	public void postLocal(Post post, String topicName) {
-		;
+
 	}
 
 	/**
@@ -346,9 +346,8 @@ public class User {
 	public void pullLocal(String topicName, List<Post> newPosts) throws IOException {
 		currentProfile.updateTopic(topicName, newPosts);
 
-		for (Post post : newPosts) {
+		for (final Post post : newPosts)
 			profileFileSystem.savePost(post, topicName);
-		}
 	}
 
 	/**

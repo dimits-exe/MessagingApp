@@ -47,7 +47,7 @@ public class CrappyUserUI extends JFrame {
 		setSize(800, 600);
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-		JPanel main = new JPanel(new GridLayout(2, 2));
+		final JPanel main = new JPanel(new GridLayout(2, 2));
 		main.add(getPostPanel());
 		main.add(getCreateTopicPanel());
 		main.add(getPullPanel());
@@ -56,31 +56,31 @@ public class CrappyUserUI extends JFrame {
 	}
 
 	private final JPanel getPostPanel() {
-		JPanel main = new JPanel();
+		final JPanel main = new JPanel();
 		main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));
 
-		JTextField file_text = new JTextField(20);
-		JTextField topicName = new JTextField(20);
-		JButton    postFile  = new JButton("File");
-		JButton    postText  = new JButton("Text");
+		final JTextField file_text = new JTextField(20);
+		final JTextField topicName = new JTextField(20);
+		final JButton    postFile  = new JButton("File");
+		final JButton    postText  = new JButton("Text");
 
-		postFile.addActionListener((e) -> {
+		postFile.addActionListener(e -> {
 			try {
-				User user1    = CrappyUserUI.this.user;
-				File file     = new File(file_text.getText());
-				long posterId = user1.getCurrentProfile().getId();
-				Post post     = Post.fromFile(file, posterId);
+				final User user1    = CrappyUserUI.this.user;
+				final File file     = new File(file_text.getText());
+				final long posterId = user1.getCurrentProfile().getId();
+				final Post post     = Post.fromFile(file, posterId);
 				user1.post(post, topicName.getText());
-			} catch (IOException e1) {
+			} catch (final IOException e1) {
 				e1.printStackTrace();
 			}
 		});
 
-		postText.addActionListener((e) -> {
-			User   user1    = CrappyUserUI.this.user;
-			String text     = file_text.getText();
-			long   posterId = user1.getCurrentProfile().getId();
-			Post   post     = Post.fromText(text, posterId);
+		postText.addActionListener(e -> {
+			final User   user1    = CrappyUserUI.this.user;
+			final String text     = file_text.getText();
+			final long   posterId = user1.getCurrentProfile().getId();
+			final Post   post     = Post.fromText(text, posterId);
 			user1.post(post, topicName.getText());
 		});
 
@@ -93,17 +93,17 @@ public class CrappyUserUI extends JFrame {
 	}
 
 	private final JPanel getCreateTopicPanel() {
-		JPanel main = new JPanel();
+		final JPanel main = new JPanel();
 		main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));
 
-		JTextField topicName   = new JTextField(20);
-		JButton    createTopic = new JButton("Create");
+		final JTextField topicName   = new JTextField(20);
+		final JButton    createTopic = new JButton("Create");
 
-		createTopic.addActionListener((e) -> {
-			User user1 = CrappyUserUI.this.user;
+		createTopic.addActionListener(e -> {
+			final User user1 = CrappyUserUI.this.user;
 			try {
 				user1.createTopic(topicName.getText());
-			} catch (IOException e1) {
+			} catch (final IOException e1) {
 				e1.printStackTrace();
 			}
 		});
@@ -115,17 +115,17 @@ public class CrappyUserUI extends JFrame {
 	}
 
 	private final JPanel getPullPanel() {
-		JPanel main = new JPanel();
+		final JPanel main = new JPanel();
 		main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));
 
-		JTextField topicName   = new JTextField(20);
-		JButton    pull      = new JButton("Pull");
+		final JTextField topicName = new JTextField(20);
+		final JButton    pull      = new JButton("Pull");
 
-		pull.addActionListener((e) -> {
-			User user1 = CrappyUserUI.this.user;
+		pull.addActionListener(e -> {
+			final User user1 = CrappyUserUI.this.user;
 			try {
 				user1.pull(topicName.getText());
-			} catch (IOException e1) {
+			} catch (final IOException e1) {
 				e1.printStackTrace();
 			}
 		});
@@ -137,17 +137,17 @@ public class CrappyUserUI extends JFrame {
 	}
 
 	private final JPanel getListenForTopicPanel() {
-		JPanel main = new JPanel();
+		final JPanel main = new JPanel();
 		main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));
 
-		JTextField topicName   = new JTextField(20);
-		JButton    lsitenForTopic = new JButton("Listen For Topic");
+		final JTextField topicName      = new JTextField(20);
+		final JButton    lsitenForTopic = new JButton("Listen For Topic");
 
-		lsitenForTopic.addActionListener((e) -> {
-			User user1 = CrappyUserUI.this.user;
+		lsitenForTopic.addActionListener(e -> {
+			final User user1 = CrappyUserUI.this.user;
 			try {
 				user1.listenForTopic(topicName.getText());
-			} catch (IOException e1) {
+			} catch (final IOException e1) {
 				e1.printStackTrace();
 			}
 		});

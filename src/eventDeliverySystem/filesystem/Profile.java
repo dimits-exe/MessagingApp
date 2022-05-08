@@ -21,9 +21,9 @@ import eventDeliverySystem.datastructures.Topic;
  */
 public class Profile {
 
-	private final String             name;
-	private final long               id;
-	private final Map<String, Topic> topics;
+	private final String               name;
+	private final long                 id;
+	private final Map<String, Topic>   topics;
 	private final Map<String, Integer> unreadTopics;
 
 	/**

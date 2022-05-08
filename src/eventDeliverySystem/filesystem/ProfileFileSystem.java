@@ -42,9 +42,9 @@ public class ProfileFileSystem {
 		this.profilesRootDirectory = profilesRootDirectory;
 		topicFileSystemMap = new HashMap<>();
 
-		for (String id : getProfileIDs()) {
-			long            profileId = Long.parseLong(id);
-			TopicFileSystem tfs       = new TopicFileSystem(getTopicsDirectory(profileId));
+		for (final String id : getProfileIDs()) {
+			final long            profileId = Long.parseLong(id);
+			final TopicFileSystem tfs       = new TopicFileSystem(getTopicsDirectory(profileId));
 			topicFileSystemMap.put(profileId, tfs);
 		}
 	}
@@ -55,8 +55,9 @@ public class ProfileFileSystem {
 	 * @return a collection of all the Profile IDs found
 	 */
 	public Collection<String> getProfileIDs() {
-		File[] profileDirectories = profilesRootDirectory.toFile().listFiles(File::isDirectory);
-		Stream<String> nameStream = Stream.of(profileDirectories).map(td -> td.getName());
+		final File[]         profileDirectories = profilesRootDirectory.toFile()
+		        .listFiles(File::isDirectory);
+		final Stream<String> nameStream         = Stream.of(profileDirectories).map(File::getName);
 		return new HashSet<>(nameStream.collect(Collectors.toList()));
 	}
 
@@ -82,10 +83,10 @@ public class ProfileFileSystem {
 
 		changeProfile(profileId);
 
-		File profileMeta = getProfileMeta();
+		final File profileMeta = getProfileMeta();
 		profileMeta.createNewFile();
-		byte[] profileNameData = name.getBytes();
-		write(profileMeta, profileNameData);
+		final byte[] profileNameData = name.getBytes();
+		ProfileFileSystem.write(profileMeta, profileNameData);
 
 		return new Profile(name, currentProfileId);
 	}
@@ -104,13 +105,13 @@ public class ProfileFileSystem {
 	public Profile loadProfile(long profileId) throws IOException {
 		changeProfile(profileId);
 
-		File    profileMeta     = getProfileMeta();
-		byte[]  profileNameData = read(profileMeta);
-		String  name            = new String(profileNameData);
-		Profile profile         = new Profile(name, currentProfileId);
+		final File    profileMeta     = getProfileMeta();
+		final byte[]  profileNameData = ProfileFileSystem.read(profileMeta);
+		final String  name            = new String(profileNameData);
+		final Profile profile         = new Profile(name, currentProfileId);
 
-		TopicFileSystem tfs = getTopicFileSystemForCurrentUser();
-		for (Topic topic : tfs.readAllTopics())
+		final TopicFileSystem tfs = getTopicFileSystemForCurrentUser();
+		for (final Topic topic : tfs.readAllTopics())
 			profile.addTopic(topic);
 
 		return profile;
@@ -155,13 +156,13 @@ public class ProfileFileSystem {
 	}
 
 	private Path getTopicsDirectory(long profileId) {
-		String root = profilesRootDirectory.toAbsolutePath().toString();
+		final String root = profilesRootDirectory.toAbsolutePath().toString();
 		return Path.of(root, String.valueOf(profileId));
 	}
 
 	private File getProfileMeta() {
-		Path topicsDirectory = getTopicsDirectory(currentProfileId);
-		return Path.of(topicsDirectory.toString(), PROFILE_META).toFile();
+		final Path topicsDirectory = getTopicsDirectory(currentProfileId);
+		return Path.of(topicsDirectory.toString(), ProfileFileSystem.PROFILE_META).toFile();
 	}
 
 	// ==================== READ/WRITE ====================
@@ -175,7 +176,7 @@ public class ProfileFileSystem {
 	private static void write(File file, byte[] data) throws IOException {
 		try (FileOutputStream fos = new FileOutputStream(file)) {
 			fos.write(data);
-		} catch (FileNotFoundException e) {
+		} catch (final FileNotFoundException e) {
 			System.err.printf("File %s could not be found", file);
 		}
 	}

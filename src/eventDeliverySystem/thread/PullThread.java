@@ -63,7 +63,7 @@ public class PullThread extends Thread {
 				do {
 					try {
 						packet = (Packet) ois.readObject();
-					} catch (ClassNotFoundException e) {
+					} catch (final ClassNotFoundException e) {
 						e.printStackTrace();
 						return;
 					}
