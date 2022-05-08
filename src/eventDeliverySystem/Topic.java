@@ -14,7 +14,7 @@ import java.util.Stack;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-class Topic extends AbstractTopic {
+public class Topic extends AbstractTopic {
 
 	/** Constant to be used when no post exists and an ID is needed */
 	static final long FETCH_ALL_POSTS = -1L;

@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.filesystem;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,6 +15,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import eventDeliverySystem.Post;
+import eventDeliverySystem.PostInfo;
+import eventDeliverySystem.Topic;
 
 /**
  * Manages Topics that are saved in directories in the file system.

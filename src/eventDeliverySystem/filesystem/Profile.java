@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.filesystem;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+
+import eventDeliverySystem.Post;
+import eventDeliverySystem.Topic;
 
 /**
  * A data structure holding information about a user and their subscribed

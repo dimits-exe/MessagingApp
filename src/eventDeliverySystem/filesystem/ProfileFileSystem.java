@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.filesystem;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,12 +15,15 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import eventDeliverySystem.Post;
+import eventDeliverySystem.Topic;
+
 /**
  * Manages Profiles that are saved in directories in the file system.
  *
  * @author Alex Mandelias
  */
-class ProfileFileSystem {
+public class ProfileFileSystem {
 
 	private static final String PROFILE_META = "profile.meta";
 

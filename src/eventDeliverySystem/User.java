@@ -7,6 +7,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import eventDeliverySystem.filesystem.Profile;
+import eventDeliverySystem.filesystem.ProfileFileSystem;
+
 
 /**
  * A class that manages the actions of the user by communicating with the server
