@@ -1,5 +1,6 @@
 package app;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -68,7 +69,7 @@ public class Client {
 			return;
 		}
 
-		final Path dir = Path.of(args[4]);
+		final Path dir = new File(args[4]).toPath();
 
 		CrappyUserUI ui;
 		try {

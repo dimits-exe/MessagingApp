@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -145,12 +146,12 @@ public class TopicFileSystem {
 
 	private Path getTopicDirectory(String topicName) {
 		final String userDir = topicsRootDirectory.toString();
-		return Path.of(userDir, topicName);
+		return new File(userDir + File.separator + topicName).toPath();
 	}
 
 	private static File getFileInDirectory(Path directory, String filename) {
 		final String dir = directory.toAbsolutePath().toString();
-		return Path.of(dir, filename).toFile();
+		return new File(dir + File.separator + filename);
 	}
 
 	// ==================== HELPERS FOR SAVE POST ====================
@@ -240,7 +241,18 @@ public class TopicFileSystem {
 	private static byte[] read(File file) throws IOException {
 		System.out.println(file);
 		try (FileInputStream fis = new FileInputStream(file)) {
-			return fis.readAllBytes();
+			List<Integer> bytes = new ArrayList<>();
+
+			int nextByte;
+			while ((nextByte = fis.read()) != -1) {
+				bytes.add(nextByte);
+			}
+
+			byte[] data = new byte[bytes.size()];
+			for (int i = 0; i < data.length; i++)
+				data[i] = (byte) ((int) bytes.get(i));
+
+			return data;
 		}
 	}
 

@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
@@ -72,7 +74,16 @@ public class Post {
 
 		byte[] data;
 		try (FileInputStream fis = new FileInputStream(file)) {
-			data = fis.readAllBytes();
+			List<Integer> bytes = new ArrayList<>();
+
+			int nextByte;
+			while ((nextByte = fis.read()) != -1) {
+				bytes.add(nextByte);
+			}
+
+			data = new byte[bytes.size()];
+			for (int i = 0; i < data.length; i++)
+				data[i] = (byte) ((int) bytes.get(i));
 		}
 
 		final String fileName      = file.getName();

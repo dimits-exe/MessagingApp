@@ -9,6 +9,8 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -113,9 +115,12 @@ public class Publisher extends ClientNode {
 					oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
 
 					final PostInfo            postInfo  = post.getPostInfo();
-					final List<PostInfo>      postInfos = List.of(postInfo);
-					final Map<Long, Packet[]> packets   = Map.of(postInfo.getId(),
-					        Packet.fromPost(post));
+					final List<PostInfo>      postInfos = new LinkedList<>();
+					final Map<Long, Packet[]> packets   = new HashMap<>();
+
+					postInfos.add(postInfo);
+					packets.put(postInfo.getId(), Packet.fromPost(post));
+
 					pushThread = new PushThread(oos, postInfos, packets, Protocol.NORMAL);
 					pushThread.start();
 					try {

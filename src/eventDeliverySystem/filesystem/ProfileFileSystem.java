@@ -6,9 +6,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
@@ -157,19 +159,31 @@ public class ProfileFileSystem {
 
 	private Path getTopicsDirectory(long profileId) {
 		final String root = profilesRootDirectory.toAbsolutePath().toString();
-		return Path.of(root, String.valueOf(profileId));
+		return new File(root + File.separator + String.valueOf(profileId)).toPath();
 	}
 
 	private File getProfileMeta() {
 		final Path topicsDirectory = getTopicsDirectory(currentProfileId);
-		return Path.of(topicsDirectory.toString(), ProfileFileSystem.PROFILE_META).toFile();
+		return new File(topicsDirectory.toAbsolutePath().toString() + File.separator
+		        + ProfileFileSystem.PROFILE_META);
 	}
 
 	// ==================== READ/WRITE ====================
 
 	private static byte[] read(File file) throws IOException {
 		try (FileInputStream fis = new FileInputStream(file)) {
-			return fis.readAllBytes();
+			List<Integer> bytes = new ArrayList<>();
+
+			int nextByte;
+			while ((nextByte = fis.read()) != -1) {
+				bytes.add(nextByte);
+			}
+
+			byte[] data = new byte[bytes.size()];
+			for (int i = 0; i < data.length; i++)
+				data[i] = (byte) ((int) bytes.get(i));
+
+			return data;
 		}
 	}
 

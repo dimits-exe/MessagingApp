@@ -13,7 +13,10 @@ public class LG {
 	private static int tab = 0;
 
 	public static void sout(String format, Object... args) {
-		System.out.printf("\t".repeat(LG.tab) + format + "\n", args);
+		for (int i = 0; i < LG.tab; i++)
+			System.out.print("\t");
+
+		System.out.printf(format + "\n", args);
 		System.out.flush();
 	}
 
