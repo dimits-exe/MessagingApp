@@ -2,7 +2,6 @@ package eventDeliverySystem.server;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -46,7 +45,7 @@ class BrokerPushThread extends Thread implements Subscriber {
 		queue = new LinkedList<>();
 		currentPostId = -1;
 		postInfos = new LinkedList<>();
-		buffers = Collections.synchronizedMap(new HashMap<>());
+		buffers = new HashMap<>();
 		oos = stream;
 	}
 
@@ -106,7 +105,9 @@ class BrokerPushThread extends Thread implements Subscriber {
 			synchronized (postInfos) {
 				postInfos.addLast(postInfo);
 			}
-			buffers.put(postInfo.getId(), Collections.synchronizedList(new LinkedList<>()));
+			synchronized (buffers) {
+				buffers.put(postInfo.getId(), new LinkedList<>());
+			}
 		}
 
 		synchronized (this) {
@@ -159,7 +160,10 @@ class BrokerPushThread extends Thread implements Subscriber {
 					}
 
 					// stream all packets in buffer
-					final List<Packet> buffer = buffers.get(currentPostId);
+					final List<Packet> buffer;
+					synchronized (buffers) {
+						buffer = buffers.get(currentPostId);
+					}
 					for (final Packet packetInBuffer : buffer) {
 						if (finalReached)
 							throw new RuntimeException(
@@ -174,15 +178,21 @@ class BrokerPushThread extends Thread implements Subscriber {
 						finalReached |= packetInBuffer.isFinal();
 					}
 
-					if (finalReached)
-						buffers.remove(currentPostId);
+					if (finalReached) {
+						synchronized (buffers) {
+							buffers.remove(currentPostId);
+						}
+					}
 
 					// keep streaming the next post in buffer if the previous has been fully streamed
 				} while (finalReached);
 			}
-		} else
+		} else {
 			// add packet to buffer because it's not being streamed
-			buffers.get(packet.getPostId()).add(packet);
+			synchronized (buffers) {
+				buffers.get(packet.getPostId()).add(packet);
+			}
+		}
 
 		synchronized (this) {
 			this.notify();
