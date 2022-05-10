@@ -54,7 +54,7 @@ public class Broker implements Runnable, AutoCloseable {
 	 */
 	public Broker() {
 		publisherConnectionInfo = new HashSet<>();
-		consumerOOSPerTopic = Collections.synchronizedMap(new HashMap<>());
+		consumerOOSPerTopic = new HashMap<>();
 		brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		brokerCI = Collections.synchronizedList(new LinkedList<>());
 		topicsByName = Collections.synchronizedMap(new HashMap<>());
@@ -162,7 +162,7 @@ public class Broker implements Runnable, AutoCloseable {
 	 * Closes all active connections to the broker.
 	 */
 	@Override
-	public void close() {
+	synchronized public void close() {
 		try {
 			for (final Set<ObjectOutputStream> consumers : consumerOOSPerTopic.values())
 				for (final ObjectOutputStream consumer : consumers)
@@ -184,7 +184,7 @@ public class Broker implements Runnable, AutoCloseable {
 	 *
 	 * @param topicName the name of the Topic to be added
 	 */
-	private void addTopic(String topicName) {
+	synchronized private void addTopic(String topicName) {
 		topicsByName.put(topicName, new BrokerTopic(topicName));
 		consumerOOSPerTopic.put(topicName, new HashSet<>());
 	}
@@ -279,7 +279,10 @@ public class Broker implements Runnable, AutoCloseable {
 					if (!topicsByName.containsKey(topicName))
 						addTopic(topicName);
 
-					consumerOOSPerTopic.get(topicName).add(oos);
+
+					synchronized (consumerOOSPerTopic) {
+						consumerOOSPerTopic.get(topicName).add(oos);
+					}
 					new BrokerPushThread(topicsByName.get(topicName), oos).start();
 
 					// send existing topics that the consumer does not have
