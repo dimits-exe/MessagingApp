@@ -53,7 +53,7 @@ public class Broker implements Runnable, AutoCloseable {
 	 * the server network.
 	 */
 	public Broker() {
-		publisherConnectionInfo = Collections.synchronizedSet(new HashSet<>());
+		publisherConnectionInfo = new HashSet<>();
 		consumerOOSPerTopic = Collections.synchronizedMap(new HashMap<>());
 		brokerConnections = Collections.synchronizedList(new LinkedList<>());
 		brokerCI = Collections.synchronizedList(new LinkedList<>());
@@ -190,7 +190,7 @@ public class Broker implements Runnable, AutoCloseable {
 	}
 
 
-	private void addPublisherCI(Socket socket) {
+	synchronized private void addPublisherCI(Socket socket) {
 		publisherConnectionInfo.add(new ConnectionInfo(socket));
 	}
 
