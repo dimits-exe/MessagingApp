@@ -56,7 +56,7 @@ public class Broker implements Runnable, AutoCloseable {
 		publisherConnectionInfo = new HashSet<>();
 		consumerOOSPerTopic = new HashMap<>();
 		brokerConnections = new LinkedList<>();
-		brokerCI = Collections.synchronizedList(new LinkedList<>());
+		brokerCI = new LinkedList<>();
 		topicsByName = Collections.synchronizedMap(new HashMap<>());
 
 		try {
@@ -118,7 +118,10 @@ public class Broker implements Runnable, AutoCloseable {
 							e.printStackTrace();
 							return;
 						}
-						brokerCI.add(brokerCIForClient);
+
+						synchronized (brokerCI) {
+							brokerCI.add(brokerCIForClient);
+						}
 
 					} catch (final IOException e) {
 						e.printStackTrace();
@@ -225,7 +228,9 @@ public class Broker implements Runnable, AutoCloseable {
 		}
 
 		// else send the broker from the other connections
-		return brokerCI.get(brokerIndex);
+		synchronized (brokerCI) {
+			return brokerCI.get(brokerIndex);
+		}
 	}
 
 
