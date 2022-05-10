@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -57,7 +56,7 @@ public class Broker implements Runnable, AutoCloseable {
 		consumerOOSPerTopic = new HashMap<>();
 		brokerConnections = new LinkedList<>();
 		brokerCI = new LinkedList<>();
-		topicsByName = Collections.synchronizedMap(new HashMap<>());
+		topicsByName = new HashMap<>();
 
 		try {
 			clientRequestSocket = new ServerSocket(PortManager.getNewAvailablePort(),
@@ -200,7 +199,10 @@ public class Broker implements Runnable, AutoCloseable {
 	}
 
 	private BrokerTopic getTopic(String topicName) {
-		final BrokerTopic topic = topicsByName.get(topicName);
+		final BrokerTopic topic;
+		synchronized (topicsByName) {
+			topic = topicsByName.get(topicName);
+		}
 		if (topic == null)
 			throw new NoSuchElementException("There is no Topic with name " + topicName);
 		return topic;
@@ -286,14 +288,21 @@ public class Broker implements Runnable, AutoCloseable {
 					topicName = topicToken.getName();
 					LG.sout("Registering consumer for Topic '%s'", topicName);
 					LG.in();
-					if (!topicsByName.containsKey(topicName))
-						addTopic(topicName);
+
+					synchronized (topicsByName) {
+						if (!topicsByName.containsKey(topicName))
+							addTopic(topicName);
+					}
 
 
 					synchronized (consumerOOSPerTopic) {
 						consumerOOSPerTopic.get(topicName).add(oos);
 					}
-					new BrokerPushThread(topicsByName.get(topicName), oos).start();
+
+					synchronized (topicsByName) {
+						topic = topicsByName.get(topicName);
+					}
+					new BrokerPushThread(topic, oos).start();
 
 					// send existing topics that the consumer does not have
 					final long idOfLast = topicToken.getLastId();
@@ -318,7 +327,10 @@ public class Broker implements Runnable, AutoCloseable {
 					topicName = (String) message.getValue();
 					LG.sout("Creating Topic '%s'", topicName);
 
-					final boolean topicExists = topicsByName.containsKey(topicName);
+					final boolean topicExists;
+					synchronized (topicsByName) {
+						topicExists = topicsByName.containsKey(topicName);
+					}
 					LG.sout("Exists '%s'", topicExists);
 					if (!topicExists)
 						addTopic(topicName);
