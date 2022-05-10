@@ -25,10 +25,10 @@ public class PortManager {
 	 * @return a new available port
 	 */
 	public synchronized static int getNewAvailablePort() {
+		final ThreadLocalRandom tlr = ThreadLocalRandom.current();
 		int port;
 		do
-			port = ThreadLocalRandom.current().nextInt(PortManager.LOWEST_PORT,
-			        PortManager.HIGHEST_PORT);
+			port = tlr.nextInt(PortManager.LOWEST_PORT, PortManager.HIGHEST_PORT);
 		while (!PortManager.isAvailable(port));
 
 		return port;
@@ -43,8 +43,11 @@ public class PortManager {
 	 *
 	 * @implNote the method attempts to create a connection through the port and
 	 *           relies on exception handling to determine if it's already binded.
+	 *
+	 * @see <a href=
+	 *      "https://stackoverflow.com/questions/434718/sockets-discover-port-availability-using-java">stack
+	 *      overflow</a>
 	 */
-	// https://stackoverflow.com/questions/434718/sockets-discover-port-availability-using-java
 	private static boolean isAvailable(int port) {
 		try (ServerSocket testSocket = new ServerSocket(port)) {
 			testSocket.setReuseAddress(true);

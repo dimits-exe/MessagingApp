@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import eventDeliverySystem.util.LG;
+
 /**
  * Runs a Client which can be configured by command-line arguments.
  *
@@ -33,6 +35,7 @@ public class Client {
 	 * @param args run with no args to get information about args
 	 */
 	public static void main(String[] args) {
+		LG.args(args);
 
 		if (args.length != 5) {
 			System.out.println(Client.usage);

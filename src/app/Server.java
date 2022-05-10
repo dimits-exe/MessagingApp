@@ -32,6 +32,7 @@ public class Server {
 	 *             leader otherwise.
 	 */
 	public static void main(String[] args) {
+		LG.args(args);
 
 		if ((args.length != 2) && (args.length != 0)) {
 			System.out.print(Server.usage);
