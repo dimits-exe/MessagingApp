@@ -1,11 +1,11 @@
 package eventDeliverySystem.server;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
@@ -31,37 +31,29 @@ class BrokerTopic extends AbstractTopic {
 	 */
 	public BrokerTopic(String name) {
 		super(name);
-		postInfoList = Collections.synchronizedList(new LinkedList<>());
+		postInfoList = new LinkedList<>();
 		packetsPerPostInfoMap = new HashMap<>();
 		indexPerPostInfoId = new HashMap<>();
 	}
 
 	@Override
-	public void postHook(PostInfo postInfo) {
+	synchronized public void postHook(PostInfo postInfo) {
 		postInfoList.add(postInfo);
 
 		final long         postId     = postInfo.getId();
-		final List<Packet> packetList = Collections.synchronizedList(new LinkedList<>());
+		final List<Packet> packetList = new LinkedList<>();
 
-		synchronized (packetsPerPostInfoMap) {
-			packetsPerPostInfoMap.put(postId, packetList);
-		}
-
-		synchronized (indexPerPostInfoId) {
-			indexPerPostInfoId.put(postId, postInfoList.size() - 1);
-		}
+		packetsPerPostInfoMap.put(postId, packetList);
+		indexPerPostInfoId.put(postId, postInfoList.size() - 1);
 	}
 
 	@Override
 	public void postHook(Packet packet) {
 		final long postId = packet.getPostId();
 
-		List<Packet> packetList;
 		synchronized (packetsPerPostInfoMap) {
-			packetList = packetsPerPostInfoMap.get(postId);
+			packetsPerPostInfoMap.get(postId).add(packet);
 		}
-
-		packetList.add(packet);
 	}
 
 	/**
@@ -76,9 +68,18 @@ class BrokerTopic extends AbstractTopic {
 	 */
 	public void getAllPosts(List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
-		emptyPostInfoList.addAll(postInfoList);
-		packetsPerPostInfoMap.forEach(
-		        (id, ls) -> emptyPacketsPerPostInfoMap.put(id, ls.toArray(new Packet[ls.size()])));
+
+		synchronized (postInfoList) {
+			emptyPostInfoList.addAll(postInfoList);
+		}
+
+		synchronized (packetsPerPostInfoMap) {
+			for (final Entry<Long, List<Packet>> e : packetsPerPostInfoMap.entrySet()) {
+				final List<Packet> ls      = e.getValue();
+				final Packet[]     packets = ls.toArray(new Packet[ls.size()]);
+				emptyPacketsPerPostInfoMap.put(e.getKey(), packets);
+			}
+		}
 	}
 
 	/**
@@ -93,7 +94,7 @@ class BrokerTopic extends AbstractTopic {
 	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every
 	 *                                   PostInfo object will be added
 	 */
-	public void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
+	synchronized public void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
 
 		if (postId == AbstractTopic.FETCH_ALL_POSTS)
