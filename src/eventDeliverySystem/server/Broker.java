@@ -55,7 +55,7 @@ public class Broker implements Runnable, AutoCloseable {
 	public Broker() {
 		publisherConnectionInfo = new HashSet<>();
 		consumerOOSPerTopic = new HashMap<>();
-		brokerConnections = Collections.synchronizedList(new LinkedList<>());
+		brokerConnections = new LinkedList<>();
 		brokerCI = Collections.synchronizedList(new LinkedList<>());
 		topicsByName = Collections.synchronizedMap(new HashMap<>());
 
@@ -105,7 +105,9 @@ public class Broker implements Runnable, AutoCloseable {
 				while (true)
 					try {
 						final Socket socket = brokerRequestSocket.accept();
-						brokerConnections.add(socket);
+						synchronized (brokerConnections) {
+							brokerConnections.add(socket);
+						}
 
 						final ObjectInputStream ois = new ObjectInputStream(
 						        socket.getInputStream());
@@ -210,14 +212,17 @@ public class Broker implements Runnable, AutoCloseable {
 	 * @return the {@link ConnectionInfo} for the assigned broker
 	 */
 	private ConnectionInfo getAssignedBroker(String topicName) {
-		final int brokerIndex = Math
-		        .abs(AbstractTopic.hashForTopic(topicName) % (brokerConnections.size() + 1));
+		final int brokerIndex;
+		synchronized (brokerConnections) {
+			int hash = AbstractTopic.hashForTopic(topicName);
+			brokerIndex = Math.abs(hash % (brokerConnections.size() + 1));
 
-		// last index (out of range normally) => this broker is responsible for the topic
-		// this rule should work because the default broker is the only broker that processes
-		// such requests.
-		if (brokerIndex == brokerConnections.size())
-			return new ConnectionInfo(clientRequestSocket);
+			// last index (out of range normally) => this broker is responsible for the topic
+			// this rule should work because the default broker is the only broker that processes
+			// such requests.
+			if (brokerIndex == brokerConnections.size())
+				return new ConnectionInfo(clientRequestSocket);
+		}
 
 		// else send the broker from the other connections
 		return brokerCI.get(brokerIndex);
