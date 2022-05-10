@@ -44,7 +44,7 @@ class BrokerPushThread extends Thread implements Subscriber {
 	public BrokerPushThread(AbstractTopic topic, ObjectOutputStream stream) {
 		super("BrokerPushThread-" + topic.getName());
 		topic.subscribe(this);
-		queue = new ConcurrentLinkedDeque<>();
+		queue = new LinkedList<>();
 		currentPostId = -1;
 		postInfos = new ConcurrentLinkedDeque<>();
 		buffers = Collections.synchronizedMap(new HashMap<>());
@@ -53,24 +53,39 @@ class BrokerPushThread extends Thread implements Subscriber {
 
 	@Override
 	public void run() {
+		boolean isEmpty;
 		while (true) {
-			while (queue.isEmpty()) {
+			synchronized (queue) {
+				isEmpty = queue.isEmpty();
+			}
+
+			while (isEmpty) {
 				LG.sout("--- queue is empty ---");
 				try {
 					synchronized (this) {
 						this.wait();
 					}
 				} catch (final InterruptedException e) {}
+
+				synchronized (queue) {
+					isEmpty = queue.isEmpty();
+				}
 			}
 
 			LG.sout("--- queue is no longer empty ---");
-			do
+			do {
 				try {
-					oos.writeObject(queue.remove());
+					synchronized (queue) {
+						oos.writeObject(queue.remove());
+					}
 				} catch (final IOException e) {
 					e.printStackTrace();
 				}
-			while (!queue.isEmpty());
+
+				synchronized (queue) {
+					isEmpty = queue.isEmpty();
+				}
+			} while (isEmpty);
 		}
 	}
 
@@ -83,7 +98,9 @@ class BrokerPushThread extends Thread implements Subscriber {
 			// set post as current being streamed
 			currentPostId = postInfo.getId();
 			// start streaming post
-			queue.add(postInfo);
+			synchronized (queue) {
+				queue.add(postInfo);
+			}
 
 		} else {
 			// add this post to buffer
@@ -107,7 +124,9 @@ class BrokerPushThread extends Thread implements Subscriber {
 		// if packet belongs to post being streamed
 		if (packet.getPostId() == currentPostId) {
 			// stream packet
-			queue.add(packet);
+			synchronized (queue) {
+				queue.add(packet);
+			}
 
 			// if current post is fully streamed
 			if (packet.isFinal()) {
@@ -129,7 +148,9 @@ class BrokerPushThread extends Thread implements Subscriber {
 					// set as current
 					currentPostId = curr.getId();
 					// start streaming post
-					queue.add(curr);
+					synchronized (queue) {
+						queue.add(curr);
+					}
 
 					// stream all packets in buffer
 					final List<Packet> buffer = buffers.get(currentPostId);
@@ -139,7 +160,9 @@ class BrokerPushThread extends Thread implements Subscriber {
 							        "this should never happend tomara deikse eleos");
 
 						// stream packet
-						queue.add(packetInBuffer);
+						synchronized (queue) {
+							queue.add(packetInBuffer);
+						}
 
 						// mark if this post has been fully streamed
 						finalReached |= packetInBuffer.isFinal();
