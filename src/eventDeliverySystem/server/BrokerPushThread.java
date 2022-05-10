@@ -9,7 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
@@ -46,7 +45,7 @@ class BrokerPushThread extends Thread implements Subscriber {
 		topic.subscribe(this);
 		queue = new LinkedList<>();
 		currentPostId = -1;
-		postInfos = new ConcurrentLinkedDeque<>();
+		postInfos = new LinkedList<>();
 		buffers = Collections.synchronizedMap(new HashMap<>());
 		oos = stream;
 	}
@@ -104,7 +103,9 @@ class BrokerPushThread extends Thread implements Subscriber {
 
 		} else {
 			// add this post to buffer
-			postInfos.addLast(postInfo);
+			synchronized (postInfos) {
+				postInfos.addLast(postInfo);
+			}
 			buffers.put(postInfo.getId(), Collections.synchronizedList(new LinkedList<>()));
 		}
 
@@ -138,13 +139,18 @@ class BrokerPushThread extends Thread implements Subscriber {
 
 					// if no posts left in buffer, mark current as none
 					// wait next post info
-					if (postInfos.isEmpty()) {
-						currentPostId = -1;
-						break;
+					synchronized (postInfos) {
+						if (postInfos.isEmpty()) {
+							currentPostId = -1;
+							break;
+						}
 					}
 
 					// take next Post
-					final PostInfo curr = postInfos.removeFirst();
+					final PostInfo curr;
+					synchronized (postInfos) {
+						curr = postInfos.removeFirst();
+					}
 					// set as current
 					currentPostId = curr.getId();
 					// start streaming post
