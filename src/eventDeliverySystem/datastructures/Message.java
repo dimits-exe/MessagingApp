@@ -59,11 +59,8 @@ public class Message implements Serializable {
 		 */
 		DATA_PACKET_SEND,
 
-		/**
-		 * Requests the actual broker for a Topic. The value is is a String describing
-		 * the Topic's name.
-		 */
-		PUBLISHER_DISCOVERY_REQUEST,
+		/** Requests the actual Broker for a Topic. The value is the Topic's name */
+		BROKER_DISCOVERY,
 
 		/**
 		 * Request to initialise consumer connection to broker. The value is a

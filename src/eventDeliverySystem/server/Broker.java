@@ -317,10 +317,10 @@ public class Broker implements Runnable, AutoCloseable {
 					LG.out();
 					break;
 
-				case PUBLISHER_DISCOVERY_REQUEST:
+				case BROKER_DISCOVERY:
 					addPublisherCI(socket);
 					topicName = (String) message.getValue();
-					new PublisherDiscoveryThread(oos, topicName).start();
+					new BrokerDiscoveryThread(oos, topicName).start();
 					break;
 
 				case CREATE_TOPIC:
@@ -354,24 +354,24 @@ public class Broker implements Runnable, AutoCloseable {
 	}
 
 	/**
-	 * A Thread for discovering the actual broker for a Topic.
+	 * A Thread for discovering the actual Broker for a Topic.
 	 *
 	 * @author Alex Mandelias
 	 */
-	private class PublisherDiscoveryThread extends Thread {
+	private class BrokerDiscoveryThread extends Thread {
 
 		private final ObjectOutputStream oos;
 		private final String             topicName;
 
 		/**
-		 * Constructs the Thread that, when run, will write the address of the broker
-		 * that has the requested topic in the given output stream.
+		 * Constructs the Thread that, when run, will write the ConnectionInfo of the
+		 * Broker responsible for the requested Topic to the given output stream.
 		 *
-		 * @param stream    the output stream to which to write the data
+		 * @param stream    the output stream to which to write the ConnectionInfo
 		 * @param topicName the name of the Topic
 		 */
-		public PublisherDiscoveryThread(ObjectOutputStream stream, String topicName) {
-			super("PublisherDiscoveryThread-" + topicName);
+		public BrokerDiscoveryThread(ObjectOutputStream stream, String topicName) {
+			super("BrokerDiscoveryThread-" + topicName);
 			oos = stream;
 			this.topicName = topicName;
 		}
@@ -379,13 +379,14 @@ public class Broker implements Runnable, AutoCloseable {
 		@Override
 		public void run() {
 
-			LG.sout("PublichserDiscoveryThread#run()");
+			LG.sout("BrokerDiscoveryThread#run()");
 			LG.in();
 
+			LG.sout("topicName=%s", topicName);
+			final ConnectionInfo brokerInfo = getAssignedBroker(topicName);
+			LG.sout("brokerInfo=%s", brokerInfo);
+
 			try {
-				LG.sout("topicName=%s", topicName);
-				final ConnectionInfo brokerInfo = getAssignedBroker(topicName);
-				LG.sout("brokerInfo=%s", brokerInfo);
 				oos.writeObject(brokerInfo);
 			} catch (final IOException e) {
 				// do nothing

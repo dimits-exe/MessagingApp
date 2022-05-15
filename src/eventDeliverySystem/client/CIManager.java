@@ -1,6 +1,6 @@
 package eventDeliverySystem.client;
 
-import static eventDeliverySystem.datastructures.Message.MessageType.PUBLISHER_DISCOVERY_REQUEST;
+import static eventDeliverySystem.datastructures.Message.MessageType.BROKER_DISCOVERY;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -161,7 +161,7 @@ class CIManager implements AutoCloseable {
 
 				// TODO: replace with BROKER_DISCOVERY_REQUEST
 				// TODO: separate INITIALISE_CONSUMER and INITIALISE_PUBLISHER in Broker
-				oos.writeObject(new Message(PUBLISHER_DISCOVERY_REQUEST, topicName));
+				oos.writeObject(new Message(BROKER_DISCOVERY, topicName));
 				oos.flush();
 
 				try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
