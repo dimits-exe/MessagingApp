@@ -1,9 +1,10 @@
 package eventDeliverySystem.datastructures;
 
 import java.io.Serializable;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import eventDeliverySystem.util.LG;
@@ -33,8 +34,10 @@ public class Topic extends AbstractTopic {
 	}
 
 	// first element is the first post added
-	private final List<Post> postList;
-	private Post             lastPost;
+	private final List<Post>         postList;
+	private final Map<Long, Integer> indexPerPostId;
+
+	private Post lastPost;
 
 	/**
 	 * Creates a new, empty, Topic.
@@ -54,6 +57,7 @@ public class Topic extends AbstractTopic {
 	public Topic(String name, List<Post> posts) {
 		super(name);
 		postList = new LinkedList<>();
+		indexPerPostId = new HashMap<>();
 		lastPost = null;
 		post(dummyPost);
 
@@ -112,6 +116,7 @@ public class Topic extends AbstractTopic {
 	 */
 	private void post(Post post) {
 		postList.add(post);
+		indexPerPostId.put(post.getPostInfo().getId(), postList.size() - 1);
 		lastPost = post;
 	}
 
@@ -125,7 +130,7 @@ public class Topic extends AbstractTopic {
 	 * Returns the Posts in this Topic that were posted after the Post with the
 	 * given ID. The Post with the given ID is not returned.
 	 *
-	 * @param lastPostId the ID of the Post
+	 * @param lastPostId the ID of the Post.
 	 *
 	 * @return the Posts in this Topic that were posted after the Post with the
 	 *         given ID, sorted from earliest to latest
@@ -136,25 +141,12 @@ public class Topic extends AbstractTopic {
 		LG.sout("Topic#getPostsSince(%d)", lastPostId);
 		LG.in();
 
-		final Iterator<Post> iter = postList.iterator();
-
-		// find post with the given id
-		Post curr;
-		try {
-			for (curr = iter.next(); curr.getPostInfo().getId() != lastPostId; curr = iter.next());
-		} catch (NoSuchElementException e) {
+		final Integer index = indexPerPostId.get(lastPostId);
+		if (index == null)
 			throw new NoSuchElementException(
 			        "No post with id " + lastPostId + " found in this Topic");
-		}
 
-		// add the next posts to the list
-		final LinkedList<Post> postsAfterGivenPost = new LinkedList<>();
-
-		// discard post with the given id, advance to next
-		for (curr = iter.next(); iter.hasNext(); curr = iter.next()) {
-			postsAfterGivenPost.add(curr);
-		}
-
+		final List<Post> postsAfterGivenPost = postList.subList(index + 1, postList.size());
 		LG.sout("postsAfterGivenPost=%s", postsAfterGivenPost);
 		LG.out();
 		return postsAfterGivenPost;
