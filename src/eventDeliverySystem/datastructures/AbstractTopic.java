@@ -16,10 +16,11 @@ import eventDeliverySystem.util.Subscriber;
  */
 public abstract class AbstractTopic {
 
+	/** Constant to be used when no post exists and an ID is needed */
+	public static final long FETCH_ALL_POSTS = -1L;
+
 	private final String          name;
 	private final Set<Subscriber> subscribers;
-	/** Constant to be used when no post exists and an ID is needed */
-	public static final long      FETCH_ALL_POSTS = -1L;
 
 	/**
 	 * Constructs an empty Topic with no subscribers.

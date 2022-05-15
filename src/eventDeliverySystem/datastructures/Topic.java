@@ -1,12 +1,10 @@
 package eventDeliverySystem.datastructures;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.EmptyStackException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Stack;
 
 import eventDeliverySystem.util.LG;
 
@@ -18,6 +16,13 @@ import eventDeliverySystem.util.LG;
  */
 public class Topic extends AbstractTopic {
 
+	private static final Post dummyPost;
+
+	static {
+		PostInfo dummyPI = new PostInfo(-1, null, AbstractTopic.FETCH_ALL_POSTS);
+		dummyPost = new Post(null, dummyPI);
+	}
+
 	/**
 	 * Returns a token that can be used to smartly update the topic by the Broker.
 	 *
@@ -27,7 +32,9 @@ public class Topic extends AbstractTopic {
 		return new TopicToken(this);
 	}
 
-	private final Stack<Post> postStack;
+	// first element is the first post added
+	private final List<Post> postList;
+	private Post             lastPost;
 
 	/**
 	 * Creates a new, empty, Topic.
@@ -35,8 +42,7 @@ public class Topic extends AbstractTopic {
 	 * @param name the Topic's unique name
 	 */
 	public Topic(String name) {
-		super(name);
-		postStack = new Stack<>();
+		this(name, new LinkedList<>());
 	}
 
 	/**
@@ -45,8 +51,12 @@ public class Topic extends AbstractTopic {
 	 * @param name  the Topic's unique name
 	 * @param posts the Posts to add to the Topic
 	 */
-	public Topic(String name, Collection<Post> posts) {
-		this(name);
+	public Topic(String name, List<Post> posts) {
+		super(name);
+		postList = new LinkedList<>();
+		lastPost = null;
+		post(dummyPost);
+
 		post(posts);
 	}
 
@@ -57,10 +67,7 @@ public class Topic extends AbstractTopic {
 	 *         there are no Posts in this Topic
 	 */
 	public long getLastPostId() {
-		if (postStack.isEmpty())
-			return AbstractTopic.FETCH_ALL_POSTS;
-
-		return postStack.peek().getPostInfo().getId();
+		return lastPost.getPostInfo().getId();
 	}
 
 	private final List<Packet> currPackets = new LinkedList<>();
@@ -68,7 +75,7 @@ public class Topic extends AbstractTopic {
 
 	@Override
 	public void postHook(PostInfo postInfo) {
-		if (!currPackets.isEmpty())
+		if (!currPackets.isEmpty() || (currPI != null))
 			throw new IllegalStateException("Recieved PostInfo while more Packets remain");
 
 		currPI = postInfo;
@@ -79,38 +86,39 @@ public class Topic extends AbstractTopic {
 		currPackets.add(packet);
 
 		if (packet.isFinal()) {
-			final Packet[] data = currPackets.toArray(new Packet[currPackets.size()]);
-			post(Post.fromPackets(data, currPI));
+			final Packet[] data          = currPackets.toArray(new Packet[currPackets.size()]);
+			final Post     completedPost = Post.fromPackets(data, currPI);
+			post(completedPost);
+
 			currPackets.clear();
+			currPI = null;
 		}
 	}
 
 	/**
-	 * Adds a collection of Posts to this Topic.
+	 * Adds a list of Posts to this Topic.
 	 *
 	 * @param posts the Posts
 	 */
-	public void post(Collection<Post> posts) {
+	public void post(List<Post> posts) {
 		for (final Post post : posts)
 			post(post);
 	}
 
 	/**
-	 * Adds a Post to this Topic.
+	 * Adds a Post to this Topic and updates the lastPost.
 	 *
 	 * @param post the Post
 	 */
 	private void post(Post post) {
-		postStack.push(post);
+		postList.add(post);
+		lastPost = post;
 	}
 
 	/** Clears this Topic by removing all but the latest Posts */
 	public void clear() {
-		if (!postStack.isEmpty()) {
-			final Post first = postStack.pop();
-			postStack.clear();
-			postStack.push(first);
-		}
+		postList.clear();
+		post(dummyPost);
 	}
 
 	/**
@@ -120,7 +128,7 @@ public class Topic extends AbstractTopic {
 	 * @param lastPostId the ID of the Post
 	 *
 	 * @return the Posts in this Topic that were posted after the Post with the
-	 *         given ID, sorted from latest to earliest
+	 *         given ID, sorted from earliest to latest
 	 *
 	 * @throws NoSuchElementException if no Post in this Topic has the given ID
 	 */
@@ -128,39 +136,34 @@ public class Topic extends AbstractTopic {
 		LG.sout("Topic#getPostsSince(%d)", lastPostId);
 		LG.in();
 
-		final Stack<Post> postsClone = new Stack<>();
-		postsClone.addAll(postStack);
+		final Iterator<Post> iter = postList.iterator();
 
-		LG.sout("postsClone=%s", postsClone);
+		// find post with the given id
+		Post curr;
+		try {
+			for (curr = iter.next(); curr.getPostInfo().getId() != lastPostId; curr = iter.next());
+		} catch (NoSuchElementException e) {
+			throw new NoSuchElementException(
+			        "No post with id " + lastPostId + " found in this Topic");
+		}
 
+		// add the next posts to the list
 		final LinkedList<Post> postsAfterGivenPost = new LinkedList<>();
 
-		if (lastPostId == AbstractTopic.FETCH_ALL_POSTS) {
-			while (!postsClone.isEmpty())
-				postsAfterGivenPost.add(postsClone.pop());
-
-			LG.sout("postsAfterGivenPost=%s", postsAfterGivenPost);
-
-			LG.out();
-			return postsAfterGivenPost;
+		// discard post with the given id, advance to next
+		for (curr = iter.next(); iter.hasNext(); curr = iter.next()) {
+			postsAfterGivenPost.add(curr);
 		}
 
-		try {
-			while (postsClone.peek().getPostInfo().getId() != lastPostId)
-				postsAfterGivenPost.add(postsClone.pop());
-
-			LG.out();
-			return postsAfterGivenPost;
-		} catch (final EmptyStackException e) {
-			throw new NoSuchElementException(
-			        "No post with id " + lastPostId + " found in the stack");
-		}
+		LG.sout("postsAfterGivenPost=%s", postsAfterGivenPost);
+		LG.out();
+		return postsAfterGivenPost;
 	}
 
 	/**
 	 * Returns all Posts in this Topic.
 	 *
-	 * @return the Posts in this Topic, sorted from latest to earliest
+	 * @return the Posts in this Topic, sorted from earliest to latest
 	 */
 	public List<Post> getAllPosts() {
 		return getPostsSince(AbstractTopic.FETCH_ALL_POSTS);

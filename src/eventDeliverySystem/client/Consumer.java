@@ -9,7 +9,6 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import eventDeliverySystem.User.UserSub;
-import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
@@ -39,6 +37,7 @@ import eventDeliverySystem.util.Subscriber;
  * @see Broker
  */
 public class Consumer extends ClientNode implements Subscriber {
+
 	private final UserSub      usersub;
 	private final TopicManager topicManager;
 
@@ -105,22 +104,8 @@ public class Consumer extends ClientNode implements Subscriber {
 	public void setTopics(Set<Topic> newTopics) throws IOException {
 		topicManager.close();
 
-		for (final Topic topic : newTopics) {
-			final String topicName = topic.getName();
-			listenForTopic(topicName);
-
-			// TODO: contemplate life choices
-			final List<Post> posts = topic.getAllPosts();
-
-			final long idOfLast;
-			if (posts.size() != 0)
-				idOfLast = posts.get(0).getPostInfo().getId();
-			else
-				idOfLast = AbstractTopic.FETCH_ALL_POSTS;
-			Collections.reverse(posts);
-			topicManager.tdMap.get(topicName).topic.post(posts);
-			topicManager.tdMap.get(topicName).pointer = idOfLast;
-		}
+		for (final Topic topic : newTopics)
+			listenForTopic(topic);
 	}
 
 	/**
@@ -128,8 +113,8 @@ public class Consumer extends ClientNode implements Subscriber {
 	 *
 	 * @param topicName the name of the Topic
 	 *
-	 * @return a List with all the Posts not yet pulled, sorted from latest to
-	 *         earliest
+	 * @return a List with all the Posts not yet pulled, sorted from earliest to
+	 *         latest
 	 *
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
@@ -145,14 +130,31 @@ public class Consumer extends ClientNode implements Subscriber {
 	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
 	 *                                  with the same name
 	 */
-	@SuppressWarnings("resource") // 'socket' closes at closeImpl()
-	public void listenForTopic(String topicName) {
-		LG.sout("listenForTopic=%s", topicName);
+	public void listenForNewTopic(String topicName) {
+		LG.sout("listenForNewTopic(%s)", topicName);
 		LG.in();
-		final Topic topic = new Topic(topicName);
-		topic.subscribe(this);
-		Socket socket = null;
+		listenForTopic(new Topic(topicName));
+		LG.out();
+	}
 
+	/**
+	 * Registers an existing Topic for this Consumer to continuously fetch new Posts
+	 * from.
+	 *
+	 * @param topic Topic to fetch from
+	 *
+	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
+	 *                                  with the same name
+	 */
+	@SuppressWarnings("resource") // 'socket' closes at closeImpl()
+	private void listenForTopic(Topic topic) {
+		LG.sout("listenForTopic(%s)", topic);
+		LG.in();
+
+		topic.subscribe(this);
+
+		Socket socket = null;
+		final String topicName = topic.getName();
 		while (true) {
 			final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
@@ -172,7 +174,7 @@ public class Consumer extends ClientNode implements Subscriber {
 			if (socket == null)
 				throw new RuntimeException("No connection could be established with the Broker");
 
-			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream()); // socket can't be null
+			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();
 			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
@@ -181,37 +183,37 @@ public class Consumer extends ClientNode implements Subscriber {
 			new PullThread(ois, topic).start();
 
 		} catch (final IOException e1) {
-			throw new UncheckedIOException(e1);
+			throw new UncheckedIOException(e1); // 'socket' closes at closeImpl()
 		}
 		LG.out();
 	}
 
 	@Override
 	public void notify(PostInfo postInfo, String topicName) {
-		LG.sout("Consumer#notify(%s)", postInfo);
+		LG.sout("Consumer#notify(%s, %s)", postInfo, topicName);
 		// do nothing
 	}
 
 	@Override
 	public void notify(Packet packet, String topicName) {
-		LG.sout("Consumer#notify(%s)", packet);
+		LG.sout("Consumer#notify(%s, %s)", packet, topicName);
 		if (packet.isFinal())
 			usersub.notify(topicName);
 	}
 
-	private static class TopicData {
-		private final Topic topic;
-		private long        pointer;
-		private Socket      socket;
-
-		public TopicData(Topic topic) {
-			this.topic = topic;
-			pointer = topic.getLastPostId();
-			socket = null;
-		}
-	}
-
 	private static class TopicManager implements AutoCloseable {
+
+		private static class TopicData {
+			private final Topic topic;
+			private long        pointer;
+			private Socket      socket;
+
+			public TopicData(Topic topic) {
+				this.topic = topic;
+				pointer = topic.getLastPostId();
+				socket = null;
+			}
+		}
 
 		private final Map<String, TopicData> tdMap = new HashMap<>();
 
@@ -220,8 +222,8 @@ public class Consumer extends ClientNode implements Subscriber {
 		 *
 		 * @param topicName the name of the Topic
 		 *
-		 * @return a List with all the Posts not yet fetched, sorted from latest to
-		 *         earliest
+		 * @return a List with all the Posts not yet fetched, sorted from earliest to
+		 *         latest
 		 *
 		 * @throws NoSuchElementException if no Topic with the given name exists
 		 */
@@ -232,21 +234,12 @@ public class Consumer extends ClientNode implements Subscriber {
 				throw new NoSuchElementException("No Topic with name " + topicName + " found");
 
 			final TopicData td = tdMap.get(topicName);
-			List<Post>      newPosts;
 
 			LG.sout("td.pointer=%d", td.pointer);
-			if (td.pointer == AbstractTopic.FETCH_ALL_POSTS) // see Topic#getLastPostId() and TopicData#TopicData(Topic)
-				newPosts = td.topic.getAllPosts();
-			else
-				newPosts = td.topic.getPostsSince(td.pointer);
+			List<Post> newPosts = td.topic.getPostsSince(td.pointer);
 
-			// update topic pointer if there is at least one new Post
-			final int newPostCount = newPosts.size();
-			LG.sout("newPostCount=%d", newPostCount);
-			if (newPostCount > 0) {
-				final long lastPostId = newPosts.get(0).getPostInfo().getId();
-				td.pointer = lastPostId;
-			}
+			LG.sout("newPosts.size()=%d", newPosts.size());
+			td.pointer = td.topic.getLastPostId();
 
 			td.topic.clear();
 
@@ -264,9 +257,11 @@ public class Consumer extends ClientNode implements Subscriber {
 		 *                                  Topic with the same name.
 		 */
 		public void addSocket(Topic topic, Socket socket) {
+			LG.sout("Consumer#addSocket(%s, %s)", topic, socket);
+			LG.in();
 			add(topic);
-			final TopicData td = tdMap.get(topic.getName());
-			td.socket = socket;
+			tdMap.get(topic.getName()).socket = socket;
+			LG.out();
 		}
 
 		private void add(Topic topic) {
@@ -275,12 +270,12 @@ public class Consumer extends ClientNode implements Subscriber {
 				throw new IllegalArgumentException(
 				        "Topic with name " + topicName + " already exists");
 
-			tdMap.put(topicName, new TopicData(topic));
+			tdMap.put(topicName, new TopicManager.TopicData(topic));
 		}
 
 		@Override
 		public void close() throws IOException {
-			for (final TopicData td : tdMap.values())
+			for (final TopicManager.TopicData td : tdMap.values())
 				td.socket.close();
 
 			tdMap.clear();

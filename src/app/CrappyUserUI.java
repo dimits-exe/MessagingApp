@@ -146,7 +146,7 @@ public class CrappyUserUI extends JFrame {
 		lsitenForTopic.addActionListener(e -> {
 			final User user1 = CrappyUserUI.this.user;
 			try {
-				user1.listenForTopic(topicName.getText());
+				user1.listenForNewTopic(topicName.getText());
 			} catch (final IOException e1) {
 				e1.printStackTrace();
 			}

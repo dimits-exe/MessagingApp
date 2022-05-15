@@ -2,7 +2,6 @@ package eventDeliverySystem;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -134,7 +133,7 @@ public class User {
 
 	/**
 	 * Attempts to push a new Topic. If this succeeds,
-	 * {@link #listenForTopic(String)} is called.
+	 * {@link #listenForNewTopic(String)} is called.
 	 *
 	 * @param topicName the name of the Topic to create
 	 *
@@ -151,7 +150,7 @@ public class User {
 		final boolean success = publisher.createTopic(topicName);
 		LG.sout("success=%s", success);
 		if (success)
-			listenForTopic(topicName);
+			listenForNewTopic(topicName);
 
 		LG.out();
 		return success;
@@ -170,8 +169,7 @@ public class User {
 	public void pull(String topicName) throws IOException {
 		LG.sout("User#pull from Topic '%s'", topicName);
 		LG.in();
-		final List<Post> newPosts = consumer.pull(topicName); // sorted from latest to earliest
-		Collections.reverse(newPosts);
+		final List<Post> newPosts = consumer.pull(topicName); // sorted from earliest to latest
 		LG.sout("newPosts=%s", newPosts);
 		currentProfile.updateTopic(topicName, newPosts);
 
@@ -194,8 +192,8 @@ public class User {
 	 * @throws NullPointerException     if topic == null
 	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
-	public void listenForTopic(String topicName) throws IOException {
-		consumer.listenForTopic(topicName);
+	public void listenForNewTopic(String topicName) throws IOException {
+		consumer.listenForNewTopic(topicName);
 		currentProfile.addTopic(topicName);
 		profileFileSystem.createTopic(topicName);
 	}
