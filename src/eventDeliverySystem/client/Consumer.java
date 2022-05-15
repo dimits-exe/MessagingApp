@@ -52,11 +52,8 @@ public class Consumer extends ClientNode implements Subscriber {
 	 * @throws UnknownHostException if no IP address for the host could be found, or
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
-	 * @throws IOException          if an I/O error occurs while establishing
-	 *                              connection to the server
 	 */
-	public Consumer(String serverIP, int serverPort, UserSub usersub)
-	        throws IOException {
+	public Consumer(String serverIP, int serverPort, UserSub usersub) throws UnknownHostException {
 		this(InetAddress.getByName(serverIP), serverPort, usersub);
 	}
 
@@ -69,11 +66,8 @@ public class Consumer extends ClientNode implements Subscriber {
 	 * @param usersub    the UserSub object that will be notified when data arrives
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
-	 * @throws IOException          if an I/O error occurs while establishing
-	 *                              connection to the server
 	 */
-	public Consumer(byte[] serverIP, int serverPort, UserSub usersub)
-	        throws IOException {
+	public Consumer(byte[] serverIP, int serverPort, UserSub usersub) throws UnknownHostException {
 		this(InetAddress.getByAddress(serverIP), serverPort, usersub);
 	}
 
@@ -83,11 +77,8 @@ public class Consumer extends ClientNode implements Subscriber {
 	 * @param ip      the InetAddress of the default broker
 	 * @param port    the port of the default broker
 	 * @param usersub the UserSub object that will be notified when data arrives
-	 *
-	 * @throws IOException if an I/O error occurs while establishing connection to
-	 *                     the server
 	 */
-	private Consumer(InetAddress ip, int port, UserSub usersub) throws IOException {
+	private Consumer(InetAddress ip, int port, UserSub usersub) {
 		super(ip, port);
 		topicManager = new TopicManager();
 		this.usersub = usersub;
@@ -153,7 +144,7 @@ public class Consumer extends ClientNode implements Subscriber {
 
 		topic.subscribe(this);
 
-		Socket socket = null;
+		Socket       socket    = null;
 		final String topicName = topic.getName();
 		while (true) {
 			final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
@@ -236,7 +227,7 @@ public class Consumer extends ClientNode implements Subscriber {
 			final TopicData td = tdMap.get(topicName);
 
 			LG.sout("td.pointer=%d", td.pointer);
-			List<Post> newPosts = td.topic.getPostsSince(td.pointer);
+			final List<Post> newPosts = td.topic.getPostsSince(td.pointer);
 
 			LG.sout("newPosts.size()=%d", newPosts.size());
 			td.pointer = td.topic.getLastPostId();

@@ -5,7 +5,6 @@ import static eventDeliverySystem.datastructures.Message.MessageType.BROKER_DISC
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,103 +12,35 @@ import java.util.Map;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.util.LG;
-import eventDeliverySystem.util.PortManager;
 
 /**
- * Wrapper for a cache that communicates with the default broker to store,
- * update and invalidate the ConnectionInfoes for Topics. A ServerSocket is also
- * opened for receiving messages from brokers, which is closed by calling the
- * {@code close()} method.
+ * Wrapper for a cache that communicates with the default Broker to store,
+ * update and invalidate the ConnectionInfos for Topics.
  *
  * @author Alex Mandelias
  */
-class CIManager implements AutoCloseable {
+class CIManager {
 
 	private final Map<String, ConnectionInfo> map;
-	private ConnectionInfo                    defaultBrokerCI;
-	private final ServerThread                serverThread;
-
-	private class ServerThread extends Thread implements AutoCloseable {
-
-		private final ServerSocket serverSocket;
-
-		/**
-		 * Constructs a new ServerThread by opening this CIManager's ServerSocket.
-		 *
-		 * @throws IOException if an I/O error occurs when opening this CIManager's
-		 *                     Server Socket.
-		 */
-		public ServerThread() throws IOException {
-			super("ServerThread");
-			serverSocket = new ServerSocket(PortManager.getNewAvailablePort());
-		}
-
-		@Override
-		public void run() {
-			while (true) {
-				boolean ipForNewDefaultBrokerException;
-
-				do {
-					ipForNewDefaultBrokerException = false;
-
-					try (Socket socket1 = serverSocket.accept()) {
-						try (ObjectInputStream ois1 = new ObjectInputStream(
-						        socket1.getInputStream())) {
-							try {
-								defaultBrokerCI = (ConnectionInfo) ois1.readObject();
-							} catch (final ClassNotFoundException e1) {
-								e1.printStackTrace();
-								return;
-							} finally {
-								ois1.close();
-							}
-						} catch (final IOException e1) {
-							// io exception while getting streams, keep trying
-							ipForNewDefaultBrokerException = true;
-							System.err.printf(
-							        "IOException while getting new ConnectionInfo for default broker%n");
-						}
-					} catch (final IOException e2) {
-						// server socket was closed (presumably by calling close()), stop this thread's execution
-						System.err.printf(
-						        "IOException while waiting for connection for new default broker%n");
-
-						return;
-					}
-				} while (ipForNewDefaultBrokerException);
-
-				CIManager.this.notify(); // notify
-			}
-		}
-
-		@Override
-		public void close() throws IOException {
-			serverSocket.close();
-		}
-	}
+	private final ConnectionInfo              defaultBrokerCI;
 
 	/**
-	 * Constructs the CIManager given the ConnectionInfo to the default broker. The
-	 * CIManager's server socket is also opened and begins listening for connections
-	 * to update its connection information for the default broker.
+	 * Constructs the CIManager given the ConnectionInfo to the default Broker.
 	 *
-	 * @param defaultBrokerConnectionInfo the IP of the default broker to connect to
-	 *
-	 * @throws IOException if an I/O error occurs when opening this IP Manager's
-	 *                     Server Socket.
+	 * @param defaultBrokerConnectionInfo the ConnectionInfo of the default Broker
+	 *                                    to connect to
 	 */
-	public CIManager(ConnectionInfo defaultBrokerConnectionInfo) throws IOException {
+	public CIManager(ConnectionInfo defaultBrokerConnectionInfo) {
 		map = new HashMap<>();
 		defaultBrokerCI = defaultBrokerConnectionInfo;
-		serverThread = new ServerThread();
 	}
 
 	/**
-	 * Communicates with the default broker to fetch the ConnectionInfo associated
+	 * Communicates with the default Broker to fetch the ConnectionInfo associated
 	 * with a Topic, which is then cached. Future requests for it will use the
 	 * ConnectionInfo found in the cache.
 	 * <p>
-	 * To invalidate the cache and request that the default broker provide a new
+	 * To invalidate the cache and request that the default Broker provide a new
 	 * ConnectionInfo, the {@link #invalidate(String)} method may be used.
 	 *
 	 * @param topicName the Topic for which to get the ConnectionInfo
@@ -132,7 +63,7 @@ class CIManager implements AutoCloseable {
 
 	/**
 	 * Invalidates the ConnectionInfo associated with a Topic. The next time the
-	 * ConnectionInfo for said Topic is requested, the default broker will be asked
+	 * ConnectionInfo for said Topic is requested, the default Broker will be asked
 	 * will be requested to provide it.
 	 *
 	 * @param topicName the Topic for which to invalidate the ConnectionInfo
@@ -142,11 +73,6 @@ class CIManager implements AutoCloseable {
 		LG.in();
 		map.remove(topicName);
 		LG.out();
-	}
-
-	@Override
-	public void close() throws IOException {
-		serverThread.close();
 	}
 
 	private void updateCIForTopic(String topicName) {

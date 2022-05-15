@@ -1,6 +1,5 @@
 package eventDeliverySystem.client;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -16,7 +15,7 @@ import eventDeliverySystem.server.Broker;
  *
  * @see Broker
  */
-abstract class ClientNode implements AutoCloseable {
+abstract class ClientNode {
 
 	/**
 	 * This Client Node's Connection Info Manager that manages the information about
@@ -36,10 +35,8 @@ abstract class ClientNode implements AutoCloseable {
 	 * @throws UnknownHostException if no IP address for the host could be found, or
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
-	 * @throws IOException          if an I/O error occurs while establishing
-	 *                              connection to the server
 	 */
-	public ClientNode(String serverIP, int serverPort) throws IOException {
+	public ClientNode(String serverIP, int serverPort) throws UnknownHostException {
 		this(InetAddress.getByName(serverIP), serverPort);
 	}
 
@@ -51,10 +48,8 @@ abstract class ClientNode implements AutoCloseable {
 	 * @param serverPort the port of the default broker
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
-	 * @throws IOException          if an I/O error occurs while establishing
-	 *                              connection to the server
 	 */
-	public ClientNode(byte[] serverIP, int serverPort) throws IOException {
+	public ClientNode(byte[] serverIP, int serverPort) throws UnknownHostException {
 		this(InetAddress.getByAddress(serverIP), serverPort);
 	}
 
@@ -63,25 +58,8 @@ abstract class ClientNode implements AutoCloseable {
 	 *
 	 * @param ip   the InetAddress of the default broker
 	 * @param port the port of the default broker
-	 *
-	 * @throws IOException if an I/O error occurs while establishing connection to
-	 *                     the server
 	 */
-	protected ClientNode(InetAddress ip, int port) throws IOException {
+	protected ClientNode(InetAddress ip, int port) {
 		topicCIManager = new CIManager(new ConnectionInfo(ip, port));
 	}
-
-	@Override
-	public final void close() throws IOException {
-		topicCIManager.close();
-		closeImpl();
-	}
-
-	/**
-	 * Allows each subclass to optionally specify how to close itself. The default
-	 * implementation does nothing.
-	 *
-	 * @throws IOException if an IOException occurs while closing this resource
-	 */
-	protected void closeImpl() throws IOException {}
 }

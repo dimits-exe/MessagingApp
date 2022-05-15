@@ -45,10 +45,8 @@ public class Publisher extends ClientNode {
 	 * @throws UnknownHostException if no IP address for the host could be found, or
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
-	 * @throws IOException          if an I/O error occurs when opening the
-	 *                              Publisher's Server Socket.
 	 */
-	public Publisher(String defaultServerIP, int defaultServerPort) throws IOException {
+	public Publisher(String defaultServerIP, int defaultServerPort) throws UnknownHostException {
 		this(InetAddress.getByName(defaultServerIP), defaultServerPort);
 	}
 
@@ -60,10 +58,8 @@ public class Publisher extends ClientNode {
 	 * @param defaultServerPort the port of the default broker
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
-	 * @throws IOException          if an I/O error occurs when opening the
-	 *                              Publisher's Server Socket.
 	 */
-	public Publisher(byte[] defaultServerIP, int defaultServerPort) throws IOException {
+	public Publisher(byte[] defaultServerIP, int defaultServerPort) throws UnknownHostException {
 		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort);
 	}
 
@@ -72,10 +68,8 @@ public class Publisher extends ClientNode {
 	 *
 	 * @param ip   the InetAddress of the default broker
 	 * @param port the port of the default broker
-	 *
-	 * @throws IOException if an I/O error occurs while initialising the Client Node
 	 */
-	private Publisher(InetAddress ip, int port) throws IOException {
+	private Publisher(InetAddress ip, int port) {
 		super(ip, port);
 	}
 
