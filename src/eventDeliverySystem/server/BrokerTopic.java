@@ -3,9 +3,7 @@ package eventDeliverySystem.server;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
@@ -19,6 +17,12 @@ import eventDeliverySystem.datastructures.PostInfo;
  * @author Dimitris Tsirmpas
  */
 class BrokerTopic extends AbstractTopic {
+
+	private static final PostInfo dummyPostInfo;
+
+	static {
+		dummyPostInfo = new PostInfo(-1, null, AbstractTopic.FETCH_ALL_POSTS);
+	}
 
 	private final List<PostInfo>          postInfoList;
 	private final Map<Long, List<Packet>> packetsPerPostInfoMap;
@@ -34,6 +38,9 @@ class BrokerTopic extends AbstractTopic {
 		postInfoList = new LinkedList<>();
 		packetsPerPostInfoMap = new HashMap<>();
 		indexPerPostInfoId = new HashMap<>();
+
+		postInfoList.add(dummyPostInfo);
+		indexPerPostInfoId.put(AbstractTopic.FETCH_ALL_POSTS, 0);
 	}
 
 	@Override
@@ -58,61 +65,44 @@ class BrokerTopic extends AbstractTopic {
 
 	/**
 	 * Fills the List and the Map with all of the PostInfo and Packet objects in
-	 * this Topic. The first PostInfo object in the list is the earlier and the last
-	 * is the latest.
+	 * this Topic.
 	 *
 	 * @param emptyPostInfoList          the empty list where the PostInfo objects
-	 *                                   will be added
+	 *                                   will be added, sorted from earliest to
+	 *                                   latest
 	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every
 	 *                                   PostInfo object will be added
 	 */
 	public void getAllPosts(List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
-
-		synchronized (postInfoList) {
-			emptyPostInfoList.addAll(postInfoList);
-		}
-
-		synchronized (packetsPerPostInfoMap) {
-			for (final Entry<Long, List<Packet>> e : packetsPerPostInfoMap.entrySet()) {
-				final List<Packet> ls      = e.getValue();
-				final Packet[]     packets = ls.toArray(new Packet[ls.size()]);
-				emptyPacketsPerPostInfoMap.put(e.getKey(), packets);
-			}
-		}
+		getPostsSince(AbstractTopic.FETCH_ALL_POSTS, emptyPostInfoList, emptyPacketsPerPostInfoMap);
 	}
 
 	/**
 	 * Fills the List and the Map with all of the PostInfo and Packet objects in
-	 * this Topic starting from a certain PostInfo object. The first PostInfo object
-	 * in the list is the earlier and the last is the latest.
+	 * this Topic starting from a certain PostInfo object. The PostInfo with the
+	 * given ID and its Packets are not returned.
 	 *
-	 * @param postId                     the id of the PostInfo after which to
-	 *                                   return the object
+	 * @param postId                     the ID of the PostInfo
 	 * @param emptyPostInfoList          the empty list where the PostInfo objects
-	 *                                   will be added
+	 *                                   will be added, sorted from earliest to
+	 *                                   latest
 	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every
 	 *                                   PostInfo object will be added
 	 */
 	synchronized public void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
 
-		if (postId == AbstractTopic.FETCH_ALL_POSTS)
-			getAllPosts(emptyPostInfoList, emptyPacketsPerPostInfoMap);
+		final Integer index = indexPerPostInfoId.get(postId);
 
-		// broker is not persistent, consumer may have posts from previous session
-		if (!indexPerPostInfoId.containsKey(postId))
+		// broker is not persistent, consumer may have posts from previous session, not an error
+		if (index == null)
 			return;
 
-		final int              index = indexPerPostInfoId.get(postId);
-		ListIterator<PostInfo> postInfoIter;
-		for (postInfoIter = postInfoList.listIterator(index); postInfoIter.hasNext();) {
+		emptyPostInfoList.addAll(postInfoList.subList(index + 1, postInfoList.size()));
 
-			final PostInfo curr = postInfoIter.next();
-
-			emptyPostInfoList.add(curr);
-
-			final long         id = curr.getId();
+		for (PostInfo pi : emptyPostInfoList) {
+			final long         id = pi.getId();
 			final List<Packet> ls = packetsPerPostInfoMap.get(id);
 			emptyPacketsPerPostInfoMap.put(id, ls.toArray(new Packet[ls.size()]));
 		}
