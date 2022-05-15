@@ -152,51 +152,30 @@ class CIManager implements AutoCloseable {
 	private void updateCIForTopic(String topicName) {
 		LG.sout("updateCIForTopic(%s)", topicName);
 		LG.in();
-		boolean ipForTopicBrokerException;
-		do {
-			ipForTopicBrokerException = false;
+		try (Socket socket = getSocketToDefaultBroker();
+		        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
 
-			try (Socket socket = getSocketToDefaultBroker();
-			        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+			oos.writeObject(new Message(BROKER_DISCOVERY, topicName));
+			oos.flush();
 
-				// TODO: replace with BROKER_DISCOVERY_REQUEST
-				// TODO: separate INITIALISE_CONSUMER and INITIALISE_PUBLISHER in Broker
-				oos.writeObject(new Message(BROKER_DISCOVERY, topicName));
-				oos.flush();
-
-				try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
-					ConnectionInfo actualBrokerCIForTopic;
-					try {
-						actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
-					} catch (final ClassNotFoundException e) {
-						e.printStackTrace();
-						return;
-					}
-
-					LG.sout("actualBrokerCIForTopic=%s", actualBrokerCIForTopic);
-
-					map.put(topicName, actualBrokerCIForTopic);
-				}
-
-			} catch (final IOException e) {
-				ipForTopicBrokerException = true;
-
-				System.err.printf(
-				        "IOException while getting ConnectionInfo for Topic from default broker%n\n"
-				                + e);
-				System.err.flush();
-
+			try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
+				ConnectionInfo actualBrokerCIForTopic;
 				try {
-					// wait until notified by server thread that the default broker has been changed
-					synchronized (this) {
-						wait();
-					}
-				} catch (final InterruptedException e1) {
-					System.err.printf(
-					        "Interrupted after IOException while getting ConnectionInfo for Topic from default broker%n");
+					actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
+				} catch (final ClassNotFoundException e) {
+					e.printStackTrace();
+					return;
 				}
+
+				LG.sout("actualBrokerCIForTopic=%s", actualBrokerCIForTopic);
+
+				map.put(topicName, actualBrokerCIForTopic);
 			}
-		} while (ipForTopicBrokerException);
+
+		} catch (final IOException e) {
+			System.err.printf("Fatal error: connection to server lost");
+			e.printStackTrace();
+		}
 		LG.out();
 	}
 

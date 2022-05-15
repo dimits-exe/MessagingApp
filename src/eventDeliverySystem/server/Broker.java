@@ -38,7 +38,6 @@ public class Broker implements Runnable, AutoCloseable {
 
 	private static final int MAX_CONNECTIONS = 64;
 
-	private final Set<ConnectionInfo>                  publisherConnectionInfo;
 	private final Map<String, Set<ObjectOutputStream>> consumerOOSPerTopic;
 	private final Map<String, BrokerTopic>             topicsByName;
 	private final List<Socket>                         brokerConnections;
@@ -52,7 +51,6 @@ public class Broker implements Runnable, AutoCloseable {
 	 * the server network.
 	 */
 	public Broker() {
-		publisherConnectionInfo = new HashSet<>();
 		consumerOOSPerTopic = new HashMap<>();
 		brokerConnections = new LinkedList<>();
 		brokerCI = new LinkedList<>();
@@ -193,11 +191,6 @@ public class Broker implements Runnable, AutoCloseable {
 		consumerOOSPerTopic.put(topicName, new HashSet<>());
 	}
 
-
-	synchronized private void addPublisherCI(Socket socket) {
-		publisherConnectionInfo.add(new ConnectionInfo(socket));
-	}
-
 	private BrokerTopic getTopic(String topicName) {
 		final BrokerTopic topic;
 		synchronized (topicsByName) {
@@ -318,7 +311,6 @@ public class Broker implements Runnable, AutoCloseable {
 					break;
 
 				case BROKER_DISCOVERY:
-					addPublisherCI(socket);
 					topicName = (String) message.getValue();
 					new BrokerDiscoveryThread(oos, topicName).start();
 					break;
