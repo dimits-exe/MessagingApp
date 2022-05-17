@@ -49,7 +49,8 @@ public class ProfileFileSystem {
 	 * @throws IOException if an I/O error occurs when opening the root directory
 	 */
 	public Stream<String> getProfileNames() throws IOException {
-		return Files.list(profilesRootDirectory).map(p -> p.getFileName().toString());
+		return Files.list(profilesRootDirectory).filter(path -> Files.isDirectory(path))
+		        .map(path -> path.getFileName().toString());
 	}
 
 	/**
