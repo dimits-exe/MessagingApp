@@ -127,7 +127,7 @@ public class PushThread extends Thread {
 			success = false;
 		}
 
-		callback.orElse(Callback.EMPTY).onCompletion(success, topicName.get());
+		callback.orElse(Callback.EMPTY).onCompletion(success, topicName.orElse(null));
 
 		LG.out();
 		LG.sout("/%s#run()", getName());
