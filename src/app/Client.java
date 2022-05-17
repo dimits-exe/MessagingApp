@@ -13,7 +13,7 @@ import eventDeliverySystem.util.LG;
  */
 public class Client {
 
-	private static final String usage = "Usage:\n"
+	private static final String USAGE = "Usage:\n"
 	        + "\t   java app.Client -c <name> <ip> <port> <user_dir>\n"
 	        + "\tor java app.Client -l <name> <ip> <port> <user_dir>\n"
 	        + "\n"
@@ -38,7 +38,7 @@ public class Client {
 		LG.args(args);
 
 		if (args.length != 5) {
-			System.out.println(Client.usage);
+			System.out.println(Client.USAGE);
 			return;
 		}
 
@@ -51,7 +51,7 @@ public class Client {
 		case "-l":
 			break;
 		default:
-			System.out.println(Client.usage);
+			System.out.println(Client.USAGE);
 			return;
 		}
 

@@ -325,7 +325,7 @@ public class User {
 	 *
 	 * @see Publisher#push(Post, String)
 	 */
-	@SuppressWarnings({ "static-method", "unused" })
+	@SuppressWarnings("unused")
 	public void postLocal(Post post, String topicName) {
 
 	}

@@ -12,7 +12,7 @@ import eventDeliverySystem.util.LG;
  */
 public class Server {
 
-	private static final String usage = "Usage:\n"
+	private static final String USAGE = "Usage:\n"
 	        + "\t   java app.Server\n"
 	        + "\tor java app.Server <ip> <port>\n"
 	        + "\n"
@@ -34,45 +34,35 @@ public class Server {
 	public static void main(String[] args) {
 		LG.args(args);
 
-		if ((args.length != 2) && (args.length != 0)) {
-			System.out.print(Server.usage);
-			return;
-		}
+		final Broker broker;
+		final String brokerId;
 
-		LG.sout("Broker#main start");
-		LG.args(args);
+		if (args.length == 0) {
+			broker = new Broker();
+			brokerId = "Main";
 
-		// argument processing
-		String  ip       = "";
-		int     port     = -1;
-		boolean isLeader = true;
-
-		if (args.length == 2) {
-			ip = args[0];
+		} else if (args.length == 2) {
+			String ip = args[0];
+			int    port;
 			try {
 				port = Integer.parseInt(args[1]);
 			} catch (final NumberFormatException e) {
 				System.err.printf("Invalid port: %s", args[1]);
 				return;
 			}
-			isLeader = false;
-		}
 
-		// broker thread naming
-		String brokerId;
-		if (isLeader)
-			brokerId = "Main";
-		else
+			broker = new Broker(ip, port);
+
 			brokerId = Integer.toString(ThreadLocalRandom.current().nextInt(1, 1000));
 
-		// broker execution
-		try (Broker broker = isLeader ? new Broker() : new Broker(ip, port)) { //java 8 forces me to do this
+		} else {
+			System.out.println(Server.USAGE);
+			return;
+		}
+
+		try (broker) {
 			final Thread thread = new Thread(broker, "Broker-" + brokerId);
-			thread.start();
-			LG.sout("Broker#main end");
-			thread.join();
-		} catch (final InterruptedException e) {
-			e.printStackTrace();
+			thread.run();
 		}
 	}
 }
