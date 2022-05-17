@@ -18,8 +18,6 @@ public class PullThread extends Thread {
 	private final ObjectInputStream ois;
 	private final AbstractTopic     topic;
 
-	private boolean success, start, end;
-
 	/**
 	 * Constructs the Thread that, when run, will read some Posts from a stream and
 	 * post them to a Topic.
@@ -31,17 +29,14 @@ public class PullThread extends Thread {
 		super("PullThread-" + topic.getName());
 		ois = stream;
 		this.topic = topic;
-		success = start = end = false;
 	}
 
 	@Override
 	public void run() {
 		LG.sout("%s#run()", getName());
 		LG.in();
-		start = true;
 
 		try {
-
 			final int postCount = ois.readInt();
 			LG.sout("postCount=%d", postCount);
 			LG.in();
@@ -73,37 +68,11 @@ public class PullThread extends Thread {
 
 			LG.out();
 
-			success = true;
-
 		} catch (final IOException e) {
 			e.printStackTrace();
-			success = false;
 		}
 
-		LG.sout("success=%s", success);
-
-		end = true;
 		LG.out();
 		LG.sout("/%s#run()", getName());
-	}
-
-	/**
-	 * Returns whether this Thread has executed its job successfully. This method
-	 * shall be called after this Thread has executed its {@code run} method once.
-	 *
-	 * @return {@code true} if it has, {@code false} otherwise
-	 *
-	 * @throws IllegalStateException if this Thread has not completed its execution
-	 *                               before this method is called
-	 */
-	public boolean success() throws IllegalStateException {
-		if (!start)
-			throw new IllegalStateException(
-			        "Can't call 'success()' before starting this Thread");
-		if (!end)
-			throw new IllegalStateException(
-			        "This Thread must finish execution before calling 'success()'");
-
-		return success;
 	}
 }
