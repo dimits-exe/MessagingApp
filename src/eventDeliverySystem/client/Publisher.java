@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 
 import eventDeliverySystem.User.UserSub;
 import eventDeliverySystem.datastructures.ConnectionInfo;
@@ -38,9 +37,7 @@ import eventDeliverySystem.util.LG;
  */
 public class Publisher extends ClientNode {
 
-	private final UserSub           usersub;
-	private final Queue<PushStruct> queue;
-	private final Thread            postThread;
+	private final UserSub usersub;
 
 	/**
 	 * Constructs a Publisher.
@@ -86,9 +83,6 @@ public class Publisher extends ClientNode {
 	private Publisher(InetAddress ip, int port, UserSub usersub) {
 		super(ip, port);
 		this.usersub = usersub;
-		queue = new LinkedList<>();
-		postThread = new PostThread();
-		postThread.start();
 	}
 
 	/**
@@ -101,12 +95,8 @@ public class Publisher extends ClientNode {
 	public void push(Post post, String topicName) {
 		LG.sout("Publisher#push(%s, %s)", post, topicName);
 		LG.in();
-		synchronized (queue) {
-			queue.add(new PushStruct(post, topicName));
-		}
-		synchronized (postThread) {
-			postThread.notify();
-		}
+		Thread thread = new PostThread(post, topicName);
+		thread.start();
 		LG.out();
 	}
 
@@ -142,97 +132,57 @@ public class Publisher extends ClientNode {
 
 	private class PostThread extends Thread {
 
-		private final Callback callback = (success, topicName) -> {
-			if (success)
-				usersub.failure(topicName);
-		};
-
-		/**
-		 * Constructs the Thread that, when run, will write some Posts to a stream. This
-		 * Thread is subscribed to a Topic and is notified each time there is new data
-		 * in the Topic.
-		 */
-		public PostThread() {
-			super("PostThread");
-		}
-
-		@Override
-		public void run() {
-			boolean isEmpty;
-			while (true) {
-				synchronized (queue) {
-					isEmpty = queue.isEmpty();
-				}
-
-				while (isEmpty) {
-					LG.sout("--- queue is empty ---");
-					try {
-						synchronized (this) {
-							this.wait();
-						}
-					} catch (final InterruptedException e) {}
-
-					synchronized (queue) {
-						isEmpty = queue.isEmpty();
-					}
-				}
-
-				LG.sout("--- queue is no longer empty ---");
-				do {
-					PushStruct ps;
-					synchronized (queue) {
-						ps = queue.remove();
-					}
-
-					try {
-						final ConnectionInfo actualBrokerCI = topicCIManager
-						        .getConnectionInfoForTopic(ps.topicName);
-						LG.sout("Actual Broker CI: %s", actualBrokerCI);
-
-						final Socket socket = new Socket(actualBrokerCI.getAddress(),
-						        actualBrokerCI.getPort());
-
-						final ObjectOutputStream oos = new ObjectOutputStream(
-						        socket.getOutputStream());
-						oos.writeObject(new Message(DATA_PACKET_SEND, ps.topicName));
-
-						final PostInfo            postInfo  = ps.post.getPostInfo();
-						final List<PostInfo>      postInfos = new LinkedList<>();
-						final Map<Long, Packet[]> packets   = new HashMap<>();
-
-						postInfos.add(postInfo);
-						packets.put(postInfo.getId(), Packet.fromPost(ps.post));
-
-						final PushThread pushThread = new PushThread(oos, ps.topicName, postInfos,
-						        packets, Protocol.NORMAL, callback);
-						pushThread.start();
-
-					} catch (final IOException e) {
-						callback.onCompletion(false, ps.topicName);
-					}
-
-					synchronized (queue) {
-						isEmpty = queue.isEmpty();
-					}
-				} while (isEmpty);
-			}
-		}
-	}
-
-	private static class PushStruct {
-
 		private final Post   post;
 		private final String topicName;
 
 		/**
-		 * Creates a new PushStruct.
+		 * Constructs a new PostThread that connects to the actual Broker and starts a
+		 * PushThread to post the Post.
 		 *
-		 * @param post      the Post to post
-		 * @param topicName the name of the Topic to which the Post will be posted
+		 * @param post      the Post
+		 * @param topicName the name of the Topic to which to push the Post
 		 */
-		public PushStruct(Post post, String topicName) {
+		public PostThread(Post post, String topicName) {
+			super("PostThread");
 			this.post = post;
 			this.topicName = topicName;
+		}
+
+		@Override
+		public void run() {
+
+			final Callback callback = (success, topicName1) -> {
+				if (success)
+					usersub.failure(topicName1);
+			};
+
+			try {
+				final ConnectionInfo actualBrokerCI = topicCIManager
+				        .getConnectionInfoForTopic(topicName);
+				LG.sout("Actual Broker CI: %s", actualBrokerCI);
+
+				final Socket socket = new Socket(actualBrokerCI.getAddress(),
+				        actualBrokerCI.getPort());
+
+				final ObjectOutputStream oos = new ObjectOutputStream(
+				        socket.getOutputStream());
+				oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
+
+				final PostInfo            postInfo  = post.getPostInfo();
+				final List<PostInfo>      postInfos = new LinkedList<>();
+				final Map<Long, Packet[]> packets   = new HashMap<>();
+
+				postInfos.add(postInfo);
+				packets.put(postInfo.getId(), Packet.fromPost(post));
+
+
+				final PushThread pushThread = new PushThread(oos, topicName, postInfos,
+				        packets, Protocol.NORMAL, callback);
+				pushThread.start();
+
+			} catch (final IOException e) {
+				callback.onCompletion(false, topicName);
+			}
 		}
 	}
 }
