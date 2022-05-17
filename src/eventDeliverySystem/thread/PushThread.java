@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
@@ -40,11 +41,11 @@ public class PushThread extends Thread {
 	}
 
 	private final ObjectOutputStream  oos;
+	private final Optional<String>    topicName;
 	private final List<PostInfo>      postInfos;
 	private final Map<Long, Packet[]> packets;
 	private final Protocol            protocol;
-
-	private boolean success, start, end;
+	private final Optional<Callback>  callback;
 
 	/**
 	 * Constructs the Thread that, when run, will write some Posts to a stream.
@@ -59,20 +60,40 @@ public class PushThread extends Thread {
 	 */
 	public PushThread(ObjectOutputStream stream, List<PostInfo> postInfos,
 	        Map<Long, Packet[]> packets, Protocol protocol) {
+		this(stream, null, postInfos, packets, protocol, null);
+	}
+
+	/**
+	 * Constructs the Thread that, when run, will write some Posts to a stream.
+	 *
+	 * @param stream    the output stream to which to write the Posts
+	 * @param topicName the name of the Topic that corresponds to the stream
+	 * @param postInfos the PostInfo objects to write to the stream
+	 * @param packets   the array of Packets to write for each PostInfo object
+	 * @param protocol  the protocol to use when pushing, which alters the behaviour
+	 *                  of the Pull Thread
+	 * @param callback  the callback to call when this thread finishes execution
+	 *
+	 * @see Protocol
+	 * @see Callback
+	 */
+	public PushThread(ObjectOutputStream stream, String topicName, List<PostInfo> postInfos,
+	        Map<Long, Packet[]> packets, Protocol protocol, Callback callback) {
 		super("PushThread-" + postInfos.size() + "-" + protocol);
 		oos = stream;
+		this.topicName = Optional.ofNullable(topicName);
 		this.postInfos = postInfos;
 		this.packets = packets;
 		this.protocol = protocol;
-		success = start = end = false;
+		this.callback = Optional.ofNullable(callback);
 	}
 
 	@Override
 	public void run() {
 		LG.sout("%s#run()", getName());
 		LG.in();
-		start = true;
 
+		boolean success;
 		try /* (oos) */ {
 
 			LG.sout("protocol=%s, posts.size()=%d", protocol, postInfos.size());
@@ -97,9 +118,8 @@ public class PushThread extends Thread {
 					oos.writeObject(packet);
 			}
 
-			LG.out();
-
 			success = true;
+			LG.out();
 
 		} catch (final IOException e) {
 			System.err.printf("IOException in PushThread#run()%n");
@@ -107,28 +127,16 @@ public class PushThread extends Thread {
 			success = false;
 		}
 
-		end = true;
+		callback.orElse(Callback.EMPTY).onCompletion(success, topicName.get());
+
 		LG.out();
 		LG.sout("/%s#run()", getName());
 	}
 
-	/**
-	 * Returns whether this Thread has executed its job successfully. This method
-	 * shall be called after this Thread has executed its {@code run} method once.
-	 *
-	 * @return {@code true} if it has, {@code false} otherwise
-	 *
-	 * @throws IllegalStateException if this Thread has not completed its execution
-	 *                               before this method is called
-	 */
-	public boolean success() throws IllegalStateException {
-		if (!start)
-			throw new IllegalStateException(
-			        "Can't call 'success()' before starting this Thread");
-		if (!end)
-			throw new IllegalStateException(
-			        "This Thread must finish execution before calling 'success()'");
+	@FunctionalInterface
+	public interface Callback {
+		static final Callback EMPTY = (success, topicName) -> {};
 
-		return success;
+		void onCompletion(boolean success, String topicName);
 	}
 }
