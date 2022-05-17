@@ -61,7 +61,7 @@ public class PostInfo implements Serializable {
 
 	@Override
 	public String toString() {
-		return String.format("PostInfo [posterName=%d, fileExtension=%s, id=%d]", posterName,
+		return String.format("PostInfo [posterName=%s, fileExtension=%s, id=%s]", posterName,
 		        fileExtension, id);
 	}
 }
