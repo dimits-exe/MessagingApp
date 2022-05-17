@@ -41,7 +41,7 @@ public class User {
 	 * @param serverPort            the port of the server
 	 * @param profilesRootDirectory the root directory of all the Profiles in the
 	 *                              file system
-	 * @param profileId             the id of the existing profile
+	 * @param profileName           the name of the existing profile
 	 *
 	 * @return the new User
 	 *
@@ -49,9 +49,9 @@ public class User {
 	 *                     system or while establishing connection to the server
 	 */
 	public static User loadExisting(String serverIP, int serverPort, Path profilesRootDirectory,
-	        long profileId) throws IOException {
+	        String profileName) throws IOException {
 		final User user = new User(serverIP, serverPort, profilesRootDirectory);
-		user.switchToExistingProfile(profileId);
+		user.switchToExistingProfile(profileName);
 		return user;
 	}
 
@@ -112,12 +112,12 @@ public class User {
 	/**
 	 * Switches this User to manage an existing.
 	 *
-	 * @param profileId the id of an existing Profile
+	 * @param profileName the name of an existing Profile
 	 *
 	 * @throws IOException if an I/O error occurs while loading the existing Profile
 	 */
-	public void switchToExistingProfile(long profileId) throws IOException {
-		currentProfile = profileFileSystem.loadProfile(profileId);
+	public void switchToExistingProfile(String profileName) throws IOException {
+		currentProfile = profileFileSystem.loadProfile(profileName);
 		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
 	}
 
@@ -255,17 +255,17 @@ public class User {
 	 *
 	 * @param profilesRootDirectory the root directory of all the Profiles in the
 	 *                              file system
-	 * @param profileId             the id of the existing profile
+	 * @param profileName           the name of the existing profile
 	 *
 	 * @return the new User that only works with the local methods
 	 *
 	 * @throws IOException if an I/O error occurs while interacting with the file
 	 *                     system or while establishing connection to the server
 	 */
-	public static User loadExistingLocal(Path profilesRootDirectory, long profileId)
+	public static User loadExistingLocal(Path profilesRootDirectory, String profileName)
 	        throws IOException {
 		final User user = new User(profilesRootDirectory);
-		user.switchToExistingProfileLocal(profileId);
+		user.switchToExistingProfileLocal(profileName);
 		return user;
 	}
 
@@ -289,7 +289,7 @@ public class User {
 		return user;
 	}
 
-	private User(Path profilesRootDirectory) {
+	private User(Path profilesRootDirectory) throws IOException {
 		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 		publisher = null;
 		consumer = null;
@@ -309,12 +309,12 @@ public class User {
 	/**
 	 * Switches this User to manage an existing.
 	 *
-	 * @param profileId the id of an existing Profile
+	 * @param profileName the name of an existing Profile
 	 *
 	 * @throws IOException if an I/O error occurs while loading the existing Profile
 	 */
-	public void switchToExistingProfileLocal(long profileId) throws IOException {
-		currentProfile = profileFileSystem.loadProfile(profileId);
+	public void switchToExistingProfileLocal(String profileName) throws IOException {
+		currentProfile = profileFileSystem.loadProfile(profileName);
 	}
 
 	/**

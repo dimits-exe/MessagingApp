@@ -21,7 +21,7 @@ class BrokerTopic extends AbstractTopic {
 	private static final PostInfo dummyPostInfo;
 
 	static {
-		dummyPostInfo = new PostInfo(-1, null, AbstractTopic.FETCH_ALL_POSTS);
+		dummyPostInfo = new PostInfo(null, null, AbstractTopic.FETCH_ALL_POSTS);
 	}
 
 	private final List<PostInfo>          postInfoList;

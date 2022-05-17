@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.Topic;
@@ -22,36 +21,20 @@ import eventDeliverySystem.datastructures.Topic;
 public class Profile {
 
 	private final String               name;
-	private final long                 id;
 	private final Map<String, Topic>   topics;
 	private final Map<String, Integer> unreadTopics;
 
 	/**
-	 * Creates a new, empty, Profile with the specified name and a random unique ID.
-	 * This constructor should be used when creating a new Profile, since the ID is
-	 * not known and is randomly generated.
+	 * Creates a new, empty, Profile with the specified name.
 	 *
-	 * @param name the name of the Profile
+	 * @param name the unique name of the Profile
 	 */
 	public Profile(String name) {
-		this(name, ThreadLocalRandom.current().nextLong(), new HashMap<>());
+		this(name, new HashMap<>());
 	}
 
-	/**
-	 * Creates a new, empty, Profile with the specified name and unique ID. This
-	 * constructor should be used when loading a saved Profile from disk, since the
-	 * ID is known.
-	 *
-	 * @param name the name of the Profile
-	 * @param id   the Profile's unique ID
-	 */
-	public Profile(String name, long id) {
-		this(name, id, new HashMap<>());
-	}
-
-	private Profile(String name, long id, Map<String, Topic> topics) {
+	private Profile(String name, Map<String, Topic> topics) {
 		this.name = name;
-		this.id = id;
 		this.topics = topics;
 		unreadTopics = new HashMap<>();
 	}
@@ -63,15 +46,6 @@ public class Profile {
 	 */
 	public String getName() {
 		return name;
-	}
-
-	/**
-	 * Returns this Profile's id.
-	 *
-	 * @return the id
-	 */
-	public long getId() {
-		return id;
 	}
 
 	/**
@@ -163,6 +137,6 @@ public class Profile {
 	@Override
 	public String toString() {
 		final List<Object> topicNames = Arrays.asList(topics.keySet().toArray());
-		return String.format("Profile [name=%s, id=%d, topics=%s]", name, id, topicNames);
+		return String.format("Profile [name=%s, topics=%s]", name, topicNames);
 	}
 }

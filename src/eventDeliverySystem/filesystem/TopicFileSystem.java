@@ -266,7 +266,7 @@ public class TopicFileSystem {
 
 	private static String getFileNameFromPostInfo(PostInfo postInfo) {
 		final long   postId        = postInfo.getId();
-		final long   posterId      = postInfo.getPosterId();
+		final String posterId      = postInfo.getPosterName();
 		final String fileExtension = postInfo.getFileExtension();
 
 		return String.format(TopicFileSystem.format, postId, posterId, fileExtension);
@@ -279,7 +279,7 @@ public class TopicFileSystem {
 			throw new RuntimeException("Bad filename: " + fileName);
 
 		final long   postId        = Long.parseLong(m.group("postId"));
-		final long   posterId      = Long.parseLong(m.group("posterId"));
+		final String posterId      = m.group("posterId");
 		final String fileExtension = m.group("extension");
 
 		return new PostInfo(posterId, fileExtension, postId);

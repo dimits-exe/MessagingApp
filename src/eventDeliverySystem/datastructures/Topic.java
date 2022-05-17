@@ -20,7 +20,7 @@ public class Topic extends AbstractTopic {
 	private static final Post dummyPost;
 
 	static {
-		PostInfo dummyPI = new PostInfo(-1, null, AbstractTopic.FETCH_ALL_POSTS);
+		PostInfo dummyPI = new PostInfo(null, null, AbstractTopic.FETCH_ALL_POSTS);
 		dummyPost = new Post(null, dummyPI);
 	}
 

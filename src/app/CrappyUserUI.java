@@ -34,13 +34,13 @@ public class CrappyUserUI extends JFrame {
 		}
 	}
 
-	public CrappyUserUI(boolean existing, Object arg, String serverIP, int serverPort, Path dir)
+	public CrappyUserUI(boolean existing, String name, String serverIP, int serverPort, Path dir)
 	        throws IOException {
-		super(arg.toString());
+		super(name);
 		if (existing)
-			user = User.loadExisting(serverIP, serverPort, dir, (Long) arg);
+			user = User.loadExisting(serverIP, serverPort, dir, name);
 		else
-			user = User.createNew(serverIP, serverPort, dir, (String) arg);
+			user = User.createNew(serverIP, serverPort, dir, name);
 
 		user.setUserUISub(new UserUISub());
 
@@ -66,10 +66,10 @@ public class CrappyUserUI extends JFrame {
 
 		postFile.addActionListener(e -> {
 			try {
-				final User user1    = CrappyUserUI.this.user;
-				final File file     = new File(file_text.getText());
-				final long posterId = user1.getCurrentProfile().getId();
-				final Post post     = Post.fromFile(file, posterId);
+				final User   user1      = CrappyUserUI.this.user;
+				final File   file       = new File(file_text.getText());
+				final String posterName = user1.getCurrentProfile().getName();
+				final Post   post       = Post.fromFile(file, posterName);
 				user1.post(post, topicName.getText());
 			} catch (final IOException e1) {
 				e1.printStackTrace();
@@ -77,10 +77,10 @@ public class CrappyUserUI extends JFrame {
 		});
 
 		postText.addActionListener(e -> {
-			final User   user1    = CrappyUserUI.this.user;
-			final String text     = file_text.getText();
-			final long   posterId = user1.getCurrentProfile().getId();
-			final Post   post     = Post.fromText(text, posterId);
+			final User   user1      = CrappyUserUI.this.user;
+			final String text       = file_text.getText();
+			final String posterName = user1.getCurrentProfile().getName();
+			final Post   post       = Post.fromText(text, posterName);
 			user1.post(post, topicName.getText());
 		});
 

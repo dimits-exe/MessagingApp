@@ -61,15 +61,15 @@ public class Post {
 	/**
 	 * Constructs a Post with from a File.
 	 *
-	 * @param file     the File whose data will be encapsulated in a Post
-	 * @param posterId the ID of the poster of the File
+	 * @param file       the File whose data will be encapsulated in a Post
+	 * @param posterName the name of the poster of the File
 	 *
 	 * @return the Post that encapsulates the contents of the File
 	 *
 	 * @throws FileNotFoundException if the File could not be found
 	 * @throws IOException           if an I/O Error occurs
 	 */
-	public static Post fromFile(File file, long posterId)
+	public static Post fromFile(File file, String posterName)
 	        throws FileNotFoundException, IOException {
 
 		byte[] data;
@@ -88,19 +88,19 @@ public class Post {
 
 		final String fileName      = file.getName();
 		final String fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
-		return new Post(data, posterId, fileExtension);
+		return new Post(data, posterName, fileExtension);
 	}
 
 	/**
 	 * Constructs a Post from a String of text, a plain-text message.
 	 *
-	 * @param text     the message
-	 * @param posterId the ID of the poster of the plain-message
+	 * @param text       the message
+	 * @param posterName the name of the poster of the plain-message
 	 *
 	 * @return the Post that encapsulates the plain-text message
 	 */
-	public static Post fromText(String text, long posterId) {
-		return new Post(text.getBytes(), posterId, "~txt");
+	public static Post fromText(String text, String posterName) {
+		return new Post(text.getBytes(), posterName, "~txt");
 	}
 
 	private final byte[]   data;
@@ -121,27 +121,27 @@ public class Post {
 	 * Constructs a new Post with a random ID.
 	 *
 	 * @param data          the data to be encapsulated in this Post
-	 * @param posterId      the ID of the poster of this Post
+	 * @param posterName    the name of the poster of this Post
 	 * @param fileExtension the file extension associated with the data of this
 	 *                      Post. Plain-text messages have a file extension of
 	 *                      '{@code ~txt}'
 	 */
-	private Post(byte[] data, long posterId, String fileExtension) {
-		this(data, posterId, fileExtension, ThreadLocalRandom.current().nextLong());
+	private Post(byte[] data, String posterName, String fileExtension) {
+		this(data, posterName, fileExtension, ThreadLocalRandom.current().nextLong());
 	}
 
 	/**
 	 * Constructs a new Post with a set ID.
 	 *
 	 * @param data          the data to be encapsulated in this Post
-	 * @param posterId      the ID of the poster of this Post
+	 * @param posterName    the name of the poster of this Post
 	 * @param fileExtension the file extension associated with the data of this
 	 *                      Post. Plain-text messages have a file extension of
 	 *                      '{@code ~txt}'
 	 * @param postID        the ID of this Post
 	 */
-	private Post(byte[] data, long posterId, String fileExtension, long postID) {
-		this(data, new PostInfo(posterId, fileExtension, postID));
+	private Post(byte[] data, String posterName, String fileExtension, long postID) {
+		this(data, new PostInfo(posterName, fileExtension, postID));
 	}
 
 	/**
@@ -164,6 +164,6 @@ public class Post {
 
 	@Override
 	public String toString() {
-		return String.format("%s: %d bytes", postInfo, data.length);
+		return String.format("Post [data.length=%s, postInfo=%s]", data.length, postInfo);
 	}
 }

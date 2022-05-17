@@ -15,11 +15,11 @@ public class Client {
 
 	private static final String usage = "Usage:\n"
 	        + "\t   java app.Client -c <name> <ip> <port> <user_dir>\n"
-	        + "\tor java app.Client -l <id> <ip> <port> <user_dir>\n"
+	        + "\tor java app.Client -l <name> <ip> <port> <user_dir>\n"
 	        + "\n"
 	        + "Options:\n"
 	        + "\t-c\tcreate new user with the <name>\t\n"
-	        + "\t-l\tload existing user with the <id>\n"
+	        + "\t-l\tload existing user with the <name>\n"
 	        + "\n"
 	        + "Where:\n"
 	        + "\t<ip>\t\tthe ip of the server\n"
@@ -43,22 +43,14 @@ public class Client {
 		}
 
 		final String type = args[0];
-		boolean      existing;
+		final String name = args[1];
 
-		Object arg;
-
-		if (type.equals("-c")) {
-			arg = args[1];
-			existing = false;
-		} else if (type.equals("-l")) {
-			try {
-				arg = Long.valueOf(args[1]);
-			} catch (final NumberFormatException e) {
-				System.err.printf("Invalid id: %s", args[1]);
-				return;
-			}
-			existing = true;
-		} else {
+		boolean existing = type.equals("-l");
+		switch (type) {
+		case "-c":
+		case "-l":
+			break;
+		default:
 			System.out.println(Client.usage);
 			return;
 		}
@@ -76,7 +68,7 @@ public class Client {
 
 		CrappyUserUI ui;
 		try {
-			ui = new CrappyUserUI(existing, arg, ip, port, dir);
+			ui = new CrappyUserUI(existing, name, ip, port, dir);
 		} catch (final IOException e) {
 			System.err.printf(
 			        "There was an I/O error either while interacting with the file system or connecting to the server");
