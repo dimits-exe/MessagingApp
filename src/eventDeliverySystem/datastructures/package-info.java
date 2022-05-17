@@ -1,5 +1,5 @@
 /**
- * TODO
+ * Defines general-use data structures.
  *
  * @author Alex Mandelias
  */

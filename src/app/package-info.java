@@ -1,5 +1,5 @@
 /**
- * TODO
+ * Defines runnable classes.
  *
  * @author Alex Mandelias
  */
