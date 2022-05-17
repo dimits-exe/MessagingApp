@@ -34,16 +34,21 @@ public class Server {
 	public static void main(String[] args) {
 		LG.args(args);
 
-		final Broker broker;
+		final boolean leader;
 		final String brokerId;
 
+		String ip   = "";
+		int    port = 0;
+
 		if (args.length == 0) {
-			broker = new Broker();
+			leader = true;
 			brokerId = "Main";
 
 		} else if (args.length == 2) {
-			String ip = args[0];
-			int    port;
+			leader = false;
+			brokerId = Integer.toString(ThreadLocalRandom.current().nextInt(1, 1000));
+
+			ip = args[0];
 			try {
 				port = Integer.parseInt(args[1]);
 			} catch (final NumberFormatException e) {
@@ -51,18 +56,15 @@ public class Server {
 				return;
 			}
 
-			broker = new Broker(ip, port);
-
-			brokerId = Integer.toString(ThreadLocalRandom.current().nextInt(1, 1000));
-
 		} else {
 			System.out.println(Server.USAGE);
 			return;
 		}
 
-		try (broker) {
+		try (Broker broker = leader ? new Broker() : new Broker(ip, port)) {
 			final Thread thread = new Thread(broker, "Broker-" + brokerId);
 			thread.run();
+			broker.close();
 		}
 	}
 }
