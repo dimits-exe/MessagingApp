@@ -44,6 +44,11 @@ public class Message implements Serializable {
 		return value;
 	}
 
+	@Override
+	public String toString() {
+		return String.format("Message [type=%s, value=%s]", type, value);
+	}
+
 	/**
 	 * Specifies the purpose of a Message, thereby indirectly indicating the type of
 	 * its value.

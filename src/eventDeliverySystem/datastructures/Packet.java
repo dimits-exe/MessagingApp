@@ -83,4 +83,10 @@ public class Packet implements Serializable {
 	public long getPostId() {
 		return postId;
 	}
+
+	@Override
+	public String toString() {
+		return String.format("Packet [isFinal=%s, payload.length=%s, postId=%s]", isFinal,
+		        payload.length, postId);
+	}
 }

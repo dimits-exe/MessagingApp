@@ -13,7 +13,7 @@ import java.net.Socket;
  */
 public final class ConnectionInfo implements Serializable {
 
-	private static final long serialVersionUID = -3742145900403155967L;
+	private static final long serialVersionUID = 1L;
 
 	private final InetAddress address;
 	private final int         port;
