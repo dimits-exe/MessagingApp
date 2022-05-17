@@ -46,8 +46,10 @@ class CIManager {
 	 * @param topicName the Topic for which to get the ConnectionInfo
 	 *
 	 * @return the ConnectionInfo for that Topic
+	 *
+	 * @throws IOException if a connection to the server fails
 	 */
-	public ConnectionInfo getConnectionInfoForTopic(String topicName) {
+	public ConnectionInfo getConnectionInfoForTopic(String topicName) throws IOException {
 		LG.sout("getConnectionInfoForTopic(%s)", topicName);
 		LG.in();
 		final ConnectionInfo address = map.get(topicName);
@@ -75,7 +77,7 @@ class CIManager {
 		LG.out();
 	}
 
-	private void updateCIForTopic(String topicName) {
+	private void updateCIForTopic(String topicName) throws IOException {
 		LG.sout("updateCIForTopic(%s)", topicName);
 		LG.in();
 		try (Socket socket = getSocketToDefaultBroker();
@@ -99,8 +101,7 @@ class CIManager {
 			}
 
 		} catch (final IOException e) {
-			System.err.printf("Fatal error: connection to server lost");
-			e.printStackTrace();
+			throw new IOException("Fatal error: connection to default server lost", e);
 		}
 		LG.out();
 	}
