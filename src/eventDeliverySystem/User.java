@@ -25,6 +25,8 @@ import eventDeliverySystem.util.LG;
  */
 public class User {
 
+	private final UserSub USER_SUB = new UserSub();
+
 	private final ProfileFileSystem profileFileSystem;
 	private Profile                 currentProfile;
 
@@ -79,8 +81,8 @@ public class User {
 		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 
 		try {
-			publisher = new Publisher(serverIP, port);
-			consumer = new Consumer(serverIP, port, new UserSub());
+			publisher = new Publisher(serverIP, port, USER_SUB);
+			consumer = new Consumer(serverIP, port, USER_SUB);
 		} catch (final IOException e) {
 			throw new IOException("Could not establish connection with server", e);
 		}
@@ -231,6 +233,15 @@ public class User {
 			// TODO: remove
 			if (uuisub != null)
 				uuisub.notify(topicName);
+		}
+
+		/**
+		 * Notifies this User about failure to send a Post to a Topic.
+		 *
+		 * @param topicName the name of the Topic
+		 */
+		public void failure(String topicName) {
+			LG.sout("MESSAGE FAILED TO SEND AT '%s'", topicName);
 		}
 	}
 
