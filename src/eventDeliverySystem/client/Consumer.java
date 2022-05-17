@@ -5,7 +5,6 @@ import static eventDeliverySystem.datastructures.Message.MessageType.INITIALISE_
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -36,7 +35,7 @@ import eventDeliverySystem.util.Subscriber;
  *
  * @see Broker
  */
-public class Consumer extends ClientNode implements Subscriber {
+public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 	private final UserSub      usersub;
 	private final TopicManager topicManager;
@@ -84,6 +83,11 @@ public class Consumer extends ClientNode implements Subscriber {
 		this.usersub = usersub;
 	}
 
+	@Override
+	public void close() throws IOException {
+		topicManager.close();
+	}
+
 	/**
 	 * Changes the Topics that this Consumer listens to. All connections regarding
 	 * the previous Topics are closed and new ones are established.
@@ -118,10 +122,11 @@ public class Consumer extends ClientNode implements Subscriber {
 	 *
 	 * @param topicName the name of the Topic to fetch from
 	 *
+	 * @throws IOException              if a connection to the server fails
 	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
 	 *                                  with the same name
 	 */
-	public void listenForNewTopic(String topicName) {
+	public void listenForNewTopic(String topicName) throws IOException {
 		LG.sout("listenForNewTopic(%s)", topicName);
 		LG.in();
 		listenForTopic(new Topic(topicName));
@@ -134,11 +139,12 @@ public class Consumer extends ClientNode implements Subscriber {
 	 *
 	 * @param topic Topic to fetch from
 	 *
+	 * @throws IOException              if a connection to the server fails
 	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
 	 *                                  with the same name
 	 */
-	@SuppressWarnings("resource") // 'socket' closes at closeImpl()
-	private void listenForTopic(Topic topic) {
+	@SuppressWarnings("resource") // 'socket' closes at close()
+	private void listenForTopic(Topic topic) throws IOException {
 		LG.sout("listenForTopic(%s)", topic);
 		LG.in();
 
@@ -146,24 +152,12 @@ public class Consumer extends ClientNode implements Subscriber {
 
 		Socket       socket    = null;
 		final String topicName = topic.getName();
-		while (true) {
-			final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
-			try {
-				socket = new Socket(ci.getAddress(), ci.getPort());
-			} catch (final IOException e) {
-				// invalidate and ask again for topicName
-				topicCIManager.invalidate(topicName);
-				continue;
-			}
-
-			topicManager.addSocket(topic, socket);
-			break;
-		}
+		final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
 		try {
-			if (socket == null)
-				throw new RuntimeException("No connection could be established with the Broker");
+			socket = new Socket(ci.getAddress(), ci.getPort()); // 'socket' closes at close()
+			topicManager.addSocket(topic, socket);
 
 			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();
@@ -173,8 +167,8 @@ public class Consumer extends ClientNode implements Subscriber {
 
 			new PullThread(ois, topic).start();
 
-		} catch (final IOException e1) {
-			throw new UncheckedIOException(e1); // 'socket' closes at closeImpl()
+		} catch (final IOException e) {
+			throw new IOException("Fatal error: can't connect to server for topic " + topicName, e);
 		}
 		LG.out();
 	}
