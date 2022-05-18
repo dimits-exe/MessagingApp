@@ -67,7 +67,7 @@ public abstract class AbstractTopic {
 	 *
 	 * @param postInfo the PostInfo
 	 */
-	public final void post(PostInfo postInfo) {
+	synchronized public final void post(PostInfo postInfo) {
 		postHook(postInfo);
 		for (final Subscriber sub : subscribers)
 			sub.notify(postInfo, name);
@@ -78,14 +78,15 @@ public abstract class AbstractTopic {
 	 *
 	 * @param packet the Packet
 	 */
-	public final void post(Packet packet) {
+	synchronized public final void post(Packet packet) {
 		postHook(packet);
 		for (final Subscriber sub : subscribers)
 			sub.notify(packet, name);
 	}
 
 	/**
-	 * Allows each subclass to specify how the template method is implemented.
+	 * Allows each subclass to specify how the template method is implemented. This
+	 * method is effectively synchronized.
 	 *
 	 * @param postInfo the PostInfo
 	 *
@@ -94,7 +95,8 @@ public abstract class AbstractTopic {
 	abstract protected void postHook(PostInfo postInfo);
 
 	/**
-	 * Allows each subclass to specify how the template method is implemented.
+	 * Allows each subclass to specify how the template method is implemented. This
+	 * method is effectively synchronized.
 	 *
 	 * @param packet the Packet
 	 *

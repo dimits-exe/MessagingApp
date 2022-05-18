@@ -44,7 +44,7 @@ class BrokerTopic extends AbstractTopic {
 	}
 
 	@Override
-	synchronized public void postHook(PostInfo postInfo) {
+	public void postHook(PostInfo postInfo) {
 		postInfoList.add(postInfo);
 
 		final long         postId     = postInfo.getId();
@@ -58,9 +58,7 @@ class BrokerTopic extends AbstractTopic {
 	public void postHook(Packet packet) {
 		final long postId = packet.getPostId();
 
-		synchronized (packetsPerPostInfoMap) {
-			packetsPerPostInfoMap.get(postId).add(packet);
-		}
+		packetsPerPostInfoMap.get(postId).add(packet);
 	}
 
 	/**
