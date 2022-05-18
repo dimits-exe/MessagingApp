@@ -146,7 +146,8 @@ public class Topic extends AbstractTopic {
 			throw new NoSuchElementException(
 			        "No post with id " + lastPostId + " found in this Topic");
 
-		final List<Post> postsAfterGivenPost = postList.subList(index + 1, postList.size());
+		final List<Post> postsAfterGivenPost = new LinkedList<>(
+		        postList.subList(index + 1, postList.size()));
 		LG.sout("postsAfterGivenPost=%s", postsAfterGivenPost);
 		LG.out();
 		return postsAfterGivenPost;
