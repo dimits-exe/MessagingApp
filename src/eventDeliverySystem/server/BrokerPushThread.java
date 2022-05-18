@@ -86,7 +86,7 @@ class BrokerPushThread extends Thread implements Subscriber {
 				synchronized (queue) {
 					isEmpty = queue.isEmpty();
 				}
-			} while (isEmpty);
+			} while (!isEmpty);
 		}
 	}
 
