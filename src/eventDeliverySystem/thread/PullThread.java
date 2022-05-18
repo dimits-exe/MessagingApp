@@ -39,7 +39,6 @@ public class PullThread extends Thread {
 		try {
 			final int postCount = ois.readInt();
 			LG.sout("postCount=%d", postCount);
-			LG.in();
 
 			for (int i = 0; i < postCount; i++) {
 
@@ -51,6 +50,7 @@ public class PullThread extends Thread {
 					return;
 				}
 
+				LG.in();
 				LG.sout("postInfo=%s", postInfo);
 				topic.post(postInfo);
 
@@ -62,11 +62,12 @@ public class PullThread extends Thread {
 						e.printStackTrace();
 						return;
 					}
+					LG.sout("packet=%s", packet);
 					topic.post(packet);
 				} while (!packet.isFinal());
-			}
 
-			LG.out();
+				LG.out();
+			}
 
 		} catch (final IOException e) {
 			e.printStackTrace();

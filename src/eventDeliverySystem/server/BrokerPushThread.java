@@ -65,6 +65,8 @@ class BrokerPushThread extends Thread implements Subscriber {
 					}
 				} catch (final InterruptedException e) {}
 
+				LG.sout("--- queue notified ---");
+
 				synchronized (queue) {
 					isEmpty = queue.isEmpty();
 				}
@@ -72,6 +74,7 @@ class BrokerPushThread extends Thread implements Subscriber {
 
 			LG.sout("--- queue is no longer empty ---");
 			do {
+				LG.sout("--- there is more stuff to send ---");
 				try {
 					synchronized (queue) {
 						oos.writeObject(queue.remove());
