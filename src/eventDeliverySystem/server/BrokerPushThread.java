@@ -88,7 +88,7 @@ class BrokerPushThread extends Thread implements Subscriber {
 	}
 
 	@Override
-	public void notify(PostInfo postInfo, String topicName) {
+	synchronized public void notify(PostInfo postInfo, String topicName) {
 		LG.sout("BrokerPushThread#notify(%s)", postInfo);
 
 		// if no post is being streamed
@@ -96,27 +96,19 @@ class BrokerPushThread extends Thread implements Subscriber {
 			// set post as current being streamed
 			currentPostId = postInfo.getId();
 			// start streaming post
-			synchronized (queue) {
-				queue.add(postInfo);
-			}
+			queue.add(postInfo);
 
 		} else {
 			// add this post to buffer
-			synchronized (postInfos) {
-				postInfos.addLast(postInfo);
-			}
-			synchronized (buffers) {
-				buffers.put(postInfo.getId(), new LinkedList<>());
-			}
+			postInfos.addLast(postInfo);
+			buffers.put(postInfo.getId(), new LinkedList<>());
 		}
 
-		synchronized (this) {
-			this.notify();
-		}
+		this.notify();
 	}
 
 	@Override
-	public void notify(Packet packet, String topicName) {
+	synchronized public void notify(Packet packet, String topicName) {
 		LG.sout("BrokerPushThread#notify(%s)", packet);
 
 		// if no post is being streamed
@@ -126,9 +118,7 @@ class BrokerPushThread extends Thread implements Subscriber {
 		// if packet belongs to post being streamed
 		if (packet.getPostId() == currentPostId) {
 			// stream packet
-			synchronized (queue) {
-				queue.add(packet);
-			}
+			queue.add(packet);
 
 			// if current post is fully streamed
 			if (packet.isFinal()) {
@@ -140,48 +130,36 @@ class BrokerPushThread extends Thread implements Subscriber {
 
 					// if no posts left in buffer, mark current as none
 					// wait next post info
-					synchronized (postInfos) {
-						if (postInfos.isEmpty()) {
-							currentPostId = -1;
-							break;
-						}
+					if (postInfos.isEmpty()) {
+						currentPostId = -1;
+						break;
 					}
 
 					// take next Post
-					final PostInfo curr;
-					synchronized (postInfos) {
-						curr = postInfos.removeFirst();
-					}
+					final PostInfo curr = postInfos.removeFirst();
+
 					// set as current
 					currentPostId = curr.getId();
+
 					// start streaming post
-					synchronized (queue) {
-						queue.add(curr);
-					}
+					queue.add(curr);
 
 					// stream all packets in buffer
-					final List<Packet> buffer;
-					synchronized (buffers) {
-						buffer = buffers.get(currentPostId);
-					}
+					final List<Packet> buffer = buffers.get(currentPostId);
 					for (final Packet packetInBuffer : buffer) {
 						if (finalReached)
 							throw new RuntimeException(
 							        "this should never happend tomara deikse eleos");
 
 						// stream packet
-						synchronized (queue) {
-							queue.add(packetInBuffer);
-						}
+						queue.add(packetInBuffer);
 
 						// mark if this post has been fully streamed
 						finalReached |= packetInBuffer.isFinal();
 					}
 
 					if (finalReached) {
-						synchronized (buffers) {
-							buffers.remove(currentPostId);
-						}
+						buffers.remove(currentPostId);
 					}
 
 					// keep streaming the next post in buffer if the previous has been fully streamed
@@ -189,13 +167,9 @@ class BrokerPushThread extends Thread implements Subscriber {
 			}
 		} else {
 			// add packet to buffer because it's not being streamed
-			synchronized (buffers) {
-				buffers.get(packet.getPostId()).add(packet);
-			}
+			buffers.get(packet.getPostId()).add(packet);
 		}
 
-		synchronized (this) {
-			this.notify();
-		}
+		this.notify();
 	}
 }

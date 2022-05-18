@@ -174,13 +174,13 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	}
 
 	@Override
-	public void notify(PostInfo postInfo, String topicName) {
+	synchronized public void notify(PostInfo postInfo, String topicName) {
 		LG.sout("Consumer#notify(%s, %s)", postInfo, topicName);
 		// do nothing
 	}
 
 	@Override
-	public void notify(Packet packet, String topicName) {
+	synchronized public void notify(Packet packet, String topicName) {
 		LG.sout("Consumer#notify(%s, %s)", packet, topicName);
 		if (packet.isFinal())
 			usersub.notify(topicName);
