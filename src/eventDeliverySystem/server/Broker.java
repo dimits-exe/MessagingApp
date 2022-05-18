@@ -97,25 +97,7 @@ public class Broker implements Runnable, AutoCloseable {
 				try {
 					@SuppressWarnings("resource") // closes at Broker#close
 					final Socket socket = brokerRequestSocket.accept();
-					synchronized (brokerConnections) {
-						brokerConnections.add(socket);
-					}
-
-					final ObjectInputStream ois = new ObjectInputStream(
-					        socket.getInputStream());
-
-					ConnectionInfo brokerCIForClient;
-					try {
-						brokerCIForClient = (ConnectionInfo) ois.readObject();
-					} catch (final ClassNotFoundException e) {
-						e.printStackTrace();
-						socket.close();
-						return;
-					}
-
-					synchronized (brokerCI) {
-						brokerCI.add(brokerCIForClient);
-					}
+					new BrokerRequestHandler(socket).start();
 
 				} catch (final IOException e) {
 					e.printStackTrace();
@@ -340,6 +322,47 @@ public class Broker implements Runnable, AutoCloseable {
 		}
 	}
 
+	private class BrokerRequestHandler extends Thread {
+
+		private final Socket socket;
+
+		public BrokerRequestHandler(Socket socket) {
+			super("BrokerRequestHandler-" + socket.getInetAddress() + "-" + socket.getLocalPort());
+			this.socket = socket;
+		}
+
+		@Override
+		public void run() {
+
+			LG.ssocket("Starting BrokerRequestHandler for Socket", socket);
+
+			try {
+				synchronized (brokerConnections) {
+					brokerConnections.add(socket);
+				}
+
+				final ObjectInputStream ois = new ObjectInputStream(
+				        socket.getInputStream());
+
+				ConnectionInfo brokerCIForClient;
+				try {
+					brokerCIForClient = (ConnectionInfo) ois.readObject();
+				} catch (final ClassNotFoundException e) {
+					e.printStackTrace();
+					socket.close();
+					return;
+				}
+				LG.sout("brokerCIForCilent=%s", brokerCIForClient);
+
+				synchronized (brokerCI) {
+					brokerCI.add(brokerCIForClient);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(-1);
+			}
+		}
+	}
 	/**
 	 * A Thread for discovering the actual Broker for a Topic.
 	 *
