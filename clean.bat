@@ -1,1 +1,1 @@
-RMDIR /S /Q bin
+IF EXIST "bin" RMDIR /S /Q "bin"

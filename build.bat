@@ -1,4 +1,4 @@
-clean.bat
+CMD /C .\clean.bat
 
 DIR /A-D /B /S src\*.java > .files_to_compile
 
