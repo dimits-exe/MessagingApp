@@ -26,8 +26,8 @@ import eventDeliverySystem.datastructures.Topic;
 public class TopicFileSystem {
 
 	private static final Pattern pattern = Pattern
-	        .compile("(?<postId>\\-?\\d+)\\-(?<posterId>\\-?\\d+)\\.(?<extension>.*)");
-	private static final String  format  = "%d-%d.%s";
+	        .compile("(?<postId>\\-?\\d+)\\-(?<posterName>\\-?\\d+)\\.(?<extension>.*)");
+	private static final String  format  = "%d-%s.%s";
 
 	private static final String HEAD                 = "HEAD";
 	private static final String TOPIC_META_EXTENSION = ".meta";
@@ -261,7 +261,7 @@ public class TopicFileSystem {
 			throw new RuntimeException("Bad filename: " + fileName);
 
 		final long   postId        = Long.parseLong(m.group("postId"));
-		final String posterId      = m.group("posterId");
+		final String posterId      = m.group("posterName");
 		final String fileExtension = m.group("extension");
 
 		return new PostInfo(posterId, fileExtension, postId);
