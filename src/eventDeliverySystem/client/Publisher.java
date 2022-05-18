@@ -152,7 +152,7 @@ public class Publisher extends ClientNode {
 		public void run() {
 
 			final Callback callback = (success, topicName1) -> {
-				if (success)
+				if (!success)
 					usersub.failure(topicName1);
 			};
 
