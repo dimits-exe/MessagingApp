@@ -1,7 +1,7 @@
 CMD /C .\clean.bat
 
-DIR /A-D /B /S src\*.java > .files_to_compile
+DIR /B /S src\*.java > .java_files
 
-javac -d bin -g:none --release 8 @.files_to_compile
+javac -d bin -g:none --release 8 @.java_files
 
-DEL .files_to_compile
+DEL .java_files
