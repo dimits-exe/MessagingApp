@@ -1,6 +1,6 @@
 package eventDeliverySystem;
 
-import java.io.IOException;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -10,8 +10,10 @@ import app.CrappyUserUI;
 import eventDeliverySystem.client.Consumer;
 import eventDeliverySystem.client.Publisher;
 import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.filesystem.FileSystemException;
 import eventDeliverySystem.filesystem.Profile;
 import eventDeliverySystem.filesystem.ProfileFileSystem;
+import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.util.LG;
 
 
@@ -44,11 +46,15 @@ public class User {
 	 *
 	 * @return the new User
 	 *
-	 * @throws IOException if an I/O error occurs while interacting with the file
-	 *                     system or while establishing connection to the server
+	 * @throws ServerException      if the connection to the server fails
+	 * @throws FileSystemException  if an I/O error occurs while interacting with
+	 *                              the file system
+	 * @throws UnknownHostException if no IP address for the host could be found, or
+	 *                              if a scope_id was specified for a global
+	 *                              IPv6address while resolving the defaultServerIP.
 	 */
 	public static User loadExisting(String serverIP, int serverPort, Path profilesRootDirectory,
-	        String profileName) throws IOException {
+	        String profileName) throws ServerException, FileSystemException, UnknownHostException {
 		final User user = new User(serverIP, serverPort, profilesRootDirectory);
 		user.switchToExistingProfile(profileName);
 		return user;
@@ -65,26 +71,27 @@ public class User {
 	 *
 	 * @return the new User
 	 *
-	 * @throws IOException if an I/O error occurs while interacting with the file
-	 *                     system or while establishing connection to the server
+	 * @throws ServerException      if the connection to the server fails
+	 * @throws FileSystemException  if an I/O error occurs while interacting with
+	 *                              the file system
+	 * @throws UnknownHostException if no IP address for the host could be found, or
+	 *                              if a scope_id was specified for a global
+	 *                              IPv6address while resolving the defaultServerIP.
 	 */
 	public static User createNew(String serverIP, int serverPort, Path profilesRootDirectory,
-	        String name) throws IOException {
+	        String name) throws ServerException, FileSystemException, UnknownHostException {
 		final User user = new User(serverIP, serverPort, profilesRootDirectory);
 		user.switchToNewProfile(name);
 		return user;
 	}
 
 	private User(String serverIP, int port, Path profilesRootDirectory)
-	        throws IOException {
+	        throws FileSystemException, UnknownHostException {
 		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 
-		try {
-			publisher = new Publisher(serverIP, port, userSub);
-			consumer = new Consumer(serverIP, port, userSub);
-		} catch (final IOException e) {
-			throw new IOException("Could not establish connection with server", e);
-		}
+		publisher = new Publisher(serverIP, port, userSub);
+		consumer = new Consumer(serverIP, port, userSub);
+
 	}
 
 	/**
@@ -101,9 +108,11 @@ public class User {
 	 *
 	 * @param profileName the name of the new Profile
 	 *
-	 * @throws IOException if an I/O error occurs while creating the new Profile
+	 * @throws ServerException     if the connection to the server fails
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public void switchToNewProfile(String profileName) throws IOException {
+	public void switchToNewProfile(String profileName) throws ServerException, FileSystemException {
 		currentProfile = profileFileSystem.createNewProfile(profileName);
 		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
 	}
@@ -113,9 +122,12 @@ public class User {
 	 *
 	 * @param profileName the name of an existing Profile
 	 *
-	 * @throws IOException if an I/O error occurs while loading the existing Profile
+	 * @throws ServerException     if the connection to the server fails
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public void switchToExistingProfile(String profileName) throws IOException {
+	public void switchToExistingProfile(String profileName)
+	        throws ServerException, FileSystemException {
 		currentProfile = profileFileSystem.loadProfile(profileName);
 		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
 	}
@@ -140,12 +152,13 @@ public class User {
 	 *
 	 * @return {@code true} if it was successfully created, {@code false} otherwise
 	 *
-	 * @throws IOException if an I/O error occurs while interacting with the file
-	 *                     system
+	 * @throws ServerException     if the connection to the server fails
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 *
 	 * @throw IllegalArgumentException if a Topic with the same name already exists
 	 */
-	public boolean createTopic(String topicName) throws IOException {
+	public boolean createTopic(String topicName) throws ServerException, FileSystemException {
 		LG.sout("User#createTopic(%s)", topicName);
 		LG.in();
 		final boolean success = publisher.createTopic(topicName);
@@ -163,11 +176,11 @@ public class User {
 	 *
 	 * @param topicName the name of the Topic from which to pull
 	 *
-	 * @throws IOException            if an I/O Error occurs while writing the new
-	 *                                Posts to the file system
+	 * @throws FileSystemException    if an I/O error occurs while interacting with
+	 *                                the file system
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
-	public void pull(String topicName) throws IOException {
+	public void pull(String topicName) throws FileSystemException {
 		LG.sout("User#pull from Topic '%s'", topicName);
 		LG.in();
 		final List<Post> newPosts = consumer.pull(topicName); // sorted from earliest to latest
@@ -188,12 +201,13 @@ public class User {
 	 *
 	 * @param topicName the name of the Topic to listen for
 	 *
-	 * @throws IOException              if an I/O error occurs while interacting
+	 * @throws ServerException          if the connection to the server fails
+	 * @throws FileSystemException      if an I/O error occurs while interacting
 	 *                                  with the file system
 	 * @throws NullPointerException     if topic == null
 	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
-	public void listenForNewTopic(String topicName) throws IOException {
+	public void listenForNewTopic(String topicName) throws ServerException, FileSystemException {
 		consumer.listenForNewTopic(topicName);
 		currentProfile.addTopic(topicName);
 		profileFileSystem.createTopic(topicName);
