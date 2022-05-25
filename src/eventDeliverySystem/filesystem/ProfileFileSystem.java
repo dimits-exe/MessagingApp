@@ -29,9 +29,10 @@ public class ProfileFileSystem {
 	 * @param profilesRootDirectory the root directory of the new file system whose
 	 *                              sub-directories correspond to different Profiles
 	 *
-	 * @throws IOException if an I/O error occurs when initialising the file system
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public ProfileFileSystem(Path profilesRootDirectory) throws IOException {
+	public ProfileFileSystem(Path profilesRootDirectory) throws FileSystemException {
 		this.profilesRootDirectory = profilesRootDirectory;
 		topicFileSystemMap = new HashMap<>();
 
@@ -46,11 +47,16 @@ public class ProfileFileSystem {
 	 *
 	 * @return a collection of all the Profile names found
 	 *
-	 * @throws IOException if an I/O error occurs when opening the root directory
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public Stream<String> getProfileNames() throws IOException {
-		return Files.list(profilesRootDirectory).filter(path -> Files.isDirectory(path))
+	public Stream<String> getProfileNames() throws FileSystemException {
+		try {
+			return Files.list(profilesRootDirectory).filter(Files::isDirectory)
 		        .map(path -> path.getFileName().toString());
+		} catch (IOException e) {
+			throw new FileSystemException(profilesRootDirectory, e);
+		}
 	}
 
 	/**
@@ -60,11 +66,16 @@ public class ProfileFileSystem {
 	 *
 	 * @return the new Profile
 	 *
-	 * @throws IOException if an I/O error occurs while creating the new Profile
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public Profile createNewProfile(String profileName) throws IOException {
+	public Profile createNewProfile(String profileName) throws FileSystemException {
 		Path topicsDirectory = getTopicsDirectory(profileName);
-		Files.createDirectory(topicsDirectory);
+		try {
+			Files.createDirectory(topicsDirectory);
+		} catch (IOException e) {
+			throw new FileSystemException(topicsDirectory, e);
+		}
 
 		topicFileSystemMap.put(profileName, new TopicFileSystem(topicsDirectory));
 
@@ -81,10 +92,10 @@ public class ProfileFileSystem {
 	 *
 	 * @return the Profile read
 	 *
-	 * @throws IOException if an I/O error occurs while interacting with the file
-	 *                     system
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public Profile loadProfile(String profileName) throws IOException {
+	public Profile loadProfile(String profileName) throws FileSystemException {
 		changeProfile(profileName);
 
 		final Profile profile = new Profile(profileName);
@@ -101,10 +112,10 @@ public class ProfileFileSystem {
 	 *
 	 * @param topicName the name of the new Topic
 	 *
-	 * @throws IOException if an I/O error occurs while interacting with the file
-	 *                     system
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public void createTopic(String topicName) throws IOException {
+	public void createTopic(String topicName) throws FileSystemException {
 		getTopicFileSystemForCurrentUser().createTopic(topicName);
 	}
 
@@ -114,10 +125,10 @@ public class ProfileFileSystem {
 	 * @param post      the Post to save
 	 * @param topicName the name of the Topic in which to save
 	 *
-	 * @throws IOException if an I/O error occurs while interacting with the file
-	 *                     system
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public void savePost(Post post, String topicName) throws IOException {
+	public void savePost(Post post, String topicName) throws FileSystemException {
 		getTopicFileSystemForCurrentUser().writePost(post, topicName);
 	}
 

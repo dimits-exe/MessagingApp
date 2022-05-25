@@ -1,6 +1,5 @@
 package eventDeliverySystem.filesystem;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,11 +48,17 @@ public class TopicFileSystem {
 	 *
 	 * @return a collection of all the Topic names found
 	 *
-	 * @throws IOException if an I/O error occurs when opening the root directory
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public Stream<String> getTopicNames() throws IOException {
-		return Files.list(topicsRootDirectory).filter(path -> Files.isDirectory(path))
-		        .map(path -> path.getFileName().toString());
+	public Stream<String> getTopicNames() throws FileSystemException {
+		try {
+			return Files.list(topicsRootDirectory)
+			        .filter(Files::isDirectory)
+			        .map(path -> path.getFileName().toString());
+		} catch (IOException e) {
+			throw new FileSystemException(topicsRootDirectory, e);
+		}
 	}
 
 	/**
@@ -61,12 +66,16 @@ public class TopicFileSystem {
 	 *
 	 * @param topicName the name of the Topic
 	 *
-	 * @throws IOException if a topic with that name already exists in this file
-	 *                     system
+	 * @throws FileSystemException if a topic with that name already exists in this
+	 *                             file system
 	 */
-	public void createTopic(String topicName) throws IOException {
+	public void createTopic(String topicName) throws FileSystemException {
 		final Path topicDirectory = resolveRoot(topicName);
-		Files.createDirectory(topicDirectory);
+		try {
+			Files.createDirectory(topicDirectory);
+		} catch (IOException e) {
+			throw new FileSystemException(topicDirectory, e);
+		}
 
 		final Path head = getHead(topicName);
 		TopicFileSystem.create(head);
@@ -79,13 +88,21 @@ public class TopicFileSystem {
 	 *
 	 * @param topicName the name of the Topic
 	 *
-	 * @throws IOException if the topic or a post within a topic could not be
-	 *                     deleted.
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public void deleteTopic(String topicName) throws IOException {
+	public void deleteTopic(String topicName) throws FileSystemException {
 		final Path topicDirectory = resolveRoot(topicName);
-		for (Iterator<Path> iter = Files.list(topicDirectory).iterator(); iter.hasNext();)
-			Files.delete(iter.next());
+
+		Path currentPath = topicDirectory;
+		try (Stream<Path> directoryStream = Files.list(currentPath)) {
+			for (Iterator<Path> iter = directoryStream.iterator(); iter.hasNext();) {
+				currentPath = iter.next();
+				Files.delete(currentPath);
+			}
+		} catch (IOException e) {
+			throw new FileSystemException(currentPath, e);
+		}
 	}
 
 	/**
@@ -94,9 +111,10 @@ public class TopicFileSystem {
 	 * @param post      the new Post
 	 * @param topicName the topic's name
 	 *
-	 * @throws IOException if the Post couldn't be written to the File System
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public void writePost(Post post, String topicName) throws IOException {
+	public void writePost(Post post, String topicName) throws FileSystemException {
 		final Path fileForPost = writePost0(post, topicName);
 		writePointerForPost(post, topicName);
 		updateHeadForPost(fileForPost, topicName);
@@ -109,9 +127,10 @@ public class TopicFileSystem {
 	 *
 	 * @return a Topic object containing the Posts read from the File System
 	 *
-	 * @throws IOException if the Topic couldn't be loaded.
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public Topic readTopic(String topicName) throws IOException {
+	public Topic readTopic(String topicName) throws FileSystemException {
 		final List<Post> loadedPosts = new LinkedList<>();
 
 		final Path firstPost = getFirstPost(topicName);
@@ -131,9 +150,10 @@ public class TopicFileSystem {
 	 *
 	 * @return a Collection including all the Posts loaded from the File System
 	 *
-	 * @throws IOException if the Topics couldn't be loaded.
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
 	 */
-	public Collection<Topic> readAllTopics() throws IOException {
+	public Collection<Topic> readAllTopics() throws FileSystemException {
 		final Set<Topic> topics = new HashSet<>();
 
 		for (Iterator<String> iter = getTopicNames().iterator(); iter.hasNext();)
@@ -154,8 +174,7 @@ public class TopicFileSystem {
 
 	// ==================== HELPERS FOR SAVE POST ====================
 
-	private Path writePost0(Post post, String topicName)
-	        throws FileNotFoundException, IOException {
+	private Path writePost0(Post post, String topicName) throws FileSystemException {
 		final String fileName = TopicFileSystem.getFileNameFromPostInfo(post.getPostInfo());
 
 		final Path topicDirectory = resolveRoot(topicName);
@@ -169,8 +188,7 @@ public class TopicFileSystem {
 		return pathForPost;
 	}
 
-	private void writePointerForPost(Post post, String topicName)
-	        throws FileNotFoundException, IOException {
+	private void writePointerForPost(Post post, String topicName) throws FileSystemException {
 		final String fileName = TopicFileSystem.getFileNameFromPostInfo(post.getPostInfo());
 
 		final Path   topicDirectory    = resolveRoot(topicName);
@@ -184,7 +202,7 @@ public class TopicFileSystem {
 		TopicFileSystem.write(pointerToNextPost, headContents);
 	}
 
-	private void updateHeadForPost(Path fileForPost, String topicName) throws IOException {
+	private void updateHeadForPost(Path fileForPost, String topicName) throws FileSystemException {
 		final Path   head            = getHead(topicName);
 		final byte[] newHeadContents = fileForPost.getFileName().toString().getBytes();
 		TopicFileSystem.write(head, newHeadContents);
@@ -198,7 +216,7 @@ public class TopicFileSystem {
 	// ==================== HELPERS FOR LOAD POSTS FOR TOPIC ====================
 
 	// returns null if topic has no posts
-	private Path getFirstPost(String topicName) throws FileNotFoundException, IOException {
+	private Path getFirstPost(String topicName) throws FileSystemException {
 		final Path   head         = getHead(topicName);
 		final byte[] headContents = TopicFileSystem.read(head);
 
@@ -211,7 +229,7 @@ public class TopicFileSystem {
 	}
 
 	// returns null if there is no next post
-	private Path getNextFile(Path postFile, String topicName) throws IOException {
+	private Path getNextFile(Path postFile, String topicName) throws FileSystemException {
 		final Path pointerToNextPost = postFile.resolve(TopicFileSystem.TOPIC_META_EXTENSION);
 
 		final byte[] pointerToNextPostContents = TopicFileSystem.read(pointerToNextPost);
@@ -224,24 +242,35 @@ public class TopicFileSystem {
 		return TopicFileSystem.resolve(topicDirectory, fileName);
 	}
 
-	private static Post readPost(PostInfo postInfo, Path postFile)
-	        throws FileNotFoundException, IOException {
+	private static Post readPost(PostInfo postInfo, Path postFile) throws FileSystemException {
 		final byte[] data = TopicFileSystem.read(postFile);
 		return new Post(data, postInfo);
 	}
 
 	// ==================== READ/WRITE ====================
 
-	private static void create(Path pathForPost) throws IOException {
+	private static void create(Path pathForPost) throws FileSystemException {
+		try {
 		Files.createFile(pathForPost);
+		} catch (IOException e) {
+			throw new FileSystemException(pathForPost, e);
+		}
 	}
 
-	private static byte[] read(Path head) throws IOException {
-		return Files.readAllBytes(head);
+	private static byte[] read(Path head) throws FileSystemException {
+		try {
+			return Files.readAllBytes(head);
+		} catch (IOException e) {
+			throw new FileSystemException(head, e);
+		}
 	}
 
-	private static void write(Path pointerToNextPost, byte[] data) throws IOException {
-		Files.write(pointerToNextPost, data);
+	private static void write(Path pointerToNextPost, byte[] data) throws FileSystemException {
+		try {
+			Files.write(pointerToNextPost, data);
+		} catch (IOException e) {
+			throw new FileSystemException(pointerToNextPost, e);
+		}
 	}
 
 	// ==================== POST INFO ====================
