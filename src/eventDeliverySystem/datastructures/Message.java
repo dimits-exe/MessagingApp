@@ -58,25 +58,16 @@ public class Message implements Serializable {
 	 */
 	public enum MessageType {
 
-		/**
-		 * Indicates the start of a data send message. The value is a String describing
-		 * the Topic's name.
-		 */
+		/** Indicates the start of Packet transmission. The value is the Topic's name */
 		DATA_PACKET_SEND,
 
-		/** Requests the actual Broker for a Topic. The value is the Topic's name */
+		/** Requests the actual Broker CI for a Topic. The value is the Topic's name */
 		BROKER_DISCOVERY,
 
-		/**
-		 * Request to initialise consumer connection to broker. The value is a
-		 * TopicToken.
-		 */
+		/** Initialises a Consumer connection. The value is a TopicToken */
 		INITIALISE_CONSUMER,
 
-		/**
-		 * Request the (not-default) broker to create a new Topic. The value is is a
-		 * String describing the new Topic's name.
-		 */
+		/** Requests the creation of a Topic. The value is the Topic's name */
 		CREATE_TOPIC,
 	}
 }

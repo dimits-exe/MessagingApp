@@ -25,9 +25,9 @@ import eventDeliverySystem.datastructures.Topic;
  */
 public class TopicFileSystem {
 
-	private static final Pattern pattern = Pattern
+	private static final Pattern PATTERN = Pattern
 	        .compile("(?<postId>\\-?\\d+)\\-(?<posterName>\\-?\\d+)\\.(?<extension>.*)");
-	private static final String  format  = "%d-%s.%s";
+	private static final String  FORMAT  = "%d-%s.%s";
 
 	private static final String HEAD                 = "HEAD";
 	private static final String TOPIC_META_EXTENSION = ".meta";
@@ -251,19 +251,20 @@ public class TopicFileSystem {
 		final String posterId      = postInfo.getPosterName();
 		final String fileExtension = postInfo.getFileExtension();
 
-		return String.format(TopicFileSystem.format, postId, posterId, fileExtension);
+		return String.format(TopicFileSystem.FORMAT, postId, posterId, fileExtension);
 	}
 
 	private static PostInfo getPostInfoFromFileName(String fileName) {
-		final Matcher m = TopicFileSystem.pattern.matcher(fileName);
+		final Matcher m = TopicFileSystem.PATTERN.matcher(fileName);
 
-		if (!m.find())
-			throw new RuntimeException("Bad filename: " + fileName);
+		if (m.matches()) {
+			final long   postId        = Long.parseLong(m.group("postId"));
+			final String posterId      = m.group("posterName");
+			final String fileExtension = m.group("extension");
 
-		final long   postId        = Long.parseLong(m.group("postId"));
-		final String posterId      = m.group("posterName");
-		final String fileExtension = m.group("extension");
+			return new PostInfo(posterId, fileExtension, postId);
+		}
 
-		return new PostInfo(posterId, fileExtension, postId);
+		throw new IllegalArgumentException("Bad filename: " + fileName);
 	}
 }

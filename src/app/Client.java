@@ -47,8 +47,7 @@ public class Client {
 
 		boolean existing = type.equals("-l");
 		switch (type) {
-		case "-c":
-		case "-l":
+		case "-c", "-l":
 			break;
 		default:
 			System.out.println(Client.USAGE);

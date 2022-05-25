@@ -19,36 +19,34 @@ public final class ConnectionInfo implements Serializable {
 	private final int         port;
 
 	/**
-	 * Create a new ConnectionInfo representing the given server socket connection.
+	 * Creates a new ConnectionInfo representing the given Server Socket.
 	 *
-	 * @param connection the server socket whose details will be used.
+	 * @param connection the Server Socket whose details will be used.
+	 *
+	 * @return the ConnectionInfo
 	 */
-	public ConnectionInfo(ServerSocket connection) {
-		this(connection.getInetAddress(), connection.getLocalPort());
+	public static ConnectionInfo forServerSocket(ServerSocket connection) {
+		return new ConnectionInfo(connection.getInetAddress(), connection.getLocalPort());
 	}
 
 	/**
-	 * Create a new ConnectionInfo representing the given socket connection.
+	 * Creates a new ConnectionInfo representing the given Socket.
 	 *
-	 * @param connection the socket whose details will be used.
+	 * @param connection the Socket whose details will be used.
+	 *
+	 * @return the ConnectionInfo
 	 */
-	public ConnectionInfo(Socket connection) {
-		this(connection.getInetAddress(), connection.getLocalPort());
+	public static ConnectionInfo forSocket(Socket connection) {
+		return new ConnectionInfo(connection.getInetAddress(), connection.getLocalPort());
 	}
 
-	/**
-	 * Construct a new info object with the connection details of the host.
-	 *
-	 * @param address the IP address of the host
-	 * @param port    the port number of the host
-	 */
-	public ConnectionInfo(InetAddress address, int port) {
+	private ConnectionInfo(InetAddress address, int port) {
 		this.address = address;
 		this.port = port;
 	}
 
 	/**
-	 * Get the IP address of the connection.
+	 * Returns this ConnectionInfo's address.
 	 *
 	 * @return the address
 	 */
@@ -57,7 +55,7 @@ public final class ConnectionInfo implements Serializable {
 	}
 
 	/**
-	 * Get the port number of the connection.
+	 * Returns this ConnectionInfo's port.
 	 *
 	 * @return the port
 	 */

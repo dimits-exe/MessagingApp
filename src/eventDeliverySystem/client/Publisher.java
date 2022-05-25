@@ -94,10 +94,8 @@ public class Publisher extends ClientNode {
 	 */
 	public void push(Post post, String topicName) {
 		LG.sout("Publisher#push(%s, %s)", post, topicName);
-		LG.in();
 		Thread thread = new PostThread(post, topicName);
 		thread.start();
-		LG.out();
 	}
 
 	/**

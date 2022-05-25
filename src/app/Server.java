@@ -63,8 +63,10 @@ public class Server {
 
 		try (Broker broker = leader ? new Broker() : new Broker(ip, port)) {
 			final Thread thread = new Thread(broker, "Broker-" + brokerId);
-			thread.run();
-			broker.close();
+			thread.start();
+			thread.join();
+		} catch (InterruptedException e) {
+			// do nothing
 		}
 	}
 }

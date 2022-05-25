@@ -109,18 +109,13 @@ public class Topic extends AbstractTopic {
 			post(post);
 	}
 
-	/**
-	 * Adds a Post to this Topic and updates the lastPost.
-	 *
-	 * @param post the Post
-	 */
 	private void post(Post post) {
 		postList.add(post);
 		indexPerPostId.put(post.getPostInfo().getId(), postList.size() - 1);
 		lastPost = post;
 	}
 
-	/** Clears this Topic by removing all but the latest Posts */
+	/** Clears this Topic by removing all Posts */
 	public void clear() {
 		postList.clear();
 		post(dummyPost);

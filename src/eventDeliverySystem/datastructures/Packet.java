@@ -3,8 +3,8 @@ package eventDeliverySystem.datastructures;
 import java.io.Serializable;
 
 /**
- * Provides utility methods to facilitate the transmission of Posts by breaking
- * them into Packets and then reassembling them.
+ * Represents a fragment of a Post. Each Packet contains enough information so
+ * that the original Post can be restored given the array of Packets.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
@@ -16,16 +16,19 @@ public class Packet implements Serializable {
 	private static final int PACKET_SIZE = (int) (512 * Math.pow(2, 10));
 
 	/**
-	 * Break a Post into an array of Packets.
+	 * Breaks a Post into an array of Packets.
 	 *
 	 * @param post the Post
 	 *
-	 * @return an array of Packets which collectively stores the original Post
+	 * @return an array of Packets which collectively stores the original Post.
+	 *         Every Packet has the same id as the Post and invoking
+	 *         {@link #isFinal()} on the last one returns {@code true}.
+	 *
+	 * @see Post#fromPackets(Packet[], PostInfo)
 	 */
 	public static Packet[] fromPost(Post post) {
-		final byte[]   src      = post.getData();
-		final PostInfo postInfo = post.getPostInfo();
-		final long     id       = postInfo.getId();
+		final byte[] src = post.getData();
+		final long   id  = post.getPostInfo().getId();
 
 		final int      packetCount = (int) Math.ceil(src.length / (double) Packet.PACKET_SIZE);
 		final Packet[] packets     = new Packet[packetCount];

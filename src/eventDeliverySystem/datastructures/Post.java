@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
@@ -30,6 +30,8 @@ public class Post {
 	 * @throws IllegalArgumentException if the packets array has length 0
 	 * @throws IllegalStateException    if Packets with different IDs are found in
 	 *                                  the packets array
+	 *
+	 * @see Packet#fromPost(Post)
 	 */
 	public static Post fromPackets(Packet[] packets, PostInfo postInfo) {
 		if (packets.length == 0)
@@ -74,7 +76,7 @@ public class Post {
 
 		byte[] data;
 		try (FileInputStream fis = new FileInputStream(file)) {
-			List<Integer> bytes = new ArrayList<>();
+			List<Integer> bytes = new LinkedList<>();
 
 			int nextByte;
 			while ((nextByte = fis.read()) != -1) {
@@ -82,12 +84,16 @@ public class Post {
 			}
 
 			data = new byte[bytes.size()];
-			for (int i = 0; i < data.length; i++)
-				data[i] = (byte) ((int) bytes.get(i));
+			int index = 0;
+			for (int b : bytes) {
+				data[index] = (byte) b;
+				index++;
+			}
 		}
 
 		final String fileName      = file.getName();
 		final String fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
+
 		return new Post(data, posterName, fileExtension);
 	}
 
@@ -127,21 +133,7 @@ public class Post {
 	 *                      '{@code ~txt}'
 	 */
 	private Post(byte[] data, String posterName, String fileExtension) {
-		this(data, posterName, fileExtension, ThreadLocalRandom.current().nextLong());
-	}
-
-	/**
-	 * Constructs a new Post with a set ID.
-	 *
-	 * @param data          the data to be encapsulated in this Post
-	 * @param posterName    the name of the poster of this Post
-	 * @param fileExtension the file extension associated with the data of this
-	 *                      Post. Plain-text messages have a file extension of
-	 *                      '{@code ~txt}'
-	 * @param postID        the ID of this Post
-	 */
-	private Post(byte[] data, String posterName, String fileExtension, long postID) {
-		this(data, new PostInfo(posterName, fileExtension, postID));
+		this(data, new PostInfo(posterName, fileExtension, ThreadLocalRandom.current().nextLong()));
 	}
 
 	/**

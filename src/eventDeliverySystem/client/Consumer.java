@@ -128,9 +128,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 */
 	public void listenForNewTopic(String topicName) throws IOException {
 		LG.sout("listenForNewTopic(%s)", topicName);
-		LG.in();
 		listenForTopic(new Topic(topicName));
-		LG.out();
 	}
 
 	/**
@@ -145,9 +143,6 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 */
 	@SuppressWarnings("resource") // 'socket' closes at close()
 	private void listenForTopic(Topic topic) throws IOException {
-		LG.sout("listenForTopic(%s)", topic);
-		LG.in();
-
 		topic.subscribe(this);
 
 		Socket       socket    = null;
@@ -170,17 +165,16 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		} catch (final IOException e) {
 			throw new IOException("Fatal error: can't connect to server for topic " + topicName, e);
 		}
-		LG.out();
 	}
 
 	@Override
-	synchronized public void notify(PostInfo postInfo, String topicName) {
+	public synchronized void notify(PostInfo postInfo, String topicName) {
 		LG.sout("Consumer#notify(%s, %s)", postInfo, topicName);
 		// do nothing
 	}
 
 	@Override
-	synchronized public void notify(Packet packet, String topicName) {
+	public synchronized void notify(Packet packet, String topicName) {
 		LG.sout("Consumer#notify(%s, %s)", packet, topicName);
 		if (packet.isFinal())
 			usersub.notify(topicName);
@@ -243,10 +237,8 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		 */
 		public void addSocket(Topic topic, Socket socket) {
 			LG.sout("Consumer#addSocket(%s, %s)", topic, socket);
-			LG.in();
 			add(topic);
 			tdMap.get(topic.getName()).socket = socket;
-			LG.out();
 		}
 
 		private void add(Topic topic) {

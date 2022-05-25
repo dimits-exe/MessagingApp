@@ -18,7 +18,7 @@ import eventDeliverySystem.util.LG;
 public class PushThread extends Thread {
 
 	/**
-	 * Defines the different Protocol' used to push data.
+	 * Defines the different Protocols used to push data.
 	 *
 	 * @author Alex Mandelias
 	 */
@@ -94,7 +94,7 @@ public class PushThread extends Thread {
 		LG.in();
 
 		boolean success;
-		try /* (oos) */ {
+		try {
 
 			LG.sout("protocol=%s, posts.size()=%d", protocol, postInfos.size());
 			LG.in();

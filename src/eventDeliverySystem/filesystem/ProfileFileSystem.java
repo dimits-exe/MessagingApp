@@ -35,7 +35,7 @@ public class ProfileFileSystem {
 		this.profilesRootDirectory = profilesRootDirectory;
 		topicFileSystemMap = new HashMap<>();
 
-		getProfileNames().forEach((profileName) -> {
+		getProfileNames().forEach(profileName -> {
 			final TopicFileSystem tfs = new TopicFileSystem(getTopicsDirectory(profileName));
 			topicFileSystemMap.put(profileName, tfs);
 		});

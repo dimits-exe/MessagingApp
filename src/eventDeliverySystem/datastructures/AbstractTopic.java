@@ -27,7 +27,7 @@ public abstract class AbstractTopic {
 	 *
 	 * @param name the name of the new Topic
 	 */
-	public AbstractTopic(String name) {
+	protected AbstractTopic(String name) {
 		this.name = name;
 		subscribers = new HashSet<>();
 	}
@@ -51,7 +51,7 @@ public abstract class AbstractTopic {
 	}
 
 	/**
-	 * Removes a Subscriber to this Topic.
+	 * Removes a Subscriber from this Topic.
 	 *
 	 * @param sub the Subscriber to remove
 	 *
@@ -67,7 +67,7 @@ public abstract class AbstractTopic {
 	 *
 	 * @param postInfo the PostInfo
 	 */
-	synchronized public final void post(PostInfo postInfo) {
+	public final synchronized void post(PostInfo postInfo) {
 		postHook(postInfo);
 		for (final Subscriber sub : subscribers)
 			sub.notify(postInfo, name);
@@ -78,7 +78,7 @@ public abstract class AbstractTopic {
 	 *
 	 * @param packet the Packet
 	 */
-	synchronized public final void post(Packet packet) {
+	public final synchronized void post(Packet packet) {
 		postHook(packet);
 		for (final Subscriber sub : subscribers)
 			sub.notify(packet, name);
@@ -92,7 +92,7 @@ public abstract class AbstractTopic {
 	 *
 	 * @see AbstractTopic#post(PostInfo)
 	 */
-	abstract protected void postHook(PostInfo postInfo);
+	protected abstract void postHook(PostInfo postInfo);
 
 	/**
 	 * Allows each subclass to specify how the template method is implemented. This
@@ -102,7 +102,7 @@ public abstract class AbstractTopic {
 	 *
 	 * @see AbstractTopic#post(Packet)
 	 */
-	abstract protected void postHook(Packet packet);
+	protected abstract void postHook(Packet packet);
 
 	/**
 	 * Returns the hash that a Topic with a given name would have. Since a Topic's

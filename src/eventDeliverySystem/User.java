@@ -24,7 +24,7 @@ import eventDeliverySystem.util.LG;
  */
 public class User {
 
-	private final UserSub USER_SUB = new UserSub();
+	private final UserSub userSub = new UserSub();
 
 	private final ProfileFileSystem profileFileSystem;
 	private Profile                 currentProfile;
@@ -80,8 +80,8 @@ public class User {
 		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 
 		try {
-			publisher = new Publisher(serverIP, port, USER_SUB);
-			consumer = new Consumer(serverIP, port, USER_SUB);
+			publisher = new Publisher(serverIP, port, userSub);
+			consumer = new Consumer(serverIP, port, userSub);
 		} catch (final IOException e) {
 			throw new IOException("Could not establish connection with server", e);
 		}

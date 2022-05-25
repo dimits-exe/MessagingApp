@@ -3,7 +3,6 @@ package eventDeliverySystem.client;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.server.Broker;
 
 /**
@@ -36,7 +35,7 @@ abstract class ClientNode {
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
 	 */
-	public ClientNode(String serverIP, int serverPort) throws UnknownHostException {
+	protected ClientNode(String serverIP, int serverPort) throws UnknownHostException {
 		this(InetAddress.getByName(serverIP), serverPort);
 	}
 
@@ -49,7 +48,7 @@ abstract class ClientNode {
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	public ClientNode(byte[] serverIP, int serverPort) throws UnknownHostException {
+	protected ClientNode(byte[] serverIP, int serverPort) throws UnknownHostException {
 		this(InetAddress.getByAddress(serverIP), serverPort);
 	}
 
@@ -60,6 +59,6 @@ abstract class ClientNode {
 	 * @param port the port of the default broker
 	 */
 	protected ClientNode(InetAddress ip, int port) {
-		topicCIManager = new CIManager(new ConnectionInfo(ip, port));
+		topicCIManager = new CIManager(ip, port);
 	}
 }

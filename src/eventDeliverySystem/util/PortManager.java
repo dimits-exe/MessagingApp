@@ -24,7 +24,7 @@ public class PortManager {
 	 *
 	 * @return a new available port
 	 */
-	public synchronized static int getNewAvailablePort() {
+	public static synchronized int getNewAvailablePort() {
 		final ThreadLocalRandom tlr = ThreadLocalRandom.current();
 		int port;
 		do

@@ -105,4 +105,18 @@ class BrokerTopic extends AbstractTopic {
 			emptyPacketsPerPostInfoMap.put(id, ls.toArray(new Packet[ls.size()]));
 		}
 	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		return (obj instanceof BrokerTopic);
+	}
 }

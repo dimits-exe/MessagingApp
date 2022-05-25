@@ -5,6 +5,7 @@ import static eventDeliverySystem.datastructures.Message.MessageType.BROKER_DISC
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,25 +15,28 @@ import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.util.LG;
 
 /**
- * Wrapper for a cache that communicates with the default Broker to store,
- * update and invalidate the ConnectionInfos for Topics.
+ * Wrapper for a cache that communicates with the default Broker to obtain and
+ * store the ConnectionInfos for many Topics.
  *
  * @author Alex Mandelias
  */
 class CIManager {
 
-	private final Map<String, ConnectionInfo> map;
-	private final ConnectionInfo              defaultBrokerCI;
+	private final Map<String, ConnectionInfo> cache;
+
+	private final InetAddress defaultBrokerIP;
+	private final int         defaultBrokerPort;
 
 	/**
 	 * Constructs the CIManager given the ConnectionInfo to the default Broker.
 	 *
-	 * @param defaultBrokerConnectionInfo the ConnectionInfo of the default Broker
-	 *                                    to connect to
+	 * @param defaultBrokerIP   the InetAddress of the default Broker to connect to
+	 * @param defaultBrokerPort the Port of the default Broker to connect to
 	 */
-	public CIManager(ConnectionInfo defaultBrokerConnectionInfo) {
-		map = new HashMap<>();
-		defaultBrokerCI = defaultBrokerConnectionInfo;
+	public CIManager(InetAddress defaultBrokerIP, int defaultBrokerPort) {
+		cache = new HashMap<>();
+		this.defaultBrokerIP = defaultBrokerIP;
+		this.defaultBrokerPort = defaultBrokerPort;
 	}
 
 	/**
@@ -50,63 +54,35 @@ class CIManager {
 	 * @throws IOException if a connection to the server fails
 	 */
 	public ConnectionInfo getConnectionInfoForTopic(String topicName) throws IOException {
-		LG.sout("getConnectionInfoForTopic(%s)", topicName);
-		LG.in();
-		final ConnectionInfo address = map.get(topicName);
-		LG.sout("address=%s", address);
-
+		ConnectionInfo address = cache.get(topicName);
 		if (address != null)
 			return address;
 
-		updateCIForTopic(topicName);
-		LG.out();
-		return map.get(topicName);
+		address = getCIForTopic(topicName);
+		cache.put(topicName, address);
+		return address;
 	}
 
-	/**
-	 * Invalidates the ConnectionInfo associated with a Topic. The next time the
-	 * ConnectionInfo for said Topic is requested, the default Broker will be asked
-	 * will be requested to provide it.
-	 *
-	 * @param topicName the Topic for which to invalidate the ConnectionInfo
-	 */
-	public void invalidate(String topicName) {
-		LG.sout("invalidate(%s)", topicName);
-		LG.in();
-		map.remove(topicName);
-		LG.out();
-	}
+	private ConnectionInfo getCIForTopic(String topicName) throws IOException {
+		try (Socket socket = new Socket(defaultBrokerIP, defaultBrokerPort)) {
 
-	private void updateCIForTopic(String topicName) throws IOException {
-		LG.sout("updateCIForTopic(%s)", topicName);
-		LG.in();
-		try (Socket socket = getSocketToDefaultBroker();
-		        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
-
+			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.writeObject(new Message(BROKER_DISCOVERY, topicName));
 			oos.flush();
+			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-			try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
-				ConnectionInfo actualBrokerCIForTopic;
-				try {
-					actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
-				} catch (final ClassNotFoundException e) {
-					e.printStackTrace();
-					return;
-				}
-
-				LG.sout("actualBrokerCIForTopic=%s", actualBrokerCIForTopic);
-
-				map.put(topicName, actualBrokerCIForTopic);
+			ConnectionInfo actualBrokerCIForTopic;
+			try {
+				actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
+			} catch (final ClassNotFoundException e) {
+				e.printStackTrace();
+				actualBrokerCIForTopic = null;
 			}
+
+			return actualBrokerCIForTopic;
 
 		} catch (final IOException e) {
 			throw new IOException("Fatal error: connection to default server lost", e);
 		}
-		LG.out();
-	}
-
-	private Socket getSocketToDefaultBroker() throws IOException {
-		return new Socket(defaultBrokerCI.getAddress(), defaultBrokerCI.getPort());
 	}
 }

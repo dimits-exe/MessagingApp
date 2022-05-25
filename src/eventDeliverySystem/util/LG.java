@@ -1,5 +1,6 @@
 package eventDeliverySystem.util;
 
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -10,7 +11,10 @@ import java.net.Socket;
  */
 public class LG {
 
+	private static final PrintStream out = System.out;
 	private static int tab = 0;
+
+	private LG() {}
 
 	/**
 	 * Prints {@code String.format(format + "\n", args)} according to the current
@@ -22,10 +26,10 @@ public class LG {
 	 */
 	public static void sout(String format, Object... args) {
 		for (int i = 0; i < LG.tab; i++)
-			System.out.print("\t");
+			out.print("\t");
 
-		System.out.printf(format + "\n", args);
-		System.out.flush();
+		out.printf(format + "\n", args);
+		out.flush();
 	}
 
 	/** Adds a level of indentation to all future prints */

@@ -42,13 +42,7 @@ public class PullThread extends Thread {
 
 			for (int i = 0; i < postCount; i++) {
 
-				final PostInfo postInfo;
-				try {
-					postInfo = (PostInfo) ois.readObject();
-				} catch (final ClassNotFoundException e) {
-					e.printStackTrace();
-					return;
-				}
+				final PostInfo postInfo = (PostInfo) ois.readObject();
 
 				LG.in();
 				LG.sout("postInfo=%s", postInfo);
@@ -56,20 +50,17 @@ public class PullThread extends Thread {
 
 				Packet packet;
 				do {
-					try {
-						packet = (Packet) ois.readObject();
-					} catch (final ClassNotFoundException e) {
-						e.printStackTrace();
-						return;
-					}
+					packet = (Packet) ois.readObject();
+
 					LG.sout("packet=%s", packet);
+
 					topic.post(packet);
 				} while (!packet.isFinal());
 
 				LG.out();
 			}
 
-		} catch (final IOException e) {
+		} catch (final ClassNotFoundException | IOException e) {
 			e.printStackTrace();
 		}
 

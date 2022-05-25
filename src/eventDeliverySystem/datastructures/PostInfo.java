@@ -21,7 +21,7 @@ public class PostInfo implements Serializable {
 	/**
 	 * Constructs a new PostInfo that holds information associated with a Post.
 	 *
-	 * @param posterName    the unique id of the Post's poster
+	 * @param posterName    the unique name of the Post's poster
 	 * @param fileExtension the extension of the associated Post's file,
 	 *                      '{@code ~txt}' for plain-text messages
 	 * @param id            the unique id of the Post
@@ -33,9 +33,9 @@ public class PostInfo implements Serializable {
 	}
 
 	/**
-	 * Returns the ID of the Poster of the Post associated with this PostInfo.
+	 * Returns the name of the Poster of the Post associated with this PostInfo.
 	 *
-	 * @return the Poster's id.
+	 * @return the Poster's name.
 	 */
 	public String getPosterName() {
 		return posterName;
