@@ -21,6 +21,7 @@ import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.server.Broker;
+import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Callback;
 import eventDeliverySystem.thread.PushThread.Protocol;
@@ -108,9 +109,9 @@ public class Publisher extends ClientNode {
 	 *         IOException occurred while transmitting the request or if a Topic
 	 *         with that name already exists
 	 *
-	 * @throws IOException if a connection to the server fails
+	 * @throws ServerException if a connection to the server fails
 	 */
-	public boolean createTopic(String topicName) throws IOException {
+	public boolean createTopic(String topicName) throws ServerException {
 
 		final ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
 
@@ -124,7 +125,7 @@ public class Publisher extends ClientNode {
 			return ois.readBoolean(); // true or false, successful creation or not
 
 		} catch (final IOException e) {
-			throw new IOException("Fatal error: can't connect to server for topic " + topicName, e);
+			throw new ServerException(topicName, e);
 		}
 	}
 
@@ -154,16 +155,18 @@ public class Publisher extends ClientNode {
 					usersub.failure(topicName1);
 			};
 
+			final ConnectionInfo actualBrokerCI;
 			try {
-				final ConnectionInfo actualBrokerCI = topicCIManager
-				        .getConnectionInfoForTopic(topicName);
-				LG.sout("Actual Broker CI: %s", actualBrokerCI);
+				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+			} catch (ServerException e) {
+				callback.onCompletion(false, topicName);
+				return;
+			}
 
-				final Socket socket = new Socket(actualBrokerCI.getAddress(),
-				        actualBrokerCI.getPort());
+			try (Socket socket = new Socket(actualBrokerCI.getAddress(),
+			        actualBrokerCI.getPort())) {
 
-				final ObjectOutputStream oos = new ObjectOutputStream(
-				        socket.getOutputStream());
+				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
 
 				final PostInfo            postInfo  = post.getPostInfo();
@@ -173,10 +176,9 @@ public class Publisher extends ClientNode {
 				postInfos.add(postInfo);
 				packets.put(postInfo.getId(), Packet.fromPost(post));
 
-
 				final PushThread pushThread = new PushThread(oos, topicName, postInfos,
 				        packets, Protocol.NORMAL, callback);
-				pushThread.start();
+				pushThread.run();
 
 			} catch (final IOException e) {
 				callback.onCompletion(false, topicName);

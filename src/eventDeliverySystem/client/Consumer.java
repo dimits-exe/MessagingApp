@@ -22,6 +22,7 @@ import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.datastructures.Topic;
 import eventDeliverySystem.server.Broker;
+import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.thread.PullThread;
 import eventDeliverySystem.util.LG;
 import eventDeliverySystem.util.Subscriber;
@@ -84,7 +85,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	}
 
 	@Override
-	public void close() throws IOException {
+	public void close() throws ServerException {
 		topicManager.close();
 	}
 
@@ -94,9 +95,10 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @param newTopics the new Topics to listen for
 	 *
-	 * @throws IOException if an I/O error occurs while closing existing connections
+	 * @throws ServerException if an I/O error occurs while closing existing
+	 *                         connections
 	 */
-	public void setTopics(Set<Topic> newTopics) throws IOException {
+	public void setTopics(Set<Topic> newTopics) throws ServerException {
 		topicManager.close();
 
 		for (final Topic topic : newTopics)
@@ -122,11 +124,11 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @param topicName the name of the Topic to fetch from
 	 *
-	 * @throws IOException              if a connection to the server fails
+	 * @throws ServerException          if a connection to the server fails
 	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
 	 *                                  with the same name
 	 */
-	public void listenForNewTopic(String topicName) throws IOException {
+	public void listenForNewTopic(String topicName) throws ServerException {
 		LG.sout("listenForNewTopic(%s)", topicName);
 		listenForTopic(new Topic(topicName));
 	}
@@ -137,12 +139,12 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @param topic Topic to fetch from
 	 *
-	 * @throws IOException              if a connection to the server fails
+	 * @throws ServerException          if a connection to the server fails
 	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
 	 *                                  with the same name
 	 */
 	@SuppressWarnings("resource") // 'socket' closes at close()
-	private void listenForTopic(Topic topic) throws IOException {
+	private void listenForTopic(Topic topic) throws ServerException {
 		topic.subscribe(this);
 
 		Socket       socket    = null;
@@ -163,7 +165,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			new PullThread(ois, topic).start();
 
 		} catch (final IOException e) {
-			throw new IOException("Fatal error: can't connect to server for topic " + topicName, e);
+			throw new ServerException(topicName, e);
 		}
 	}
 
@@ -251,9 +253,13 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 
 		@Override
-		public void close() throws IOException {
-			for (final TopicManager.TopicData td : tdMap.values())
-				td.socket.close();
+		public void close() throws ServerException {
+			try {
+				for (final TopicManager.TopicData td : tdMap.values())
+					td.socket.close();
+			} catch (IOException e) {
+				throw new ServerException(e);
+			}
 
 			tdMap.clear();
 		}

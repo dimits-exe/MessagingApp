@@ -12,7 +12,7 @@ import java.util.Map;
 
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
-import eventDeliverySystem.util.LG;
+import eventDeliverySystem.server.ServerException;
 
 /**
  * Wrapper for a cache that communicates with the default Broker to obtain and
@@ -43,17 +43,14 @@ class CIManager {
 	 * Communicates with the default Broker to fetch the ConnectionInfo associated
 	 * with a Topic, which is then cached. Future requests for it will use the
 	 * ConnectionInfo found in the cache.
-	 * <p>
-	 * To invalidate the cache and request that the default Broker provide a new
-	 * ConnectionInfo, the {@link #invalidate(String)} method may be used.
 	 *
 	 * @param topicName the Topic for which to get the ConnectionInfo
 	 *
 	 * @return the ConnectionInfo for that Topic
 	 *
-	 * @throws IOException if a connection to the server fails
+	 * @throws ServerException if a connection to the server fails
 	 */
-	public ConnectionInfo getConnectionInfoForTopic(String topicName) throws IOException {
+	public ConnectionInfo getConnectionInfoForTopic(String topicName) throws ServerException {
 		ConnectionInfo address = cache.get(topicName);
 		if (address != null)
 			return address;
@@ -63,7 +60,7 @@ class CIManager {
 		return address;
 	}
 
-	private ConnectionInfo getCIForTopic(String topicName) throws IOException {
+	private ConnectionInfo getCIForTopic(String topicName) throws ServerException {
 		try (Socket socket = new Socket(defaultBrokerIP, defaultBrokerPort)) {
 
 			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
@@ -82,7 +79,7 @@ class CIManager {
 			return actualBrokerCIForTopic;
 
 		} catch (final IOException e) {
-			throw new IOException("Fatal error: connection to default server lost", e);
+			throw new ServerException(e);
 		}
 	}
 }
