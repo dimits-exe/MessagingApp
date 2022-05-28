@@ -7,6 +7,7 @@ import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -291,6 +292,10 @@ public class Broker implements Runnable, AutoCloseable {
 		private void addTopic(String topicName) {
 			synchronized (topicsByName) {
 				topicsByName.put(topicName, new BrokerTopic(topicName));
+			}
+
+			synchronized (consumerOOSPerTopic) {
+				consumerOOSPerTopic.put(topicName, new HashSet<>());
 			}
 		}
 
