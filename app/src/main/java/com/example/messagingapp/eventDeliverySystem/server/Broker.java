@@ -1,4 +1,4 @@
-package eventDeliverySystem.server;
+package com.example.messagingapp.eventDeliverySystem.server;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -14,17 +14,17 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.datastructures.ConnectionInfo;
-import eventDeliverySystem.datastructures.Message;
-import eventDeliverySystem.datastructures.Packet;
-import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.datastructures.Topic.TopicToken;
-import eventDeliverySystem.thread.PullThread;
-import eventDeliverySystem.thread.PushThread;
-import eventDeliverySystem.thread.PushThread.Protocol;
-import eventDeliverySystem.util.LG;
-import eventDeliverySystem.util.PortManager;
+import com.example.messagingapp.eventDeliverySystem.datastructures.AbstractTopic;
+import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
+import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Topic.TopicToken;
+import com.example.messagingapp.eventDeliverySystem.thread.PullThread;
+import com.example.messagingapp.eventDeliverySystem.thread.PushThread;
+import com.example.messagingapp.eventDeliverySystem.thread.PushThread.Protocol;
+import com.example.messagingapp.eventDeliverySystem.util.LG;
+import com.example.messagingapp.eventDeliverySystem.util.PortManager;
 
 /**
  * A remote component that forms the backbone of the EventDeliverySystem.

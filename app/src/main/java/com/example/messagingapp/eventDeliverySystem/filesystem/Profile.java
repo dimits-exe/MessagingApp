@@ -1,4 +1,4 @@
-package eventDeliverySystem.filesystem;
+package com.example.messagingapp.eventDeliverySystem.filesystem;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.Topic;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 
 /**
  * A data structure holding information about a user and their subscribed

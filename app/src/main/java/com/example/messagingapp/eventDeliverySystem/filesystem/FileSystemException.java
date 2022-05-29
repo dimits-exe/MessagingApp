@@ -1,4 +1,4 @@
-package eventDeliverySystem.filesystem;
+package com.example.messagingapp.eventDeliverySystem.filesystem;
 
 import java.io.IOException;
 import java.nio.file.Path;

@@ -1,4 +1,4 @@
-package eventDeliverySystem.server;
+package com.example.messagingapp.eventDeliverySystem.server;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.datastructures.Packet;
-import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.util.LG;
-import eventDeliverySystem.util.Subscriber;
+import com.example.messagingapp.eventDeliverySystem.datastructures.AbstractTopic;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
+import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
+import com.example.messagingapp.eventDeliverySystem.util.LG;
+import com.example.messagingapp.eventDeliverySystem.util.Subscriber;
 
 /**
  * A thread that receives packets for a certain Topic and streams them to a

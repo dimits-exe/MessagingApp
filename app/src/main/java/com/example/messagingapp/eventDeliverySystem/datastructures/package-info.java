@@ -3,4 +3,4 @@
  *
  * @author Alex Mandelias
  */
-package eventDeliverySystem.datastructures;
+package com.example.messagingapp.eventDeliverySystem.datastructures;

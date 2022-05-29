@@ -3,4 +3,4 @@
  *
  * @author Alex Mandelias
  */
-package eventDeliverySystem.thread;
+package com.example.messagingapp.eventDeliverySystem.thread;

@@ -1,4 +1,4 @@
-package eventDeliverySystem.datastructures;
+package com.example.messagingapp.eventDeliverySystem.datastructures;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import eventDeliverySystem.util.LG;
+import com.example.messagingapp.eventDeliverySystem.util.LG;
 
 /**
  * Encapsulates the contents of a conversation / Topic.

@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package com.example.messagingapp.eventDeliverySystem;
 
 import java.net.UnknownHostException;
 import java.nio.file.Path;
@@ -6,15 +6,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import app.CrappyUserUI;
-import eventDeliverySystem.client.Consumer;
-import eventDeliverySystem.client.Publisher;
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.filesystem.FileSystemException;
-import eventDeliverySystem.filesystem.Profile;
-import eventDeliverySystem.filesystem.ProfileFileSystem;
-import eventDeliverySystem.server.ServerException;
-import eventDeliverySystem.util.LG;
+import com.example.messagingapp.eventDeliverySystem.client.Consumer;
+import com.example.messagingapp.eventDeliverySystem.client.Publisher;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.filesystem.FileSystemException;
+import com.example.messagingapp.eventDeliverySystem.filesystem.Profile;
+import com.example.messagingapp.eventDeliverySystem.filesystem.ProfileFileSystem;
+import com.example.messagingapp.eventDeliverySystem.server.ServerException;
+import com.example.messagingapp.eventDeliverySystem.util.LG;
 
 
 /**

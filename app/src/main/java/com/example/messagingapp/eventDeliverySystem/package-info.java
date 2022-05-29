@@ -5,4 +5,4 @@
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-package eventDeliverySystem;
+package com.example.messagingapp.eventDeliverySystem;

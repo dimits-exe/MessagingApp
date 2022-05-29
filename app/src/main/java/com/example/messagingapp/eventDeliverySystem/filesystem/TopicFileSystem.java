@@ -1,4 +1,4 @@
-package eventDeliverySystem.filesystem;
+package com.example.messagingapp.eventDeliverySystem.filesystem;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,9 +13,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.datastructures.Topic;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 
 /**
  * Manages Topics that are saved in directories in the file system.

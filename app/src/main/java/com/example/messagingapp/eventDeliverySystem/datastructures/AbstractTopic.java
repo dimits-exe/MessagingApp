@@ -1,4 +1,4 @@
-package eventDeliverySystem.datastructures;
+package com.example.messagingapp.eventDeliverySystem.datastructures;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import eventDeliverySystem.util.Subscriber;
+import com.example.messagingapp.eventDeliverySystem.util.Subscriber;
 
 /**
  * Abstract superclass of all Topics.

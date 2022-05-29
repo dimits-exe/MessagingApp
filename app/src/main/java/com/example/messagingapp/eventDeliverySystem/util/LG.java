@@ -1,4 +1,4 @@
-package eventDeliverySystem.util;
+package com.example.messagingapp.eventDeliverySystem.util;
 
 import java.io.PrintStream;
 import java.net.ServerSocket;

@@ -1,4 +1,4 @@
-package eventDeliverySystem.thread;
+package com.example.messagingapp.eventDeliverySystem.thread;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import eventDeliverySystem.datastructures.Packet;
-import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.util.LG;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
+import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
+import com.example.messagingapp.eventDeliverySystem.util.LG;
 
 /**
  * A Thread that writes some Posts to a stream.

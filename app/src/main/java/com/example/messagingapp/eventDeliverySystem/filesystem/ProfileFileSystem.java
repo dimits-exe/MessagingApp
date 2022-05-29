@@ -1,4 +1,4 @@
-package eventDeliverySystem.filesystem;
+package com.example.messagingapp.eventDeliverySystem.filesystem;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.Topic;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 
 /**
  * Manages Profiles that are saved in directories in the file system.

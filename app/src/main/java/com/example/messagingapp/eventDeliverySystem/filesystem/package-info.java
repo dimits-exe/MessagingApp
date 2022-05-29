@@ -3,4 +3,4 @@
  *
  * @author Alex Mandelias
  */
-package eventDeliverySystem.filesystem;
+package com.example.messagingapp.eventDeliverySystem.filesystem;

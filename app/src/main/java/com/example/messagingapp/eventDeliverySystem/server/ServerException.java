@@ -1,4 +1,4 @@
-package eventDeliverySystem.server;
+package com.example.messagingapp.eventDeliverySystem.server;
 
 import java.io.IOException;
 

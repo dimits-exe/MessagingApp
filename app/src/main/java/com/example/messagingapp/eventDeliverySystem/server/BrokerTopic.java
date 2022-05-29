@@ -1,13 +1,13 @@
-package eventDeliverySystem.server;
+package com.example.messagingapp.eventDeliverySystem.server;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.datastructures.Packet;
-import eventDeliverySystem.datastructures.PostInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.AbstractTopic;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
+import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
 
 /**
  * An extension of the Abstract Topic that stores data as required by Brokers.

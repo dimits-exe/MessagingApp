@@ -1,7 +1,7 @@
-package eventDeliverySystem.client;
+package com.example.messagingapp.eventDeliverySystem.client;
 
-import static eventDeliverySystem.datastructures.Message.MessageType.CREATE_TOPIC;
-import static eventDeliverySystem.datastructures.Message.MessageType.DATA_PACKET_SEND;
+import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.CREATE_TOPIC;
+import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.DATA_PACKET_SEND;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -14,18 +14,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import eventDeliverySystem.User.UserSub;
-import eventDeliverySystem.datastructures.ConnectionInfo;
-import eventDeliverySystem.datastructures.Message;
-import eventDeliverySystem.datastructures.Packet;
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.server.Broker;
-import eventDeliverySystem.server.ServerException;
-import eventDeliverySystem.thread.PushThread;
-import eventDeliverySystem.thread.PushThread.Callback;
-import eventDeliverySystem.thread.PushThread.Protocol;
-import eventDeliverySystem.util.LG;
+import com.example.messagingapp.eventDeliverySystem.User.UserSub;
+import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
+import com.example.messagingapp.eventDeliverySystem.server.Broker;
+import com.example.messagingapp.eventDeliverySystem.server.ServerException;
+import com.example.messagingapp.eventDeliverySystem.thread.PushThread;
+import com.example.messagingapp.eventDeliverySystem.thread.PushThread.Callback;
+import com.example.messagingapp.eventDeliverySystem.thread.PushThread.Protocol;
+import com.example.messagingapp.eventDeliverySystem.util.LG;
 
 /**
  * A client-side process which is responsible for creating Topics and pushing

@@ -1,6 +1,6 @@
-package eventDeliverySystem.client;
+package com.example.messagingapp.eventDeliverySystem.client;
 
-import static eventDeliverySystem.datastructures.Message.MessageType.BROKER_DISCOVERY;
+import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.BROKER_DISCOVERY;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,9 +10,9 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
-import eventDeliverySystem.datastructures.ConnectionInfo;
-import eventDeliverySystem.datastructures.Message;
-import eventDeliverySystem.server.ServerException;
+import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
+import com.example.messagingapp.eventDeliverySystem.server.ServerException;
 
 /**
  * Wrapper for a cache that communicates with the default Broker to obtain and

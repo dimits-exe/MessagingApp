@@ -1,6 +1,6 @@
-package eventDeliverySystem.client;
+package com.example.messagingapp.eventDeliverySystem.client;
 
-import static eventDeliverySystem.datastructures.Message.MessageType.INITIALISE_CONSUMER;
+import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.INITIALISE_CONSUMER;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -14,18 +14,18 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.User.UserSub;
-import eventDeliverySystem.datastructures.ConnectionInfo;
-import eventDeliverySystem.datastructures.Message;
-import eventDeliverySystem.datastructures.Packet;
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.datastructures.Topic;
-import eventDeliverySystem.server.Broker;
-import eventDeliverySystem.server.ServerException;
-import eventDeliverySystem.thread.PullThread;
-import eventDeliverySystem.util.LG;
-import eventDeliverySystem.util.Subscriber;
+import com.example.messagingapp.eventDeliverySystem.User.UserSub;
+import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
+import com.example.messagingapp.eventDeliverySystem.server.Broker;
+import com.example.messagingapp.eventDeliverySystem.server.ServerException;
+import com.example.messagingapp.eventDeliverySystem.thread.PullThread;
+import com.example.messagingapp.eventDeliverySystem.util.LG;
+import com.example.messagingapp.eventDeliverySystem.util.Subscriber;
 
 /**
  * A client-side process which is responsible for listening for a set of Topics

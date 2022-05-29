@@ -1,9 +1,9 @@
-package eventDeliverySystem.client;
+package com.example.messagingapp.eventDeliverySystem.client;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import eventDeliverySystem.server.Broker;
+import com.example.messagingapp.eventDeliverySystem.server.Broker;
 
 /**
  * A superclass for all client-side Nodes that connect to and send / receive

@@ -1,4 +1,4 @@
-package eventDeliverySystem.datastructures;
+package com.example.messagingapp.eventDeliverySystem.datastructures;
 
 import java.io.Serializable;
 import java.net.InetAddress;
