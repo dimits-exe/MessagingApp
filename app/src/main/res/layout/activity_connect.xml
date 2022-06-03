@@ -61,10 +61,10 @@
                 app:layout_constraintTop_toTopOf="parent">
 
                 <TextView
-                    android:id="@+id/login_username_label"
+                    android:id="@+id/connect_server_ip_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Username"
+                    android:text="Server IP"
                     android:textAlignment="center"
                     android:textSize="34sp"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -72,7 +72,7 @@
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <EditText
-                    android:id="@+id/login_username_field"
+                    android:id="@+id/connect_server_ip_field"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:ems="10"
@@ -83,42 +83,58 @@
                     android:textSize="34sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    tools:layout_editor_absoluteY="84dp" />
+                    app:layout_constraintTop_toBottomOf="@+id/connect_server_ip_label" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <LinearLayout
-                android:layout_width="wrap_content"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/constraintLayout4"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_margin="20dp"
                 android:padding="20dp"
-                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/constraintLayout3">
 
-                <Button
-                    android:id="@+id/login_create_button"
+                <TextView
+                    android:id="@+id/connect_server_port_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="20dp"
-                    android:layout_marginBottom="100dp"
-                    android:layout_weight="1"
-                    android:text="Create"
+                    android:text="Server Port"
                     android:textAlignment="center"
-                    android:textSize="24sp" />
+                    android:textSize="34sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
-                <Button
-                    android:id="@+id/login_login_button"
+                <EditText
+                    android:id="@+id/connect_server_port_field"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="20dp"
-                    android:layout_marginBottom="100dp"
-                    android:text="Login"
+                    android:ems="10"
+                    android:hint="Port Number"
+                    android:inputType="textPersonName"
+                    android:minHeight="48dp"
                     android:textAlignment="center"
-                    android:textSize="24sp" />
+                    android:textSize="34sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/connect_server_port_label" />
 
-            </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <Button
+                android:id="@+id/connect_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connect"
+                android:textAlignment="center"
+                android:textSize="24sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/constraintLayout4" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </FrameLayout>

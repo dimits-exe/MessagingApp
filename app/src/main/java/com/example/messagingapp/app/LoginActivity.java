@@ -1,60 +1,38 @@
 package com.example.messagingapp.app;
 
-import android.os.Bundle;
-
 import androidx.appcompat.app.AppCompatActivity;
 
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
-
-import com.auebds.yammiapp.databinding.ActivityLoginBinding;
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.EditText;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private AppBarConfiguration appBarConfiguration;
+    public static final String USERNAME = "USERNAME";
+
+    private EditText usernameEditText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login);
 
-        com.auebds.yammiapp.databinding.ActivityLoginBinding binding = ActivityLoginBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_login);
-        appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-
+        usernameEditText = findViewById(R.id.connect_server_ip_field);
     }
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_login);
-        return NavigationUI.navigateUp(navController, appBarConfiguration)
-                || super.onSupportNavigateUp();
-    }
+    public void onSubmit() {
 
-    /**
-     * Creates a new local account, and initiates the EDS system.
-     * This method is automatically called by the Create New button.
-     */
-    public void createNewAccount() {
-        startApp();
-    }
+        String username = usernameEditText.getText().toString();
 
-    /**
-     * Logins to an existing local account, and initiates the EDS System.
-     * This method is automatically called by the Submit button.
-     */
-    public void loginToAccount() {
-        startApp();
-    }
+        System.out.printf("Username: %s%n", username);
 
-    /**
-     * Initiates the EDS System and switches the app to the main screen.
-     */
-    private void startApp() {
+        Intent old = getIntent();
 
+        Intent intent = new Intent(this, null /* TODO HomepageActivity.class */);
+        intent.putExtra(USERNAME, username);
+        intent.putExtra(ConnectActivity.SERVER_IP, old.getStringExtra(ConnectActivity.SERVER_IP));
+        intent.putExtra(ConnectActivity.SERVER_PORT, old.getStringExtra(ConnectActivity.SERVER_PORT));
+
+        startActivity(intent);
     }
 }
