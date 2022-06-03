@@ -1,4 +1,4 @@
-package com.example.messagingapp.app;
+package com.example.messagingapp.server;
 
 import java.util.concurrent.ThreadLocalRandom;
 
