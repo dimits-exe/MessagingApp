@@ -8,7 +8,8 @@ import android.widget.EditText;
 
 public class LoginActivity extends AppCompatActivity {
 
-    public static final String USERNAME = "USERNAME";
+    public static final String USERNAME = "USER";
+    public static final String NEW_USER = "NEW_USER";
 
     private EditText usernameEditText;
 
@@ -17,21 +18,29 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        usernameEditText = findViewById(R.id.connect_server_ip_field);
+        usernameEditText = findViewById(R.id.login_username_field);
+
+        findViewById(R.id.login_create_button).setOnClickListener(e -> onSubmit(true));
+        findViewById(R.id.login_login_button).setOnClickListener(e -> onSubmit(false));
     }
 
-    public void onSubmit() {
+    public void onSubmit(boolean newUser) {
 
         String username = usernameEditText.getText().toString();
 
-        System.out.printf("Username: %s%n", username);
-
         Intent old = getIntent();
+        String serverIp = old.getStringExtra(ConnectActivity.SERVER_IP);
+        int serverPort = old.getIntExtra(ConnectActivity.SERVER_PORT, -1);
 
         Intent intent = new Intent(this, null /* TODO HomepageActivity.class */);
+        intent.putExtra(ConnectActivity.SERVER_IP, serverIp);
+        intent.putExtra(ConnectActivity.SERVER_PORT, serverPort);
         intent.putExtra(USERNAME, username);
-        intent.putExtra(ConnectActivity.SERVER_IP, old.getStringExtra(ConnectActivity.SERVER_IP));
-        intent.putExtra(ConnectActivity.SERVER_PORT, old.getStringExtra(ConnectActivity.SERVER_PORT));
+        intent.putExtra(NEW_USER, newUser);
+
+        // TODO: remove
+        for (String key : intent.getExtras().keySet())
+            System.out.printf("%s-%s%n", key, intent.getStringExtra(key));
 
         startActivity(intent);
     }

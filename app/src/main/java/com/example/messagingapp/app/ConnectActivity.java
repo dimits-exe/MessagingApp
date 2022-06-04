@@ -33,6 +33,7 @@ public class ConnectActivity extends AppCompatActivity {
         String serverIP = ipEditText.getText().toString();
         int serverPort = Integer.parseInt(portEditText.getText().toString());
 
+        // TODO: remove
         System.out.printf("Server IP: %s Server Port: %d%n", serverIP, serverPort);
 
         Intent intent = new Intent(this, LoginActivity.class);
