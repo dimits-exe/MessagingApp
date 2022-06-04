@@ -7,7 +7,14 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true" >
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MessagingApp">
+        <activity
+            android:name=".topiclist.TopicListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
         <activity
             android:name=".ConnectActivity"
             android:exported="true">

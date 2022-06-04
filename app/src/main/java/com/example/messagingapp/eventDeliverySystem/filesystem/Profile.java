@@ -126,6 +126,17 @@ public class Profile {
 	}
 
 	/**
+	 * Returns the number of unread posts in a Topic.
+	 *
+	 * @param topicName the name of the Topic
+	 *
+	 * @return the unread count
+	 */
+	public int getUnread(String topicName) {
+		return unreadTopics.get(topicName);
+	}
+
+	/**
 	 * Marks all posts in a Topic as read.
 	 *
 	 * @param topicName the name of the Topic

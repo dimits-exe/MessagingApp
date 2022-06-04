@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.EditText;
 
+import com.example.messagingapp.app.topiclist.TopicListActivity;
+
 public class LoginActivity extends AppCompatActivity {
 
     public static final String USERNAME = "USER";
@@ -32,7 +34,7 @@ public class LoginActivity extends AppCompatActivity {
         String serverIp = old.getStringExtra(ConnectActivity.SERVER_IP);
         int serverPort = old.getIntExtra(ConnectActivity.SERVER_PORT, -1);
 
-        Intent intent = new Intent(this, null /* TODO HomepageActivity.class */);
+        Intent intent = new Intent(this, TopicListActivity.class);
         intent.putExtra(ConnectActivity.SERVER_IP, serverIp);
         intent.putExtra(ConnectActivity.SERVER_PORT, serverPort);
         intent.putExtra(USERNAME, username);
