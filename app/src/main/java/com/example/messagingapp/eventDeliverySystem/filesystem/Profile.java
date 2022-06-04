@@ -37,6 +37,22 @@ public class Profile {
 		this.name = name;
 		this.topics = topics;
 		unreadTopics = new HashMap<>();
+
+		// TODO: remove
+		addTopic("topic1");
+		addTopic("topic2");
+		addTopic("topic3");
+		addTopic("topic4");
+		addTopic("topic5");
+		addTopic("topic6");
+
+		markUnread("topic1");
+		markUnread("topic1");
+		markUnread("topic2");
+		markUnread("topic2");
+		markUnread("topic2");
+		markUnread("topic2");
+		markUnread("topic4");
 	}
 
 	/**

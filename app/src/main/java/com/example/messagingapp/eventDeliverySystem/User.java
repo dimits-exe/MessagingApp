@@ -86,7 +86,8 @@ public class User {
 
 	private User(String serverIP, int port, Path profilesRootDirectory)
 	        throws FileSystemException, UnknownHostException {
-		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
+		// TODO: fix
+		profileFileSystem = null;//new ProfileFileSystem(profilesRootDirectory);
 
 		publisher = new Publisher(serverIP, port, userSub);
 		consumer = new Consumer(serverIP, port, userSub);
@@ -112,8 +113,10 @@ public class User {
 	 *                             file system
 	 */
 	public void switchToNewProfile(String profileName) throws ServerException, FileSystemException {
-		currentProfile = profileFileSystem.createNewProfile(profileName);
-		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
+		// TODO: remove
+		// currentProfile = profileFileSystem.createNewProfile(profileName);
+		// consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
+		currentProfile = new Profile("alex");
 	}
 
 	/**
