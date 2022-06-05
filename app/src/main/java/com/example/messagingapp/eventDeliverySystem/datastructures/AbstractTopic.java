@@ -1,5 +1,6 @@
 package com.example.messagingapp.eventDeliverySystem.datastructures;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -14,7 +15,7 @@ import com.example.messagingapp.eventDeliverySystem.util.Subscriber;
  *
  * @author Alex Mandelias
  */
-public abstract class AbstractTopic {
+public abstract class AbstractTopic implements Serializable {
 
 	/** Constant to be used when no post exists and an ID is needed */
 	public static final long FETCH_ALL_POSTS = -1L;

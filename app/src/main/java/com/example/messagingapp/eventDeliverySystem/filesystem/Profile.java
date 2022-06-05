@@ -1,5 +1,6 @@
 package com.example.messagingapp.eventDeliverySystem.filesystem;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,7 +19,7 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class Profile {
+public class Profile implements Serializable {
 
 	private final String               name;
 	private final Map<String, Topic>   topics;

@@ -5,6 +5,7 @@ import static com.example.messagingapp.eventDeliverySystem.datastructures.Messag
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -36,7 +37,7 @@ import com.example.messagingapp.eventDeliverySystem.util.Subscriber;
  *
  * @see Broker
  */
-public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
+public class Consumer extends ClientNode implements AutoCloseable, Subscriber, Serializable {
 
 	private final UserSub      usersub;
 	private final TopicManager topicManager;
@@ -182,12 +183,14 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			usersub.notify(topicName);
 	}
 
-	private static class TopicManager implements AutoCloseable {
+	private static class TopicManager implements AutoCloseable, Serializable {
 
-		private static class TopicData {
+		private static class TopicData implements Serializable {
 			private final Topic topic;
 			private long        pointer;
-			private Socket      socket;
+
+			// transient socket = resource will be leaked every time it's serialized
+			private transient Socket socket;
 
 			public TopicData(Topic topic) {
 				this.topic = topic;

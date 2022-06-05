@@ -37,7 +37,7 @@ public class Topic extends AbstractTopic {
 	private final List<Post>         postList;
 	private final Map<Long, Integer> indexPerPostId;
 
-	private Post lastPost;
+	private Post lastPost; // don't traverse the entire postList
 
 	/**
 	 * Creates a new, empty, Topic.

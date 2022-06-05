@@ -5,6 +5,7 @@ import static com.example.messagingapp.eventDeliverySystem.datastructures.Messag
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.HashMap;
@@ -20,7 +21,7 @@ import com.example.messagingapp.eventDeliverySystem.server.ServerException;
  *
  * @author Alex Mandelias
  */
-class CIManager {
+class CIManager implements Serializable {
 
 	private final Map<String, ConnectionInfo> cache;
 

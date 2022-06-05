@@ -6,6 +6,7 @@ import static com.example.messagingapp.eventDeliverySystem.datastructures.Messag
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -36,7 +37,7 @@ import com.example.messagingapp.eventDeliverySystem.util.LG;
  *
  * @see Broker
  */
-public class Publisher extends ClientNode {
+public class Publisher extends ClientNode implements Serializable {
 
 	private final UserSub usersub;
 
