@@ -24,7 +24,7 @@ import com.example.messagingapp.eventDeliverySystem.util.LG;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class User  implements Serializable {
+public class User implements Serializable {
 
 	private final UserSub userSub = new UserSub();
 
@@ -221,7 +221,7 @@ public class User  implements Serializable {
 	 *
 	 * @author Alex Mandelias
 	 */
-	public class UserSub {
+	public class UserSub implements Serializable {
 
 		private UserSub() {}
 

@@ -8,8 +8,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.messagingapp.app.R;
+import com.example.messagingapp.app.createtopic.CreateTopicActivity;
 import com.example.messagingapp.eventDeliverySystem.User;
-
 
 public class TopicListActivity extends AppCompatActivity {
     public static final String ARG_USER = "USER";
@@ -24,6 +24,12 @@ public class TopicListActivity extends AppCompatActivity {
 
 
         ((TextView) findViewById(R.id.topiclist_username)).setText(user.getCurrentProfile().getName());
+
+        findViewById(R.id.topiclist_add_button).setOnClickListener(e -> {
+            Intent intent = new Intent(this, CreateTopicActivity.class);
+            intent.putExtra(ARG_USER, user);
+            startActivity(intent);
+        });
 
         RecyclerView recyclerView = findViewById(R.id.topiclist_recycler_view);
         recyclerView.setAdapter(new TopicPreviewAdapter(user.getCurrentProfile()));

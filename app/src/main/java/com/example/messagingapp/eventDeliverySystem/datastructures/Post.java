@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -17,7 +18,7 @@ import java.util.stream.Stream;
  *
  * @see PostInfo
  */
-public class Post {
+public class Post implements Serializable {
 
 	/**
 	 * Extracts the data of some Packets into a single Post.

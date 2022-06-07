@@ -1,6 +1,7 @@
 package com.example.messagingapp.eventDeliverySystem.filesystem;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -16,7 +17,7 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
  *
  * @author Alex Mandelias
  */
-public class ProfileFileSystem {
+public class ProfileFileSystem implements Serializable {
 
 	private final Path                         profilesRootDirectory;
 	private final Map<String, TopicFileSystem> topicFileSystemMap;

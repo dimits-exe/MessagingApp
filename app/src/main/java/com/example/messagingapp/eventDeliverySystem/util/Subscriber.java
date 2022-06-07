@@ -4,6 +4,8 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
 import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
 
+import java.io.Serializable;
+
 /**
  * An interface denoting any class that needs to be notified about the arrival
  * of a part of or a whole {@link Post}.
@@ -11,7 +13,7 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public interface Subscriber {
+public interface Subscriber extends Serializable {
 
 	/**
 	 * Notifies the object that a post has arrived, concerning a certain Topic.
