@@ -20,7 +20,7 @@ import java.net.UnknownHostException;
 
 public class TopicListActivity extends AppCompatActivity {
 
-    private static final String EXCEPTION = "EXCEPTION";
+    public static final String USER = "USER";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +45,12 @@ public class TopicListActivity extends AppCompatActivity {
         }
 
         ((TextView) findViewById(R.id.topiclist_username)).setText(user.getCurrentProfile().getName());
+
+        findViewById(R.id.topiclist_add_button).setOnClickListener(e -> {
+            Intent intent = new Intent(this, CreateTopicActivity.class);
+            intent.putExtra(USER, user);
+            startActivity(intent);
+        });
 
         RecyclerView recyclerView = findViewById(R.id.topiclist_recycler_view);
         recyclerView.setAdapter(new TopicPreviewAdapter(user.getCurrentProfile()));

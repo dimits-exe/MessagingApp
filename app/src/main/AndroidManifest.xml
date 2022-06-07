@@ -10,6 +10,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MessagingApp">
         <activity
+            android:name=".createtopic.CreateTopicActivity"
+            android:exported="false" />
+        <activity
             android:name=".topiclist.TopicListActivity"
             android:exported="false" />
         <activity

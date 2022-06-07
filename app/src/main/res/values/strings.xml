@@ -3,4 +3,7 @@
     <string name="unread">Unread</string>
     <string name="add_topic">Add Topic</string>
     <string name="logo_of_the_app">Logo of the app</string>
+    <string name="conversation_name">Conversation Name</string>
+    <string name="create_topic">Create Conversation</string>
+    <string name="create">Create</string>
 </resources>
