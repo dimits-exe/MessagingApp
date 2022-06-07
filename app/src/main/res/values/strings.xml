@@ -3,6 +3,8 @@
     <string name="unread">Unread</string>
     <string name="add_topic">Add Topic</string>
     <string name="logo_of_the_app">Logo of the app</string>
+    <string name="ok">O.K</string>
+
     <string name="connection_hint_IP">e.g 127.0.0.1</string>
     <string name="connection_hint_port">e.g 45</string>
 

@@ -1,5 +1,6 @@
 package com.example.messagingapp.eventDeliverySystem;
 
+import java.io.Serializable;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -23,7 +24,7 @@ import com.example.messagingapp.eventDeliverySystem.util.LG;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class User {
+public class User  implements Serializable {
 
 	private final UserSub userSub = new UserSub();
 
@@ -158,7 +159,7 @@ public class User {
 	 * @throws FileSystemException if an I/O error occurs while interacting with the
 	 *                             file system
 	 *
-	 * @throw IllegalArgumentException if a Topic with the same name already exists
+	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
 	public boolean createTopic(String topicName) throws ServerException, FileSystemException {
 		LG.sout("User#createTopic(%s)", topicName);
