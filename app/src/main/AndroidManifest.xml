@@ -13,7 +13,7 @@
             android:name=".topiclist.TopicListActivity"
             android:exported="false" />
         <activity
-            android:name=".LoginActivity"
+            android:name=".login.LoginActivity"
             android:exported="false" />
         <activity
             android:name=".connect.ConnectActivity"

@@ -1,4 +1,4 @@
-package com.example.messagingapp.app;
+package com.example.messagingapp.app.login;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -6,7 +6,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.EditText;
 
+import com.example.messagingapp.app.connect.ConnectActivity;
 import com.example.messagingapp.app.topiclist.TopicListActivity;
+
+import com.example.messagingapp.R;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -20,7 +23,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        usernameEditText = findViewById(R.id.login_username_field);
+        usernameEditText = findViewById(R.id.login_username_input);
 
         findViewById(R.id.login_create_button).setOnClickListener(e -> onSubmit(true));
         findViewById(R.id.login_login_button).setOnClickListener(e -> onSubmit(false));
@@ -39,10 +42,6 @@ public class LoginActivity extends AppCompatActivity {
         intent.putExtra(ConnectActivity.SERVER_PORT, serverPort);
         intent.putExtra(USERNAME, username);
         intent.putExtra(NEW_USER, newUser);
-
-        // TODO: remove
-        for (String key : intent.getExtras().keySet())
-            System.out.printf("%s-%s%n", key, intent.getStringExtra(key));
 
         startActivity(intent);
     }

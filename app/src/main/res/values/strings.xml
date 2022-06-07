@@ -5,4 +5,8 @@
     <string name="logo_of_the_app">Logo of the app</string>
     <string name="connection_hint_IP">e.g 127.0.0.1</string>
     <string name="connection_hint_port">e.g 45</string>
+
+    <string name="login_hint_username">Username</string>
+    <string name="login_button_login">Sign in</string>
+    <string name="login_button_create">Create New</string>
 </resources>
