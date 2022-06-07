@@ -4,8 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import com.example.messagingapp.R;
-import com.example.messagingapp.app.LoginActivity;
+import com.example.messagingapp.app.R;
+import com.example.messagingapp.app.login.LoginActivity;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.Objects;
@@ -16,10 +16,6 @@ import java.util.Objects;
  * @author Dimitris Tsirmpas
  */
 public class ConnectActivity extends AppCompatActivity {
-
-    public static final String SERVER_IP = "SERVER ADDRESS";
-    public static final String SERVER_PORT = "SERVER PORT";
-
     private final ConnectPresenter presenter = new ConnectPresenter();
     private TextInputLayout ipEditText, portEditText;
 
@@ -73,8 +69,8 @@ public class ConnectActivity extends AppCompatActivity {
 
     private void toNextActivity(String serverIP, int serverPort){
         Intent intent = new Intent(this, LoginActivity.class);
-        intent.putExtra(SERVER_IP, serverIP);
-        intent.putExtra(SERVER_PORT, serverPort);
+        intent.putExtra(LoginActivity.ARG_IP, serverIP);
+        intent.putExtra(LoginActivity.ARG_PORT, serverPort);
 
         startActivity(intent);
     }
