@@ -24,7 +24,7 @@ public class CreateTopicActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_topic);
 
-        user = (User) getIntent().getExtras().getSerializable(TopicListActivity.USER);
+        user = (User) getIntent().getExtras().getSerializable(TopicListActivity.ARG_USER);
         topicNameEditText = findViewById(R.id.create_topicname);
         findViewById(R.id.create_submit_button).setOnClickListener(e -> onSubmit());
         // findViewById().setOnClickListener(e -> finish()); // TODO: add back button
