@@ -1,10 +1,11 @@
 package com.example.messagingapp.app.login;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.EditText;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.messagingapp.app.R;
@@ -14,8 +15,10 @@ import com.example.messagingapp.app.util.strategies.SeriousErrorMessageStrategy;
 import com.example.messagingapp.eventDeliverySystem.User;
 import com.example.messagingapp.eventDeliverySystem.filesystem.FileSystemException;
 import com.example.messagingapp.eventDeliverySystem.server.ServerException;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.net.UnknownHostException;
+import java.util.Objects;
 
 /**
  * An activity which creates or loads the user's data, connects with the server
@@ -30,8 +33,9 @@ public class LoginActivity extends AppCompatActivity {
     private final IErrorMessageStrategy errorMessageStrategy =
             new SeriousErrorMessageStrategy(this.getBaseContext(), R.string.ok);
 
-    private EditText usernameEditText;
+    private TextInputLayout usernameEditText;
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,9 +51,10 @@ public class LoginActivity extends AppCompatActivity {
      * Collects user parameters, creates a user instance, and if successful, launches the main app.
      * @param newUser true if the user is created now, false otherwise
      */
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void onSubmit(boolean newUser) {
-
-        String username = usernameEditText.getText().toString();
+        String username = Objects.requireNonNull(usernameEditText.getEditText())
+                .getText().toString();
 
         Intent old = getIntent();
         String serverIp = old.getStringExtra(LoginActivity.ARG_IP);
@@ -63,22 +68,23 @@ public class LoginActivity extends AppCompatActivity {
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private User tryCreateUser(boolean newUser, String serverIp, int serverPort, String username) {
         User user = null;
         try {
             if (newUser)
-                user = User.createNew(serverIp, serverPort, null /* TODO */, username);
+                user = User.createNew(serverIp, serverPort, getFilesDir().toPath(), username);
             else
-                user = User.loadExisting(serverIp, serverPort, null /* TODO */, username);
+                user = User.loadExisting(serverIp, serverPort, getFilesDir().toPath(), username);
         } catch (ServerException e) {
             errorMessageStrategy.showError("Connection interrupted with the server.");
-            Log.wtf("User Create", e);
+            Log.e("User Create", String.valueOf(e));
         } catch (FileSystemException e) {
             errorMessageStrategy.showError("Can't access the Android File System.");
-            Log.wtf("User Create", e);
+            Log.e("User Create", String.valueOf(e));
         } catch (UnknownHostException e) {
             errorMessageStrategy.showError("Couldn't establish a connection with the server.");
-            Log.wtf("User Create", e);
+            Log.e("User Create", String.valueOf(e));
         }
 
         return user;

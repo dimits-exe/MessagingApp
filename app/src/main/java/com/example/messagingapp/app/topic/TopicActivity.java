@@ -11,6 +11,7 @@ import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.util.strategies.MinorErrorMessageStrategy;
 import com.example.messagingapp.eventDeliverySystem.User;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 /**
  * An activity which displays messages from a given {@link Topic}.
@@ -50,13 +51,13 @@ public class TopicActivity extends AppCompatActivity {
     }
 
     private void setUpListeners() {
-        Button addFilesButton = findViewById(R.id.topic_add_file_button);
+        FloatingActionButton addFilesButton = findViewById(R.id.topic_add_file_button);
         addFilesButton.setOnClickListener(view -> presenter.addFile());
 
-        Button sendMessageButton = findViewById(R.id.topic_send_message_button);
+        FloatingActionButton sendMessageButton = findViewById(R.id.topic_send_message_button);
         sendMessageButton.setOnClickListener(view -> sendTextMessage());
 
-        Button takePhotoButton = findViewById(R.id.topic_take_photo_button);
+        FloatingActionButton takePhotoButton = findViewById(R.id.topic_take_photo_button);
         takePhotoButton.setOnClickListener(view -> presenter.takeAndSendPhoto());
     }
 
