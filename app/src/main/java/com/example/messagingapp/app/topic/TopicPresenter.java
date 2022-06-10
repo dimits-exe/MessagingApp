@@ -24,30 +24,10 @@ class TopicPresenter {
         this.topicName = topicName;
     }
 
-    public void addFile() {
-        File file = null;
+    public void trySendFile(File file) {
+        if(file == null)
+            return;
 
-        try {
-            file = chooseFile();
-        } catch (IOException ioe){
-            errorMessageStrategy.showError("Error on retrieving file");
-            Log.wtf("Topic Send File", ioe);
-        }
-
-        if(file != null)
-            trySendFile(file);
-    }
-
-    public void sendText(String text) {
-        //TODO: implement
-    }
-
-    public void takeAndSendPhoto() {
-       File photo = takePhoto();
-       trySendFile(photo);
-    }
-
-    private void trySendFile(File file) {
         try {
             sendFile(file);
         } catch (IOException ioe) {
@@ -56,17 +36,22 @@ class TopicPresenter {
         }
     }
 
-    private File takePhoto() {
+    public void sendText(String text) {
         //TODO: implement
-        return null;
+    }
+
+    public void takeAndSendPhoto() {
+        File photo = takePhoto();
+        trySendFile(photo);
     }
 
     private void sendFile(File file) throws IOException {
         //TODO: implement
     }
 
-    private File chooseFile() throws IOException {
+    private File takePhoto() {
         //TODO: implement
         return null;
     }
+
 }
