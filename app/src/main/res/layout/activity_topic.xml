@@ -15,7 +15,7 @@
             android:id="@+id/appbar"
 
             android:layout_width="match_parent"
-            android:layout_height="134dp">
+            android:layout_height="wrap_content">
 
             <com.google.android.material.appbar.CollapsingToolbarLayout
                 android:layout_width="match_parent"
@@ -60,25 +60,23 @@
 
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="593dp"
+            android:layout_height="498dp"
 
 
             android:background="#00421010"
             app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
             tools:ignore="SpeakableTextPresentCheck">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/fragmentContainerView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                tools:context=".topic.TopicActivity">
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
+                android:layout_height="wrap_content" />
         </androidx.core.widget.NestedScrollView>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="117dp"
+            android:layout_height="0dp"
+            android:layout_weight = "1"
             android:background="#8181ED"
             android:backgroundTint="#F9F9FA"
             android:backgroundTintMode="multiply"
@@ -92,7 +90,6 @@
                 android:id="@+id/topic_add_file_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:clickable="true"
                 app:backgroundTint="@color/purple_500"
                 app:srcCompat="@drawable/plus_icon"
@@ -103,13 +100,14 @@
                 android:id="@+id/topic_message_input"
                 android:layout_width="208dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:background="@drawable/rounded_edit_text"
                 android:backgroundTint="#F4F3F3"
                 android:backgroundTintMode="src_atop"
                 android:ems="10"
+                android:hint="@string/topic_description_send_message"
                 android:importantForAutofill="no"
                 android:inputType="textPersonName"
+                android:minHeight="48dp"
                 android:text="@string/empty_string"
                 android:textAlignment="center"
                 tools:ignore="LabelFor" />
@@ -118,7 +116,6 @@
                 android:id="@+id/topic_send_message_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:clickable="true"
                 app:fabCustomSize="30dp"
                 app:srcCompat="@android:drawable/ic_menu_send"
@@ -129,7 +126,6 @@
                 android:id="@+id/topic_take_photo_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:clickable="true"
                 app:srcCompat="@drawable/android_camera"
                 android:focusable="true"
