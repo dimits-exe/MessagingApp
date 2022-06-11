@@ -131,7 +131,9 @@ public class User implements Serializable {
 	public void switchToExistingProfile(String profileName)
 	        throws ServerException, FileSystemException {
 		currentProfile = profileFileSystem.loadProfile(profileName);
-		consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
+		// TODO: remove comment
+		// TODO: after removing, make consumer connect to broker on a separate thread, not on main
+		// consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
 	}
 
 	/**
