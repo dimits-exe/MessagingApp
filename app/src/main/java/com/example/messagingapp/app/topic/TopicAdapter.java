@@ -40,7 +40,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
 
     public TopicAdapter(TopicPresenter presenter) {
         this.presenter = presenter;
-        currentPosts = presenter.getUserPosts();
+        currentPosts = presenter.getProfilePosts();
         setHasStableIds(false);
     }
 
@@ -66,7 +66,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
 
     @Override
     public void onBindViewHolder(@NonNull TopicViewHolder holder, int position) {
-        List<Post> freshPosts = presenter.getUserPosts();
+        List<Post> freshPosts = presenter.getProfilePosts();
         if (!currentPosts.equals(freshPosts)) {
             updatePosts(freshPosts);
         }
@@ -74,7 +74,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
         Post post = currentPosts.get(position);
 
         holder.linearLayout.setGravity(
-                post.getPostInfo().getPosterName().equals(presenter.getUserName())
+                post.getPostInfo().getPosterName().equals(presenter.getProfileName())
                 ? Gravity.END
                 : Gravity.START);
 

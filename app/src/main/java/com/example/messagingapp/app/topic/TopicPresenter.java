@@ -29,12 +29,22 @@ class TopicPresenter {
         this.topicName = topicName;
     }
 
-    public String getUserName() {
+    /**
+     * Returns the name of the current Profile.
+     *
+     * @return the name
+     */
+    public String getProfileName() {
         return user.getCurrentProfile().getName();
     }
 
-    public List<Post> getUserPosts() {
-        return user.getCurrentProfile().getTopics().get(topicName).getAllPosts();
+    /**
+     * Returns all the Posts of the current Profile for the Topic this presenter is responsible for.
+     *
+     * @return a list with the Posts
+     */
+    public List<Post> getProfilePosts() {
+        return user.getCurrentProfile().getTopic(topicName).getAllPosts();
     }
 
     public File getTempFileDir(){

@@ -17,10 +17,6 @@ public class TopicListActivity extends AppCompatActivity {
 
     public static final String ARG_USER = "USER";
 
-    // TODO: maybe convert to local variable
-    private RecyclerView recyclerView;
-    private TopicListAdapter adapter;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,9 +32,9 @@ public class TopicListActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        recyclerView = findViewById(R.id.topiclist_recycler_view);
+        RecyclerView recyclerView = findViewById(R.id.topiclist_recycler_view);
 
-        adapter = new TopicListAdapter(user, topicName -> {
+        TopicListAdapter adapter = new TopicListAdapter(user.getCurrentProfile(), topicName -> {
             Log.e("TLA", "switching to showing " + topicName);
             Intent intent = new Intent(this, TopicActivity.class);
             intent.putExtra(TopicActivity.ARG_USER, user);
