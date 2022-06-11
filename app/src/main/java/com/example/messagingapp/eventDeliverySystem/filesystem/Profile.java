@@ -1,5 +1,6 @@
 package com.example.messagingapp.eventDeliverySystem.filesystem;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,7 +55,9 @@ public class Profile implements Serializable {
 		List<Post> posts = new LinkedList<>();
 		posts.add(Post.fromText("first message", this.name));
 		posts.add(Post.fromText("second message", this.name));
-		posts.add(Post.fromText("third message", this.name));
+		posts.add(Post.fromText("third message", "lmao"));
+		posts.add(Post.fromText("fourth message", this.name));
+		posts.add(Post.fromText("fifth message", "lmao"));
 		topics.get("topic1").post(posts);
 	}
 

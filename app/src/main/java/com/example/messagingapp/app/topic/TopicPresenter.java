@@ -4,9 +4,11 @@ import android.util.Log;
 
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.eventDeliverySystem.User;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A class handling the logic behind the {@link TopicActivity}'s UI.
@@ -22,6 +24,14 @@ class TopicPresenter {
         this.errorMessageStrategy = errorMessageStrategy;
         this.user = user;
         this.topicName = topicName;
+    }
+
+    public String getUserName() {
+        return user.getCurrentProfile().getName();
+    }
+
+    public List<Post> getUserPosts() {
+        return user.getCurrentProfile().getTopics().get(topicName).getAllPosts();
     }
 
     public void trySendFile(File file) {

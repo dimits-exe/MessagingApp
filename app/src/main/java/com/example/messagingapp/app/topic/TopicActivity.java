@@ -7,6 +7,7 @@ import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.util.strategies.MinorErrorMessageStrategy;
@@ -24,22 +25,27 @@ import java.io.File;
 public class TopicActivity extends AppCompatActivity {
 
     public static final String ARG_USER = "USER";
-    public static final String ARG_TOPIC = "TOPIC";
+    public static final String ARG_TOPIC_NAME = "TOPIC";
 
     private TopicPresenter presenter;
 
     private EditText messageTextArea;
+
+    private RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_topic);
 
-        String topicName = getIntent().getStringExtra(ARG_TOPIC);
+        String topicName = getIntent().getStringExtra(ARG_TOPIC_NAME);
 
         setUpPresenter(topicName);
         setUpFields(topicName);
         setUpListeners();
+
+        recyclerView = findViewById(R.id.topic_recycler_view);
+        recyclerView.setAdapter(new TopicAdapter(presenter));
     }
 
     private void setUpPresenter(String topicName) {
