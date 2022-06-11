@@ -35,10 +35,11 @@ public class LoginActivity extends AppCompatActivity {
     public static final String ARG_PORT = "PORT";
 
     private final IErrorMessageStrategy errorMessageStrategy =
-            new SeriousErrorMessageStrategy(this.getBaseContext(), R.string.ok);
+            new SeriousErrorMessageStrategy(this, R.string.ok);
 
     private TextInputLayout usernameEditText;
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +56,7 @@ public class LoginActivity extends AppCompatActivity {
      *
      * @param newUser {@code true} to create a new user, {@code false} to log in as an existing user
      */
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void onSubmit(boolean newUser) {
         String username = Objects.requireNonNull(usernameEditText.getEditText())
                 .getText().toString();
@@ -72,6 +74,7 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private User tryCreateUser(boolean newUser, String serverIp, int serverPort, String username) {
         try {
             Path userDir = getFilesDir().toPath().resolve("users");

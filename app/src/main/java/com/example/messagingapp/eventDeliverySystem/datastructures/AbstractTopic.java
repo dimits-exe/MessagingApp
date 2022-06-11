@@ -129,8 +129,13 @@ public abstract class AbstractTopic implements Serializable {
 				for (int g = 0; g < d; g++)
 					e[f] ^= (b[(d * f) + g]);
 
-			final BigInteger h = new BigInteger(e);
-			return h.intValueExact();
+			// compress to int
+			int value = 0;
+			for (int i = 0; i < 4; i++) {
+				int shift = (4 - 1 - i) * 8;
+				value += (e[i] & 0x000000FF) << shift;
+			}
+			return value;
 
 		} catch (NoSuchAlgorithmException | ArithmeticException e) {
 			throw new RuntimeException(e);

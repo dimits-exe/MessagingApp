@@ -131,7 +131,7 @@ public class User implements Serializable {
 	public void switchToExistingProfile(String profileName)
 	        throws ServerException, FileSystemException {
 		currentProfile = profileFileSystem.loadProfile(profileName);
-		consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
+		// consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
 	}
 
 	/**

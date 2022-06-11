@@ -22,6 +22,7 @@ public class SeriousErrorMessageStrategy implements IErrorMessageStrategy {
      * @param okMessageResource the id of the string resource corresponding to the app's ok message
      */
     public SeriousErrorMessageStrategy(Context context, int okMessageResource) {
+        assert context != null;
         this.context = context;
         this.okMessageResource = okMessageResource;
     }
