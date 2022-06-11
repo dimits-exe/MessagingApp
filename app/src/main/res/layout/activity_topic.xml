@@ -58,48 +58,40 @@
             </com.google.android.material.appbar.CollapsingToolbarLayout>
         </com.google.android.material.appbar.AppBarLayout>
 
-        <androidx.core.widget.NestedScrollView
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/topic_recycler_view"
             android:layout_width="match_parent"
-            android:layout_height="498dp"
-
-
-            android:background="#00421010"
-            app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
-            tools:ignore="SpeakableTextPresentCheck">
-
-            <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/fragmentContainerView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </androidx.core.widget.NestedScrollView>
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            app:layoutManager="LinearLayoutManager"/>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight = "1"
+            android:layout_height="wrap_content"
             android:background="#8181ED"
             android:backgroundTint="#F9F9FA"
             android:backgroundTintMode="multiply"
+            android:divider="@drawable/divider"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:showDividers="middle"
-            android:divider="@drawable/divider"
-            >
+            android:padding="10dp"
+            android:showDividers="middle">
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/topic_add_file_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                app:backgroundTint="@color/purple_500"
-                app:srcCompat="@drawable/plus_icon"
+                android:contentDescription="@string/topic_description_add_file"
                 android:focusable="true"
-                android:contentDescription="@string/topic_description_add_file" />
+                app:backgroundTint="@color/purple_500"
+                app:srcCompat="@drawable/plus_icon" />
 
             <EditText
                 android:id="@+id/topic_message_input"
-                android:layout_width="208dp"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:background="@drawable/rounded_edit_text"
                 android:backgroundTint="#F4F3F3"
                 android:backgroundTintMode="src_atop"
@@ -117,19 +109,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                app:fabCustomSize="30dp"
-                app:srcCompat="@android:drawable/ic_menu_send"
+                android:contentDescription="@string/topic_description_send_message"
                 android:focusable="true"
-                android:contentDescription="@string/topic_description_send_message" />
+                app:srcCompat="@android:drawable/ic_menu_send" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/topic_take_photo_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                app:srcCompat="@drawable/android_camera"
+                android:contentDescription="@string/topic_description_take_photo"
                 android:focusable="true"
-                android:contentDescription="@string/topic_description_take_photo" />
+                app:srcCompat="@drawable/android_camera" />
         </LinearLayout>
 
     </LinearLayout>

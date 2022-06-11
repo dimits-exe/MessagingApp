@@ -2,6 +2,7 @@ package com.example.messagingapp.app.topiclist;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -9,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.createtopic.CreateTopicActivity;
+import com.example.messagingapp.app.topic.TopicActivity;
 import com.example.messagingapp.eventDeliverySystem.User;
 
 public class TopicListActivity extends AppCompatActivity {
@@ -36,8 +38,12 @@ public class TopicListActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.topiclist_recycler_view);
 
-        adapter = new TopicListAdapter(user.getCurrentProfile());
-        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+        adapter = new TopicListAdapter(user, topicName -> {
+            Log.e("TLA", "switching to showing " + topicName);
+            Intent intent = new Intent(this, TopicActivity.class);
+            intent.putExtra(TopicActivity.ARG_USER, user);
+            intent.putExtra(TopicActivity.ARG_TOPIC_NAME, topicName);
+            startActivity(intent);
         });
         recyclerView.setAdapter(adapter);
         recyclerView.setHasFixedSize(true);
