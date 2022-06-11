@@ -2,14 +2,12 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/topic_plaintext_linearlayout"
+    android:id="@+id/message_image_linearlayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/topic_plaintext_text"
+    <ImageView
+        android:id="@+id/message_image_imageview"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        tools:text="lorem ipsum" />
-
+        android:layout_height="wrap_content" />
 </LinearLayout>

@@ -121,14 +121,14 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
         static PlainTextTopicViewHolder fromParent(@NonNull ViewGroup parent) {
             return new PlainTextTopicViewHolder(LayoutInflater
                     .from(parent.getContext())
-                    .inflate(R.layout.activity_topic_plaintext, parent, false));
+                    .inflate(R.layout.message_text, parent, false));
         }
 
         private final TextView textView;
 
         public PlainTextTopicViewHolder(View view) {
-            super(view, view.findViewById(R.id.topic_plaintext_linearlayout));
-            textView = view.findViewById(R.id.topic_plaintext_text);
+            super(view, view.findViewById(R.id.message_text_linearlayout));
+            textView = view.findViewById(R.id.message_text_text);
         }
     }
 
@@ -137,14 +137,14 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
         static ImageTopicViewHolder fromParent(@NonNull ViewGroup parent) {
             return new ImageTopicViewHolder(LayoutInflater
                     .from(parent.getContext())
-                    .inflate(R.layout.activity_topic_image, parent, false));
+                    .inflate(R.layout.message_image, parent, false));
         }
 
         private final ImageView imageView;
 
         public ImageTopicViewHolder(View view) {
-            super(view, view.findViewById(R.id.topic_image_linearlayout));
-            imageView = view.findViewById(R.id.topic_image_imageview);
+            super(view, view.findViewById(R.id.message_image_linearlayout));
+            imageView = view.findViewById(R.id.message_image_imageview);
         }
     }
 
