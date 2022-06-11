@@ -1,5 +1,6 @@
 package com.example.messagingapp.eventDeliverySystem.filesystem;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -32,7 +33,7 @@ public class TopicFileSystem implements Serializable {
 	private static final String HEAD                 = "HEAD";
 	private static final String TOPIC_META_EXTENSION = ".meta";
 
-	private final Path topicsRootDirectory;
+	private final File topicsRootDirectory;
 
 	/**
 	 * Constructs a new Topic File System for a given root directory.
@@ -41,7 +42,7 @@ public class TopicFileSystem implements Serializable {
 	 *                            sub-directories correspond to different Topics
 	 */
 	public TopicFileSystem(Path topicsRootDirectory) {
-		this.topicsRootDirectory = topicsRootDirectory;
+		this.topicsRootDirectory = topicsRootDirectory.toFile();
 	}
 
 	/**
@@ -54,11 +55,11 @@ public class TopicFileSystem implements Serializable {
 	 */
 	public Stream<String> getTopicNames() throws FileSystemException {
 		try {
-			return Files.list(topicsRootDirectory)
+			return Files.list(getRoot())
 			        .filter(Files::isDirectory)
 			        .map(path -> path.getFileName().toString());
 		} catch (IOException e) {
-			throw new FileSystemException(topicsRootDirectory, e);
+			throw new FileSystemException(getRoot(), e);
 		}
 	}
 
@@ -165,8 +166,12 @@ public class TopicFileSystem implements Serializable {
 
 	// ==================== HELPERS FOR PATH ====================
 
+	private Path getRoot() {
+		return topicsRootDirectory.toPath();
+	}
+
 	private Path resolveRoot(String topicName) {
-		return TopicFileSystem.resolve(topicsRootDirectory, topicName);
+		return TopicFileSystem.resolve(getRoot(), topicName);
 	}
 
 	private static Path resolve(Path directory, String filename) {
