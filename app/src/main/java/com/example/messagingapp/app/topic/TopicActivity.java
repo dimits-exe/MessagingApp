@@ -1,13 +1,17 @@
 package com.example.messagingapp.app.topic;
 
+import android.annotation.SuppressLint;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.EditText;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.core.content.FileProvider;
 
 import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.util.strategies.MinorErrorMessageStrategy;
@@ -15,10 +19,9 @@ import com.example.messagingapp.eventDeliverySystem.User;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.io.File;
-
 /**
- * An activity which displays messages from a given {@link Topic}.
+ * An activity which displays messages from a given {@link Topic}
+ * and allows the user to send its own.
  *
  * @author Dimitris Tsirmpas
  */
@@ -28,10 +31,11 @@ public class TopicActivity extends AppCompatActivity {
     public static final String ARG_TOPIC_NAME = "TOPIC";
 
     private TopicPresenter presenter;
-
     private EditText messageTextArea;
 
-    private RecyclerView recyclerView;
+    private Uri tempFileUri;
+    private ActivityResultLauncher<Uri> photoLauncher;
+    private ActivityResultLauncher<Uri> videoLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,15 +46,17 @@ public class TopicActivity extends AppCompatActivity {
 
         setUpPresenter(topicName);
         setUpFields(topicName);
+        setUpLaunchers();
         setUpListeners();
 
-        recyclerView = findViewById(R.id.topic_recycler_view);
-        recyclerView.setAdapter(new TopicAdapter(presenter));
+        ((RecyclerView) findViewById(R.id.topic_recycler_view))
+                .setAdapter(new TopicAdapter(presenter));
     }
 
     private void setUpPresenter(String topicName) {
         User user = (User) getIntent().getSerializableExtra(ARG_USER);
-        presenter = new TopicPresenter(new MinorErrorMessageStrategy(getBaseContext()), user, topicName);
+        presenter = new TopicPresenter(new MinorErrorMessageStrategy(getBaseContext()),
+                getFilesDir(), user, topicName);
     }
 
     private void setUpFields(String topicName) {
@@ -59,19 +65,72 @@ public class TopicActivity extends AppCompatActivity {
         messageTextArea = findViewById(R.id.topic_message_input);
     }
 
+    private void setUpLaunchers() {
+        tempFileUri = FileProvider.getUriForFile(this,
+                getApplicationContext().getPackageName() + ".provider", presenter.getTempFileDir());
+
+        photoLauncher = registerForActivityResult(
+                new ActivityResultContracts.TakePicture(), result -> {
+                    if(result)
+                        presenter.sendFile(tempFileUri);
+                });
+
+        videoLauncher = registerForActivityResult(
+                new ActivityResultContracts.CaptureVideo(), result -> {
+                    if(result)
+                        presenter.sendFile(tempFileUri);
+                });
+    }
+
     private void setUpListeners() {
+        setUpCameraListener();
+        setUpFileListener();
+        setUpMessageListener();
+    }
+
+    private void setUpFileListener() {
         ActivityResultLauncher<String> fileLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
-                uri -> presenter.trySendFile(new File(uri.getPath())));
+                presenter::sendFile);
 
         FloatingActionButton addFilesButton = findViewById(R.id.topic_add_file_button);
         addFilesButton.setOnClickListener(view -> fileLauncher.launch("file/*"));
+    }
 
+    @SuppressLint("NonConstantResourceId")
+    private void setUpCameraListener() {
+        FloatingActionButton takePhotoButton = findViewById(R.id.topic_take_photo_button);
+        takePhotoButton.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(this, v);
+
+            popup.setOnMenuItemClickListener(menuItem -> {
+                switch(menuItem.getItemId()) {
+                    case R.id.topic_menu_item_photo:
+                        takePhoto();
+                        return true;
+                    case R.id.topic_menu_item_video:
+                        takeVideo();
+                        return true;
+                    default:
+                        return false;
+                }
+            });
+            popup.inflate(R.menu.camera_menu);
+            popup.show();
+        });
+    }
+
+    private void takePhoto() {
+        photoLauncher.launch(tempFileUri);
+    }
+
+    private void takeVideo() {
+        videoLauncher.launch(tempFileUri);
+    }
+
+    private void setUpMessageListener() {
         FloatingActionButton sendMessageButton = findViewById(R.id.topic_send_message_button);
         sendMessageButton.setOnClickListener(view -> sendTextMessage());
-
-        FloatingActionButton takePhotoButton = findViewById(R.id.topic_take_photo_button);
-        takePhotoButton.setOnClickListener(view -> presenter.takeAndSendPhoto());
     }
 
     private void sendTextMessage() {
