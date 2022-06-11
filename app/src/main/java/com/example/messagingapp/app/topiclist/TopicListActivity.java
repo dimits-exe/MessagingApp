@@ -12,16 +12,19 @@ import com.example.messagingapp.app.createtopic.CreateTopicActivity;
 import com.example.messagingapp.eventDeliverySystem.User;
 
 public class TopicListActivity extends AppCompatActivity {
+
     public static final String ARG_USER = "USER";
+
+    // TODO: maybe convert to local variable
+    private RecyclerView recyclerView;
+    private TopicListAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_topic_list);
 
-        Intent old = getIntent();
-        User user = (User) old.getSerializableExtra(ARG_USER);
-
+        User user = (User) getIntent().getSerializableExtra(ARG_USER);
 
         ((TextView) findViewById(R.id.topiclist_username)).setText(user.getCurrentProfile().getName());
 
@@ -31,9 +34,19 @@ public class TopicListActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        RecyclerView recyclerView = findViewById(R.id.topiclist_recycler_view);
-        recyclerView.setAdapter(new TopicPreviewAdapter(user.getCurrentProfile()));
+        recyclerView = findViewById(R.id.topiclist_recycler_view);
+
+        adapter = new TopicListAdapter(user.getCurrentProfile());
+        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+        });
+        recyclerView.setAdapter(adapter);
         recyclerView.setHasFixedSize(true);
     }
 
+    // TODO: figure out if this works lmao
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ((RecyclerView) findViewById(R.id.topiclist_recycler_view)).getAdapter().notifyDataSetChanged();
+    }
 }

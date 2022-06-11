@@ -9,23 +9,23 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.messagingapp.app.R;
-import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 import com.example.messagingapp.eventDeliverySystem.filesystem.Profile;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class TopicPreviewAdapter extends RecyclerView.Adapter<TopicPreviewAdapter.TopicPreviewViewHolder> {
+class TopicListAdapter extends RecyclerView.Adapter<TopicListAdapter.TopicPreviewViewHolder> {
 
     private final Profile profile;
     private final List<String> topicNames;
 
-    public TopicPreviewAdapter(Profile profile) {
+    public TopicListAdapter(Profile profile) {
         this.profile = profile;
-        topicNames = profile.getTopics()
+        topicNames = profile
+                .getTopics()
+                .keySet()
                 .stream()
-                .map(Topic::getName)
                 .sorted(Comparator.naturalOrder())
                 .collect(Collectors.toList());
     }
