@@ -17,7 +17,10 @@ import com.example.messagingapp.eventDeliverySystem.filesystem.FileSystemExcepti
 import com.example.messagingapp.eventDeliverySystem.server.ServerException;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
@@ -27,6 +30,7 @@ import java.util.Objects;
  * @author Dimitris Tsirmpas
  */
 public class LoginActivity extends AppCompatActivity {
+
     public static final String ARG_IP = "IP";
     public static final String ARG_PORT = "PORT";
 
@@ -35,7 +39,6 @@ public class LoginActivity extends AppCompatActivity {
 
     private TextInputLayout usernameEditText;
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,10 +51,10 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * Collects user parameters, creates a user instance, and if successful, launches the main app.
-     * @param newUser true if the user is created now, false otherwise
+     * Attempts to create a new User instance and launches the main app on successful creation.
+     *
+     * @param newUser {@code true} to create a new user, {@code false} to log in as an existing user
      */
-    @RequiresApi(api = Build.VERSION_CODES.O)
     public void onSubmit(boolean newUser) {
         String username = Objects.requireNonNull(usernameEditText.getEditText())
                 .getText().toString();
@@ -62,20 +65,29 @@ public class LoginActivity extends AppCompatActivity {
 
         User user = tryCreateUser(newUser, serverIp, serverPort, username);
 
-        if(user != null) {
-            toNextActivity(user);
+        if (user != null) {
+            Intent intent = new Intent(this, TopicListActivity.class);
+            intent.putExtra(TopicListActivity.ARG_USER, user);
+            startActivity(intent);
         }
-
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private User tryCreateUser(boolean newUser, String serverIp, int serverPort, String username) {
-        User user = null;
         try {
+            Path userDir = getFilesDir().toPath().resolve("users");
+            if (!Files.exists(userDir)) {
+                try {
+                    Files.createDirectory(userDir);
+                } catch (IOException e) {
+                    throw new FileSystemException(userDir, e);
+                }
+            }
+
             if (newUser)
-                user = User.createNew(serverIp, serverPort, getFilesDir().toPath(), username);
+                return User.createNew(serverIp, serverPort, userDir, username);
             else
-                user = User.loadExisting(serverIp, serverPort, getFilesDir().toPath(), username);
+                return User.loadExisting(serverIp, serverPort, userDir, username);
+
         } catch (ServerException e) {
             errorMessageStrategy.showError("Connection interrupted with the server.");
             Log.e("User Create", String.valueOf(e));
@@ -87,12 +99,6 @@ public class LoginActivity extends AppCompatActivity {
             Log.e("User Create", String.valueOf(e));
         }
 
-        return user;
-    }
-
-    private void toNextActivity(User user) {
-        Intent intent = new Intent(this, TopicListActivity.class);
-        intent.putExtra(TopicListActivity.ARG_USER, user);
-        startActivity(intent);
+        return null;
     }
 }
