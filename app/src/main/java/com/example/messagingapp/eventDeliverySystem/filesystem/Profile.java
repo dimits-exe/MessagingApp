@@ -3,11 +3,10 @@ package com.example.messagingapp.eventDeliverySystem.filesystem;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
 import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
@@ -44,16 +43,19 @@ public class Profile implements Serializable {
 		addTopic("topic2");
 		addTopic("topic3");
 		addTopic("topic4");
-		addTopic("topic5");
-		addTopic("topic6");
 
 		markUnread("topic1");
 		markUnread("topic1");
 		markUnread("topic2");
 		markUnread("topic2");
 		markUnread("topic2");
-		markUnread("topic2");
 		markUnread("topic4");
+
+		List<Post> posts = new LinkedList<>();
+		posts.add(Post.fromText("first message", this.name));
+		posts.add(Post.fromText("second message", this.name));
+		posts.add(Post.fromText("third message", this.name));
+		topics.get("topic1").post(posts);
 	}
 
 	/**
@@ -66,12 +68,25 @@ public class Profile implements Serializable {
 	}
 
 	/**
+	 * Returns a Topic of this Profile.
+	 * @param topicName the name of the Topic
+	 *
+	 * @return the Topic with that name
+	 *
+	 * @throws NoSuchElementException if no Topic with the given name exists
+	 */
+	public Topic getTopic(String topicName) {
+		assertTopicExists(topicName);
+		return topics.get(topicName);
+	}
+
+	/**
 	 * Returns this Profile's topics.
 	 *
 	 * @return the topics
 	 */
-	public Set<Topic> getTopics() {
-		return new HashSet<>(topics.values());
+	public Map<String, Topic> getTopics() {
+		return new HashMap<>(topics);
 	}
 
 	/**
@@ -114,11 +129,8 @@ public class Profile implements Serializable {
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public void updateTopic(String topicName, List<Post> posts) {
-		final Topic topic = topics.get(topicName);
-		if (topic == null)
-			throw new NoSuchElementException("No Topic with name " + topicName + " found");
-
-		topic.post(posts);
+		assertTopicExists(topicName);
+		topics.get(topicName).post(posts);
 	}
 
 	/**
@@ -129,8 +141,8 @@ public class Profile implements Serializable {
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public void removeTopic(String topicName) {
-		if (topics.remove(topicName) == null)
-			throw new NoSuchElementException("No Topic with name " + topicName + " found");
+		assertTopicExists(topicName);
+		topics.remove(topicName);
 	}
 
 	/**
@@ -166,5 +178,10 @@ public class Profile implements Serializable {
 	public String toString() {
 		final List<Object> topicNames = Arrays.asList(topics.keySet().toArray());
 		return String.format("Profile [name=%s, topics=%s]", name, topicNames);
+	}
+
+	private void assertTopicExists(String topicName) {
+		if (!topics.containsKey(topicName))
+			throw new NoSuchElementException("No Topic with name " + topicName + " found");
 	}
 }
