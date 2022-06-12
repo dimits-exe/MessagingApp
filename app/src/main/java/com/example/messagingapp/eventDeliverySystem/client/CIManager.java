@@ -10,6 +10,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
@@ -62,25 +65,39 @@ class CIManager implements Serializable {
 	}
 
 	private ConnectionInfo getCIForTopic(String topicName) throws ServerException {
-		try (Socket socket = new Socket(defaultBrokerIP, defaultBrokerPort)) {
+		ConnectionInfo info;
 
-			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			oos.writeObject(new Message(BROKER_DISCOVERY, topicName));
-			oos.flush();
-			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+		Callable<ConnectionInfo> socketThread = () -> {
+			try (Socket socket = new Socket(defaultBrokerIP, defaultBrokerPort)) {
 
-			ConnectionInfo actualBrokerCIForTopic;
-			try {
-				actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
-			} catch (final ClassNotFoundException e) {
-				e.printStackTrace();
-				actualBrokerCIForTopic = null;
+				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.writeObject(new Message(BROKER_DISCOVERY, topicName));
+				oos.flush();
+				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+				ConnectionInfo actualBrokerCIForTopic;
+				try {
+					actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
+				} catch (final ClassNotFoundException e) {
+					e.printStackTrace();
+					actualBrokerCIForTopic = null;
+				}
+
+				return actualBrokerCIForTopic;
+
+			} catch (final IOException e) {
+				throw new ServerException(e);
 			}
+		};
 
-			return actualBrokerCIForTopic;
-
-		} catch (final IOException e) {
-			throw new ServerException(e);
+		try {
+			info = new FutureTask<>(socketThread).get();
+		} catch (ExecutionException e) {
+			throw new ServerException(new IOException(e)); // dont worry about it
+		} catch (InterruptedException ie){
+			throw new RuntimeException(ie);
 		}
+
+		return info;
 	}
 }

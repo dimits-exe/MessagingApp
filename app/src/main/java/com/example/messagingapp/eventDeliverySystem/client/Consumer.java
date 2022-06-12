@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import com.example.messagingapp.eventDeliverySystem.User.UserSub;
 import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
@@ -25,6 +26,7 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 import com.example.messagingapp.eventDeliverySystem.server.Broker;
 import com.example.messagingapp.eventDeliverySystem.server.ServerException;
 import com.example.messagingapp.eventDeliverySystem.thread.PullThread;
+import com.example.messagingapp.eventDeliverySystem.thread.PushThread;
 import com.example.messagingapp.eventDeliverySystem.util.LG;
 import com.example.messagingapp.eventDeliverySystem.util.Subscriber;
 
@@ -148,26 +150,31 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 	private void listenForTopic(Topic topic) throws ServerException {
 		topic.subscribe(this);
 
-		Socket       socket    = null;
+		final Socket[] socket = {null};
 		final String topicName = topic.getName();
 
 		final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
-		try {
-			socket = new Socket(ci.getAddress(), ci.getPort()); // 'socket' closes at close()
-			topicManager.addSocket(topic, socket);
+		// run thread
+		Runnable socketThread = () -> {
+			try{
+				socket[0] = new Socket(ci.getAddress(), ci.getPort()); // 'socket' closes at close()
+				topicManager.addSocket(topic, socket[0]);
 
-			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			oos.flush();
-			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+				final ObjectOutputStream oos = new ObjectOutputStream(socket[0].getOutputStream());
+				oos.flush();
+				final ObjectInputStream ois = new ObjectInputStream(socket[0].getInputStream());
 
-			oos.writeObject(new Message(INITIALISE_CONSUMER, topic.getToken()));
+				oos.writeObject(new Message(INITIALISE_CONSUMER, topic.getToken()));
 
-			new PullThread(ois, topic).start();
+				new PullThread(ois, topic).start();
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
+		// TODO: throw server exception somehow
+		}; //socket thread
 
-		} catch (final IOException e) {
-			throw new ServerException(topicName, e);
-		}
+		new Thread(socketThread).start();
 	}
 
 	@Override

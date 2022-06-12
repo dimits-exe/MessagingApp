@@ -1,6 +1,8 @@
 package com.example.messagingapp.eventDeliverySystem.filesystem;
 
-import java.io.File;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,9 +10,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
-import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
-import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 
 /**
  * A data structure holding information about a user and their subscribed
