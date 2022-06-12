@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * A client-side process which is responsible for listening for a set of Topics
@@ -177,11 +179,13 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 		}; //socket thread
 
 		try {
-			new FutureTask<>(socketThread).get();
+			new FutureTask<>(socketThread).get(5L, TimeUnit.SECONDS);
 		} catch (ExecutionException e) {
 			throw new ServerException(new IOException(e)); // dont worry about it
 		} catch (InterruptedException ie){
 			throw new RuntimeException(ie);
+		} catch (TimeoutException e) {
+			throw new ServerException(new IOException("Server connection timed out"));
 		}
 	}
 

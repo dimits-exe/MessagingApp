@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
@@ -91,11 +93,13 @@ class CIManager implements Serializable {
 		};
 
 		try {
-			info = new FutureTask<>(socketThread).get();
+			info = new FutureTask<>(socketThread).get(5L, TimeUnit.SECONDS);
 		} catch (ExecutionException e) {
 			throw new ServerException(new IOException(e)); // dont worry about it
 		} catch (InterruptedException ie){
 			throw new RuntimeException(ie);
+		} catch (TimeoutException e) {
+			throw new ServerException(new IOException("Connection to server timed out"));
 		}
 
 		return info;
