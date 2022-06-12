@@ -69,8 +69,17 @@ public class VideoPlayerActivity extends AppCompatActivity {
     }
 
 
-    private File generateTempFile(){
-        return new File(getFilesDir(), "tempVideo");
+    private File generateTempFile() {
+        File file = null;
+        try {
+            file = File.createTempFile("temp", "tempVideo", getFilesDir());
+            file.deleteOnExit();
+        } catch (IOException e) {
+            errorMessageStrategy.showError("Error while playing video");
+            Log.e(TAG, "Create temp file", e);
+            System.exit(-1);
+        }
+        return file;
     }
 
     private void writeToFile(File tempFile, byte[] video) {

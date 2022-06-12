@@ -9,8 +9,6 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -19,6 +17,8 @@ import java.util.List;
  * @author Dimitris Tsirmpas
  */
 class TopicPresenter {
+    private static final String TAG = "TopicPresenter";
+
     private final IErrorMessageStrategy errorMessageStrategy;
     private final File baseDir;
     private final User user;
@@ -50,7 +50,15 @@ class TopicPresenter {
     }
 
     public synchronized File getTempFileDir(){
-        return new File(baseDir, "temp_file");
+        File file = null;
+        try {
+            file = File.createTempFile("temp","temp_file", baseDir);
+            file.deleteOnExit();
+        } catch (IOException e) {
+            Log.wtf(TAG, e);
+            System.exit(-1);
+        }
+        return file;
     }
 
     public void sendFile(Uri fileUri) {
@@ -59,13 +67,13 @@ class TopicPresenter {
 
             boolean success = getTempFileDir().delete();
             if(!success)
-                Log.e("Topic", "Temp file not deleted");
+                Log.e(TAG, "Temp file not deleted");
         }
     }
 
     public void sendText(String text) {
         //TODO: implement
-        Log.i("Placeholder", "Message " + text + " sent");
+        Log.i(TAG, "Message " + text + " sent");
     }
 
     private void trySendFile(File file) {
@@ -76,13 +84,13 @@ class TopicPresenter {
             sendFile(file);
         } catch (IOException ioe) {
             errorMessageStrategy.showError("Error on sending file");
-            Log.wtf("Topic Send File", ioe);
+            Log.e(TAG, "send file", ioe);
         }
     }
 
     private void sendFile(File file) throws IOException {
         //TODO: implement
-        Log.i("Placeholder", "File " + file.toString() + " sent");
+        Log.i(TAG,"File " + file.toString() + " sent");
     }
 
 }
