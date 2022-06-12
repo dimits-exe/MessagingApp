@@ -1,6 +1,9 @@
 package com.example.messagingapp.app.topic;
 
+import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.ThumbnailUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -42,11 +45,13 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
         // ...
     }};
 
+    private final ITopicView topicView;
     private final TopicPresenter presenter;
     private List<Post> currentPosts;
 
-    public TopicAdapter(TopicPresenter presenter) {
+    public TopicAdapter(TopicPresenter presenter, ITopicView topicView) {
         this.presenter = presenter;
+        this.topicView = topicView;
         currentPosts = presenter.getProfilePosts();
         setHasStableIds(false);
     }
@@ -56,6 +61,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
      *
      * @param newPosts the new Posts
      */
+    @SuppressLint("NotifyDataSetChanged")
     public void updatePosts(List<Post> newPosts) {
         currentPosts = newPosts;
         this.notifyDataSetChanged();
@@ -68,9 +74,8 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
             case TEXT:
                 return TextTopicViewHolder.fromParent(parent);
             case IMAGE:
-                return ImageTopicViewHolder.fromParent(parent);
             case VIDEO:
-                return VideoTopicViewHolder.fromParent(parent);
+                return ImageTopicViewHolder.fromParent(parent);
             default:
                 throw new RuntimeException("No Type associated with viewType " + viewType);
         }
@@ -103,8 +108,17 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
                 break;
             }
             case VIDEO: {
-                // TODO: implement
-                throw new RuntimeException("NOT YET IMPLEMENTED");
+                ImageTopicViewHolder vh = (ImageTopicViewHolder) holder;
+
+                // set thumbnail
+                Bitmap video = BitmapFactory.decodeByteArray(post.getData(), 0, post.getData().length);
+                Bitmap thumbnail = ThumbnailUtils.extractThumbnail(video, vh.imageView.getWidth(),
+                        vh.imageView.getHeight(), 0);
+                vh.imageView.setImageBitmap(thumbnail);
+
+                // on click go to video player activity
+                vh.imageView.setOnClickListener(v -> topicView.playVideo(post.getData()));
+                break;
             }
         }
     }
@@ -118,6 +132,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
     public int getItemCount() {
         return currentPosts.size();
     }
+
 
     /**
      * ViewHolder superclass for all messages. All ViewHolders for the different message types must
@@ -177,26 +192,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
         }
     }
 
-    /**
-     * ViewHolder for messages containing Video.
-     *
-     * @author Alex Mandelias
-     */
-    private static class VideoTopicViewHolder extends TopicViewHolder {
-
-        static VideoTopicViewHolder fromParent(@NonNull ViewGroup parent) {
-            return new ImageTopicViewHolder(LayoutInflater
-                    .from(parent.getContext())
-                    .inflate(R.layout.message_video, parent, false));
-        }
-
-        // TODO declare fields
-
-        public VideoTopicViewHolder(View view) {
-            super(view, view.findViewById(R.id.message_video_linearlayout));
-            // TODO assign fields
-        }
-    }
+    // :sunflower:
 
     private Type getTypeForPosition(int position) {
         String extension = currentPosts.get(position).getPostInfo().getFileExtension();

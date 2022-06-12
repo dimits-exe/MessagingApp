@@ -1,6 +1,7 @@
 package com.example.messagingapp.app.topic;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.EditText;
@@ -15,6 +16,7 @@ import androidx.core.content.FileProvider;
 
 import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.util.strategies.MinorErrorMessageStrategy;
+import com.example.messagingapp.app.videoplayer.VideoPlayerActivity;
 import com.example.messagingapp.eventDeliverySystem.User;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -50,7 +52,7 @@ public class TopicActivity extends AppCompatActivity {
         setUpListeners();
 
         ((RecyclerView) findViewById(R.id.topic_recycler_view))
-                .setAdapter(new TopicAdapter(presenter));
+                .setAdapter(new TopicAdapter(presenter, new TopicView()));
     }
 
     private void setUpPresenter(String topicName) {
@@ -136,6 +138,21 @@ public class TopicActivity extends AppCompatActivity {
     private void sendTextMessage() {
         presenter.sendText(messageTextArea.getText().toString());
         messageTextArea.setText("");
+    }
+
+    /**
+     * A default implementation of the {@link ITopicView} interface.
+     *
+     * @author Dimitris Tsirmpas
+     */
+    private final class TopicView implements ITopicView {
+
+        @Override
+        public void playVideo(byte[] data) {
+            Intent intent = new Intent(TopicActivity.this, VideoPlayerActivity.class);
+            intent.putExtra(VideoPlayerActivity.ARG_VIDEO, data);
+            startActivity(intent);
+        }
     }
 
 }

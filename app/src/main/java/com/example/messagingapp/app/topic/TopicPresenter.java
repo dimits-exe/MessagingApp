@@ -9,6 +9,8 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -47,7 +49,7 @@ class TopicPresenter {
         return user.getCurrentProfile().getTopic(topicName).getAllPosts();
     }
 
-    public File getTempFileDir(){
+    public synchronized File getTempFileDir(){
         return new File(baseDir, "temp_file");
     }
 
