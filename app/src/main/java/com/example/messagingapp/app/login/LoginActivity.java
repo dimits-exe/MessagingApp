@@ -1,11 +1,9 @@
 package com.example.messagingapp.app.login;
 
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.messagingapp.app.R;
@@ -21,6 +19,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 /**
@@ -39,7 +38,6 @@ public class LoginActivity extends AppCompatActivity {
 
     private TextInputLayout usernameEditText;
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +54,6 @@ public class LoginActivity extends AppCompatActivity {
      *
      * @param newUser {@code true} to create a new user, {@code false} to log in as an existing user
      */
-    @RequiresApi(api = Build.VERSION_CODES.O)
     public void onSubmit(boolean newUser) {
         String username = Objects.requireNonNull(usernameEditText.getEditText())
                 .getText().toString();
@@ -74,7 +71,6 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private User tryCreateUser(boolean newUser, String serverIp, int serverPort, String username) {
         try {
             Path userDir = getFilesDir().toPath().resolve("users");
@@ -100,6 +96,8 @@ public class LoginActivity extends AppCompatActivity {
         } catch (UnknownHostException e) {
             errorMessageStrategy.showError("Couldn't establish a connection with the server.");
             Log.e("User Create", String.valueOf(e));
+        } catch (NoSuchElementException e) {
+            errorMessageStrategy.showError(e.getMessage());
         }
 
         return null;

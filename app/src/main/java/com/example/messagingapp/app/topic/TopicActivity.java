@@ -38,6 +38,7 @@ public class TopicActivity extends AppCompatActivity {
     private Uri tempFileUri;
     private ActivityResultLauncher<Uri> photoLauncher;
     private ActivityResultLauncher<Uri> videoLauncher;
+    private ActivityResultLauncher<String> fileLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +83,10 @@ public class TopicActivity extends AppCompatActivity {
                     if(result)
                         presenter.sendFile(tempFileUri);
                 });
+
+        fileLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                presenter::sendFile);
     }
 
     private void setUpListeners() {
@@ -90,13 +95,35 @@ public class TopicActivity extends AppCompatActivity {
         setUpMessageListener();
     }
 
+    @SuppressLint("NonConstantResourceId")
     private void setUpFileListener() {
-        ActivityResultLauncher<String> fileLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                presenter::sendFile);
-
         FloatingActionButton addFilesButton = findViewById(R.id.topic_add_file_button);
-        addFilesButton.setOnClickListener(view -> fileLauncher.launch("file/*"));
+        addFilesButton.setOnClickListener(v-> {
+            PopupMenu popup = new PopupMenu(this, v);
+
+            popup.setOnMenuItemClickListener(menuItem -> {
+                switch(menuItem.getItemId()) {
+                    case R.id.topic_menu_file_photo_item:
+                        selectPhoto();
+                        return true;
+                    case R.id.topic_menu_file_video_item:
+                        selectVideo();
+                        return true;
+                    default:
+                        return false;
+                }
+            });
+            popup.inflate(R.menu.file_menu);
+            popup.show();
+        });
+    }
+
+    private void selectPhoto() {
+        fileLauncher.launch("image/*");
+    }
+
+    private void selectVideo(){
+        fileLauncher.launch("video/*");
     }
 
     @SuppressLint("NonConstantResourceId")
@@ -139,6 +166,7 @@ public class TopicActivity extends AppCompatActivity {
         presenter.sendText(messageTextArea.getText().toString());
         messageTextArea.setText("");
     }
+
 
     /**
      * A default implementation of the {@link ITopicView} interface.

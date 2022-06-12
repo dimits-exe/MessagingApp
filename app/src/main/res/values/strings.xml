@@ -28,4 +28,7 @@
 
     <string name="topic_menu_photo">Take a photo</string>
     <string name="topic_menu_video">Record a video</string>
+
+    <string name="topic_menu_file_photo">Send a photo</string>
+    <string name="topic_menu_file_video">Send a video</string>
 </resources>
