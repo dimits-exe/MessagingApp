@@ -19,6 +19,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Adapter for the TopicActivity which handles how the contents of a conversation are laid out on
+ * the screen and is responsible for creating the appropriate ViewHolders for the different types of
+ * messages.
+ *
+ * @author Alex Mandelias
+ */
 public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHolder> {
 
     private static final Set<String> imageExtensions = new HashSet<String>() {{
@@ -40,10 +47,15 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
 
     public TopicAdapter(TopicPresenter presenter) {
         this.presenter = presenter;
-        currentPosts = presenter.getUserPosts();
+        currentPosts = presenter.getProfilePosts();
         setHasStableIds(false);
     }
 
+    /**
+     * Updates the Posts of this Adapter.
+     *
+     * @param newPosts the new Posts
+     */
     public void updatePosts(List<Post> newPosts) {
         currentPosts = newPosts;
         this.notifyDataSetChanged();
@@ -54,11 +66,11 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
     public TopicViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         switch (Type.fromCode(viewType)) {
             case TEXT:
-                return PlainTextTopicViewHolder.fromParent(parent);
+                return TextTopicViewHolder.fromParent(parent);
             case IMAGE:
                 return ImageTopicViewHolder.fromParent(parent);
             case VIDEO:
-                throw new RuntimeException("NOT YET IMPLEMENTED");
+                return VideoTopicViewHolder.fromParent(parent);
             default:
                 throw new RuntimeException("No Type associated with viewType " + viewType);
         }
@@ -66,7 +78,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
 
     @Override
     public void onBindViewHolder(@NonNull TopicViewHolder holder, int position) {
-        List<Post> freshPosts = presenter.getUserPosts();
+        List<Post> freshPosts = presenter.getProfilePosts();
         if (!currentPosts.equals(freshPosts)) {
             updatePosts(freshPosts);
         }
@@ -74,13 +86,13 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
         Post post = currentPosts.get(position);
 
         holder.linearLayout.setGravity(
-                post.getPostInfo().getPosterName().equals(presenter.getUserName())
+                post.getPostInfo().getPosterName().equals(presenter.getProfileName())
                 ? Gravity.END
                 : Gravity.START);
 
         switch (getTypeForPosition(position)) {
             case TEXT: {
-                PlainTextTopicViewHolder vh = (PlainTextTopicViewHolder) holder;
+                TextTopicViewHolder vh = (TextTopicViewHolder) holder;
                 vh.textView.setText(new String(post.getData()));
                 break;
             }
@@ -91,6 +103,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
                 break;
             }
             case VIDEO: {
+                // TODO: implement
                 throw new RuntimeException("NOT YET IMPLEMENTED");
             }
         }
@@ -106,6 +119,12 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
         return currentPosts.size();
     }
 
+    /**
+     * ViewHolder superclass for all messages. All ViewHolders for the different message types must
+     * extend this class.
+     *
+     * @author Alex Mandelias
+     */
     static class TopicViewHolder extends RecyclerView.ViewHolder {
 
         private final LinearLayout linearLayout;
@@ -116,35 +135,66 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
         }
     }
 
-    static class PlainTextTopicViewHolder extends TopicViewHolder {
+    /**
+     * ViewHolder for messages containing Text.
+     *
+     * @author Alex Mandelias
+     */
+    private static class TextTopicViewHolder extends TopicViewHolder {
 
-        static PlainTextTopicViewHolder fromParent(@NonNull ViewGroup parent) {
-            return new PlainTextTopicViewHolder(LayoutInflater
+        static TextTopicViewHolder fromParent(@NonNull ViewGroup parent) {
+            return new TextTopicViewHolder(LayoutInflater
                     .from(parent.getContext())
-                    .inflate(R.layout.activity_topic_plaintext, parent, false));
+                    .inflate(R.layout.message_text, parent, false));
         }
 
         private final TextView textView;
 
-        public PlainTextTopicViewHolder(View view) {
-            super(view, view.findViewById(R.id.topic_plaintext_linearlayout));
-            textView = view.findViewById(R.id.topic_plaintext_text);
+        public TextTopicViewHolder(View view) {
+            super(view, view.findViewById(R.id.message_text_linearlayout));
+            textView = view.findViewById(R.id.message_text_text);
         }
     }
 
-    static class ImageTopicViewHolder extends TopicViewHolder {
+    /**
+     * ViewHolder for messages containing Image.
+     *
+     * @author Alex Mandelias
+     */
+    private static class ImageTopicViewHolder extends TopicViewHolder {
 
         static ImageTopicViewHolder fromParent(@NonNull ViewGroup parent) {
             return new ImageTopicViewHolder(LayoutInflater
                     .from(parent.getContext())
-                    .inflate(R.layout.activity_topic_image, parent, false));
+                    .inflate(R.layout.message_image, parent, false));
         }
 
         private final ImageView imageView;
 
         public ImageTopicViewHolder(View view) {
-            super(view, view.findViewById(R.id.topic_image_linearlayout));
-            imageView = view.findViewById(R.id.topic_image_imageview);
+            super(view, view.findViewById(R.id.message_image_linearlayout));
+            imageView = view.findViewById(R.id.message_image_imageview);
+        }
+    }
+
+    /**
+     * ViewHolder for messages containing Video.
+     *
+     * @author Alex Mandelias
+     */
+    private static class VideoTopicViewHolder extends TopicViewHolder {
+
+        static VideoTopicViewHolder fromParent(@NonNull ViewGroup parent) {
+            return new ImageTopicViewHolder(LayoutInflater
+                    .from(parent.getContext())
+                    .inflate(R.layout.message_video, parent, false));
+        }
+
+        // TODO declare fields
+
+        public VideoTopicViewHolder(View view) {
+            super(view, view.findViewById(R.id.message_video_linearlayout));
+            // TODO assign fields
         }
     }
 
@@ -161,7 +211,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
             return Type.VIDEO;
 
         throw new RuntimeException("Missing Type for extension " + extension
-                + ". Please add the extension to the correct list in the TopicAdapter private static Lists.");
+                + ". Please add the extension to its corresponding list in the TopicAdapter private static Lists.");
     }
 
     private enum Type {

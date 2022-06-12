@@ -1,8 +1,5 @@
 package com.example.messagingapp.app.topiclist;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,22 +9,29 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.messagingapp.app.R;
-import com.example.messagingapp.eventDeliverySystem.User;
+import com.example.messagingapp.eventDeliverySystem.filesystem.Profile;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Adapter for the TopicListActivity which handles how the conversations are laid out on the screen
+ * and is responsible for transitioning to the corresponding TopicActivity when the user clicks on a
+ * conversation.
+ *
+ * @author Alex Mandelias
+ */
 class TopicListAdapter extends RecyclerView.Adapter<TopicListAdapter.TopicPreviewViewHolder> {
 
     private final MyClickListener myClickListener;
-    private final User user;
+    private final Profile profile;
     private final List<String> topicNames;
 
-    public TopicListAdapter(User user, MyClickListener myClickListener) {
+    public TopicListAdapter(Profile profile, MyClickListener myClickListener) {
         this.myClickListener = myClickListener;
-        this.user = user;
-        topicNames = user.getCurrentProfile()
+        this.profile = profile;
+        topicNames = profile
                 .getTopics()
                 .keySet()
                 .stream()
@@ -50,8 +54,7 @@ class TopicListAdapter extends RecyclerView.Adapter<TopicListAdapter.TopicPrevie
         String topicName = topicNames.get(position);
 
         holder.topicName.setText(topicName);
-        holder.unreadCount.setText(String.valueOf(user.getCurrentProfile().getUnread(topicNames.get(position))));
-
+        holder.unreadCount.setText(String.valueOf(profile.getUnread(topicNames.get(position))));
     }
 
     @Override
