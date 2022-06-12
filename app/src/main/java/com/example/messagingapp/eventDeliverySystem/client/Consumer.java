@@ -2,6 +2,19 @@ package com.example.messagingapp.eventDeliverySystem.client;
 
 import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.INITIALISE_CONSUMER;
 
+import com.example.messagingapp.eventDeliverySystem.User.UserSub;
+import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
+import com.example.messagingapp.eventDeliverySystem.server.Broker;
+import com.example.messagingapp.eventDeliverySystem.server.ServerException;
+import com.example.messagingapp.eventDeliverySystem.thread.PullThread;
+import com.example.messagingapp.eventDeliverySystem.util.LG;
+import com.example.messagingapp.eventDeliverySystem.util.Subscriber;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -13,22 +26,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
-import com.example.messagingapp.eventDeliverySystem.User.UserSub;
-import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
-import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
-import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
-import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
-import com.example.messagingapp.eventDeliverySystem.datastructures.PostInfo;
-import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
-import com.example.messagingapp.eventDeliverySystem.server.Broker;
-import com.example.messagingapp.eventDeliverySystem.server.ServerException;
-import com.example.messagingapp.eventDeliverySystem.thread.PullThread;
-import com.example.messagingapp.eventDeliverySystem.thread.PushThread;
-import com.example.messagingapp.eventDeliverySystem.util.LG;
-import com.example.messagingapp.eventDeliverySystem.util.Subscriber;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 /**
  * A client-side process which is responsible for listening for a set of Topics
@@ -156,7 +158,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 		final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
 		// run thread
-		Runnable socketThread = () -> {
+		Callable<Object> socketThread = () -> {
 			try{
 				socket[0] = new Socket(ci.getAddress(), ci.getPort()); // 'socket' closes at close()
 				topicManager.addSocket(topic, socket[0]);
@@ -171,10 +173,16 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 			} catch (final IOException e) {
 				e.printStackTrace();
 			}
-		// TODO: throw server exception somehow
+			return new Object();
 		}; //socket thread
 
-		new Thread(socketThread).start();
+		try {
+			new FutureTask<>(socketThread).get();
+		} catch (ExecutionException e) {
+			throw new ServerException(new IOException(e)); // dont worry about it
+		} catch (InterruptedException ie){
+			throw new RuntimeException(ie);
+		}
 	}
 
 	@Override
@@ -226,6 +234,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 
 			final TopicData td = tdMap.get(topicName);
 
+			assert td != null;
 			LG.sout("td.pointer=%d", td.pointer);
 			final List<Post> newPosts = td.topic.getPostsSince(td.pointer);
 
@@ -250,7 +259,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 		public void addSocket(Topic topic, Socket socket) {
 			LG.sout("Consumer#addSocket(%s, %s)", topic, socket);
 			add(topic);
-			tdMap.get(topic.getName()).socket = socket;
+			Objects.requireNonNull(tdMap.get(topic.getName())).socket = socket;
 		}
 
 		private void add(Topic topic) {
