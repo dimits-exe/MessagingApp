@@ -30,7 +30,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -159,7 +160,10 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 
 		final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
 
-		// run thread
+		// run connection acquisition on different thread so we don't freeze up the main
+		// android thread
+
+		// create callable so we can receive any exceptions that may arise
 		Callable<Object> socketThread = () -> {
 			try{
 				socket[0] = new Socket(ci.getAddress(), ci.getPort()); // 'socket' closes at close()
@@ -175,11 +179,12 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 			} catch (final IOException e) {
 				e.printStackTrace();
 			}
-			return new Object();
-		}; //socket thread
+			return new Object(); // return value ignored
+		};
 
 		try {
-			new FutureTask<>(socketThread).get(5L, TimeUnit.SECONDS);
+			Future<Object> task = Executors.newSingleThreadExecutor().submit(socketThread);
+			task.get(5L, TimeUnit.SECONDS);
 		} catch (ExecutionException e) {
 			throw new ServerException(new IOException(e)); // dont worry about it
 		} catch (InterruptedException ie){

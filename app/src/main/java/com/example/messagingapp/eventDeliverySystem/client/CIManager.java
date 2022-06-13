@@ -2,6 +2,10 @@ package com.example.messagingapp.eventDeliverySystem.client;
 
 import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.BROKER_DISCOVERY;
 
+import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
+import com.example.messagingapp.eventDeliverySystem.server.ServerException;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -12,13 +16,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
-import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
-import com.example.messagingapp.eventDeliverySystem.server.ServerException;
 
 /**
  * Wrapper for a cache that communicates with the default Broker to obtain and
@@ -68,6 +69,8 @@ class CIManager implements Serializable {
 
 	private ConnectionInfo getCIForTopic(String topicName) throws ServerException {
 		ConnectionInfo info;
+		// run connection acquisition on different thread so we don't freeze up the main
+		// android thread
 
 		Callable<ConnectionInfo> socketThread = () -> {
 			try (Socket socket = new Socket(defaultBrokerIP, defaultBrokerPort)) {
@@ -77,15 +80,7 @@ class CIManager implements Serializable {
 				oos.flush();
 				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-				ConnectionInfo actualBrokerCIForTopic;
-				try {
-					actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
-				} catch (final ClassNotFoundException e) {
-					e.printStackTrace();
-					actualBrokerCIForTopic = null;
-				}
-
-				return actualBrokerCIForTopic;
+				return (ConnectionInfo) ois.readObject();
 
 			} catch (final IOException e) {
 				throw new ServerException(e);
@@ -93,7 +88,8 @@ class CIManager implements Serializable {
 		};
 
 		try {
-			info = new FutureTask<>(socketThread).get(5L, TimeUnit.SECONDS);
+			Future<ConnectionInfo> task = Executors.newSingleThreadExecutor().submit(socketThread);
+			info = task.get(5L, TimeUnit.SECONDS);
 		} catch (ExecutionException e) {
 			throw new ServerException(new IOException(e)); // dont worry about it
 		} catch (InterruptedException ie){
