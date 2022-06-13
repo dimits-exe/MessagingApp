@@ -33,6 +33,8 @@ public class LoginActivity extends AppCompatActivity {
     public static final String ARG_IP = "IP";
     public static final String ARG_PORT = "PORT";
 
+    private static final String TAG = "Login";
+
     private final IErrorMessageStrategy errorMessageStrategy =
             new SeriousErrorMessageStrategy(this, R.string.ok);
 
@@ -89,13 +91,13 @@ public class LoginActivity extends AppCompatActivity {
 
         } catch (ServerException e) {
             errorMessageStrategy.showError("Connection interrupted with the server.");
-            Log.e("User Create", String.valueOf(e));
+            Log.e(TAG, String.valueOf(e), e);
         } catch (FileSystemException e) {
             errorMessageStrategy.showError("Can't access the Android File System.");
-            Log.e("User Create", String.valueOf(e));
+            Log.e(TAG, String.valueOf(e), e);
         } catch (UnknownHostException e) {
             errorMessageStrategy.showError("Couldn't establish a connection with the server.");
-            Log.e("User Create", String.valueOf(e));
+            Log.e(TAG, String.valueOf(e), e);
         } catch (NoSuchElementException e) {
             errorMessageStrategy.showError(e.getMessage());
         }
