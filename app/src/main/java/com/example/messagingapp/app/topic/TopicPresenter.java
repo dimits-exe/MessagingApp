@@ -9,6 +9,7 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
 /**
@@ -23,6 +24,8 @@ class TopicPresenter {
     private final File baseDir;
     private final User user;
     private final String topicName;
+
+    private File tempFile = null;
 
     public TopicPresenter(IErrorMessageStrategy errorMessageStrategy, File baseDir, User user, String topicName) {
         this.errorMessageStrategy = errorMessageStrategy;
@@ -50,15 +53,22 @@ class TopicPresenter {
     }
 
     public synchronized File getTempFileDir(){
-        File file = null;
+        if(tempFile != null){
+            try {
+                Files.deleteIfExists(tempFile.toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         try {
-            file = File.createTempFile("temp","temp_file", baseDir);
-            file.deleteOnExit();
+            tempFile = File.createTempFile("temp","temp_file", baseDir);
+            tempFile.deleteOnExit();
         } catch (IOException e) {
             Log.wtf(TAG, e);
             System.exit(-1);
         }
-        return file;
+        return tempFile;
     }
 
     public void sendFile(Uri fileUri) {

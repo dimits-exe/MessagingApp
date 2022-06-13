@@ -18,6 +18,7 @@ import com.example.messagingapp.app.util.strategies.SeriousErrorMessageStrategy;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 
 /**
  * An activity that plays a selected video.
@@ -68,18 +69,24 @@ public class VideoPlayerActivity extends AppCompatActivity {
         deleteTempFile();
     }
 
-
     private File generateTempFile() {
-        File file = null;
+        if(tempFile != null){
+            try {
+                Files.deleteIfExists(tempFile.toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         try {
-            file = File.createTempFile("temp", "tempVideo", getFilesDir());
-            file.deleteOnExit();
+            tempFile = File.createTempFile("temp", "tempVideo", getFilesDir());
+            tempFile.deleteOnExit();
         } catch (IOException e) {
             errorMessageStrategy.showError("Error while playing video");
             Log.e(TAG, "Create temp file", e);
             System.exit(-1);
         }
-        return file;
+        return tempFile;
     }
 
     private void writeToFile(File tempFile, byte[] video) {
@@ -96,11 +103,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
     }
 
     private void deleteTempFile(){
-        boolean success = tempFile.delete();
-
-        if(!success) {
-            Log.e(TAG, "Could not delete temp file");
-        }
+        try {
+            Files.deleteIfExists(tempFile.toPath());
+        } catch (IOException ignored) {}
     }
 
     private String queryName(Uri uri) {
