@@ -3,19 +3,7 @@ package com.example.messagingapp.eventDeliverySystem.client;
 import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.CREATE_TOPIC;
 import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.DATA_PACKET_SEND;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import com.example.messagingapp.eventDeliverySystem.User.UserSub;
+import com.example.messagingapp.eventDeliverySystem.ISubscriber;
 import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
@@ -28,6 +16,18 @@ import com.example.messagingapp.eventDeliverySystem.thread.PushThread.Callback;
 import com.example.messagingapp.eventDeliverySystem.thread.PushThread.Protocol;
 import com.example.messagingapp.eventDeliverySystem.util.LG;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * A client-side process which is responsible for creating Topics and pushing
  * Posts to them by connecting to a remote server.
@@ -39,7 +39,7 @@ import com.example.messagingapp.eventDeliverySystem.util.LG;
  */
 public class Publisher extends ClientNode implements Serializable {
 
-	private final UserSub usersub;
+	private final ISubscriber userSub;
 
 	/**
 	 * Constructs a Publisher.
@@ -54,7 +54,7 @@ public class Publisher extends ClientNode implements Serializable {
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
 	 */
-	public Publisher(String defaultServerIP, int defaultServerPort, UserSub usersub)
+	public Publisher(String defaultServerIP, int defaultServerPort, ISubscriber usersub)
 	        throws UnknownHostException {
 		this(InetAddress.getByName(defaultServerIP), defaultServerPort, usersub);
 	}
@@ -70,7 +70,7 @@ public class Publisher extends ClientNode implements Serializable {
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	public Publisher(byte[] defaultServerIP, int defaultServerPort, UserSub usersub)
+	public Publisher(byte[] defaultServerIP, int defaultServerPort, ISubscriber usersub)
 	        throws UnknownHostException {
 		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, usersub);
 	}
@@ -82,9 +82,9 @@ public class Publisher extends ClientNode implements Serializable {
 	 * @param port    the port of the default broker
 	 * @param usersub the UserSub object that will be notified if a push fails
 	 */
-	private Publisher(InetAddress ip, int port, UserSub usersub) {
+	private Publisher(InetAddress ip, int port, ISubscriber usersub) {
 		super(ip, port);
-		this.usersub = usersub;
+		this.userSub = usersub;
 	}
 
 	/**
@@ -153,7 +153,7 @@ public class Publisher extends ClientNode implements Serializable {
 
 			final Callback callback = (success, topicName1) -> {
 				if (!success)
-					usersub.failure(topicName1);
+					userSub.failure(topicName1);
 			};
 
 			final ConnectionInfo actualBrokerCI;

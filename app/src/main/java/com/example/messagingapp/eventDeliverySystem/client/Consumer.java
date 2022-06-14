@@ -2,7 +2,7 @@ package com.example.messagingapp.eventDeliverySystem.client;
 
 import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.INITIALISE_CONSUMER;
 
-import com.example.messagingapp.eventDeliverySystem.User.UserSub;
+import com.example.messagingapp.eventDeliverySystem.ISubscriber;
 import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
@@ -46,7 +46,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class Consumer extends ClientNode implements AutoCloseable, Subscriber, Serializable {
 
-	private final UserSub      usersub;
+	private final ISubscriber  usersub;
 	private final TopicManager topicManager;
 
 	/**
@@ -61,7 +61,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
 	 */
-	public Consumer(String serverIP, int serverPort, UserSub usersub) throws UnknownHostException {
+	public Consumer(String serverIP, int serverPort, ISubscriber usersub) throws UnknownHostException {
 		this(InetAddress.getByName(serverIP), serverPort, usersub);
 	}
 
@@ -75,7 +75,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	public Consumer(byte[] serverIP, int serverPort, UserSub usersub) throws UnknownHostException {
+	public Consumer(byte[] serverIP, int serverPort, ISubscriber usersub) throws UnknownHostException {
 		this(InetAddress.getByAddress(serverIP), serverPort, usersub);
 	}
 
@@ -86,7 +86,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 	 * @param port    the port of the default broker
 	 * @param usersub the UserSub object that will be notified when data arrives
 	 */
-	private Consumer(InetAddress ip, int port, UserSub usersub) {
+	private Consumer(InetAddress ip, int port, ISubscriber usersub) {
 		super(ip, port);
 		topicManager = new TopicManager();
 		this.usersub = usersub;

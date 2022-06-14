@@ -26,9 +26,8 @@ import com.example.messagingapp.eventDeliverySystem.util.LG;
  */
 public class User implements Serializable {
 
-	private final UserSub userSub = new UserSub();
-
 	private final ProfileFileSystem profileFileSystem;
+	private final ISubscriber 		userSub;
 	private Profile                 currentProfile;
 
 	private final Publisher publisher;
@@ -53,9 +52,9 @@ public class User implements Serializable {
 	 *                              if a scope_id was specified for a global
 	 *                              IPv6address while resolving the defaultServerIP.
 	 */
-	public static User loadExisting(String serverIP, int serverPort, Path profilesRootDirectory,
+	public static User loadExisting(ISubscriber userSub, String serverIP, int serverPort, Path profilesRootDirectory,
 	        String profileName) throws ServerException, FileSystemException, UnknownHostException {
-		final User user = new User(serverIP, serverPort, profilesRootDirectory);
+		final User user = new User(userSub, serverIP, serverPort, profilesRootDirectory);
 		user.switchToExistingProfile(profileName);
 		return user;
 	}
@@ -78,15 +77,16 @@ public class User implements Serializable {
 	 *                              if a scope_id was specified for a global
 	 *                              IPv6address while resolving the defaultServerIP.
 	 */
-	public static User createNew(String serverIP, int serverPort, Path profilesRootDirectory,
+	public static User createNew(ISubscriber userSub, String serverIP, int serverPort, Path profilesRootDirectory,
 	        String name) throws ServerException, FileSystemException, UnknownHostException {
-		final User user = new User(serverIP, serverPort, profilesRootDirectory);
+		final User user = new User(userSub, serverIP, serverPort, profilesRootDirectory);
 		user.switchToNewProfile(name);
 		return user;
 	}
 
-	private User(String serverIP, int port, Path profilesRootDirectory)
+	private User(ISubscriber userSub, String serverIP, int port, Path profilesRootDirectory)
 	        throws FileSystemException, UnknownHostException {
+		this.userSub = userSub;
 		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 
 		publisher = new Publisher(serverIP, port, userSub);
@@ -214,33 +214,11 @@ public class User implements Serializable {
 	}
 
 	/**
-	 * An object that can be used to notify this User about an event for a Topic.
-	 *
-	 * @author Alex Mandelias
+	 * Return the assigned subscriber for this user instance.
+	 * @return the assigned subscriber instance
 	 */
-	public class UserSub implements Serializable {
-
-		private UserSub() {}
-
-		/**
-		 * Notifies this User about an event for a Topic.
-		 *
-		 * @param topicName the name of the Topic
-		 */
-		public void notify(String topicName) {
-			currentProfile.markUnread(topicName);
-			LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
-
-			// TODO: integrate with android
-		}
-
-		/**
-		 * Notifies this User about failure to send a Post to a Topic.
-		 *
-		 * @param topicName the name of the Topic
-		 */
-		public void failure(String topicName) {
-			LG.sout("MESSAGE FAILED TO SEND AT '%s'", topicName);
-		}
+	public ISubscriber getSubscriber() {
+		return userSub;
 	}
+
 }
