@@ -22,6 +22,7 @@ import com.example.messagingapp.app.util.strategies.MinorErrorMessageStrategy;
 import com.example.messagingapp.app.videoplayer.VideoPlayerActivity;
 import com.example.messagingapp.eventDeliverySystem.User;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
+import com.example.messagingapp.eventDeliverySystem.filesystem.FileSystemException;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 /**
@@ -42,7 +43,9 @@ public class TopicActivity extends AppCompatActivity {
     private TopicSubscriber subscriber;
     private EditText messageTextArea;
 
+    private String topicName;
     private User user;
+
     private Uri tempFileUri;
     private ActivityResultLauncher<Uri> photoLauncher;
     private ActivityResultLauncher<Uri> videoLauncher;
@@ -54,7 +57,7 @@ public class TopicActivity extends AppCompatActivity {
         setContentView(R.layout.activity_topic);
 
         user = (User) getIntent().getSerializableExtra(ARG_USER);
-        String topicName = getIntent().getStringExtra(ARG_TOPIC_NAME);
+        topicName = getIntent().getStringExtra(ARG_TOPIC_NAME);
         IErrorMessageStrategy errorMessageStrategy = new MinorErrorMessageStrategy(this);
         TopicView view = new TopicView();
 
@@ -211,6 +214,11 @@ public class TopicActivity extends AppCompatActivity {
         @SuppressLint("NotifyDataSetChanged")
         @Override
         public synchronized void refresh() {
+            try {
+                user.pull(TopicActivity.this.topicName);
+            } catch (FileSystemException e) {
+                Log.e(TAG, "Refresh", e);
+            }
             runOnUiThread(()->{
                 TopicActivity.this.adapter.notifyDataSetChanged();
                 Log.i(TAG, "Page refreshed");
