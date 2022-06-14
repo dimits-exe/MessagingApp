@@ -37,27 +37,6 @@ public class Profile implements Serializable {
 		this.name = name;
 		this.topics = topics;
 		unreadTopics = new HashMap<>();
-
-		// TODO: remove
-		addTopic("topic1");
-		addTopic("topic2");
-		addTopic("topic3");
-		addTopic("topic4");
-
-		markUnread("topic1");
-		markUnread("topic1");
-		markUnread("topic2");
-		markUnread("topic2");
-		markUnread("topic2");
-		markUnread("topic4");
-
-		List<Post> posts = new LinkedList<>();
-		posts.add(Post.fromText("first message", this.name));
-		posts.add(Post.fromText("second message", this.name));
-		posts.add(Post.fromText("third message", "lmao"));
-		posts.add(Post.fromText("fourth message", this.name));
-		posts.add(Post.fromText("fifth message", "lmao"));
-		topics.get("topic1").post(posts);
 	}
 
 	/**
