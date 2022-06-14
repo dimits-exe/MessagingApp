@@ -6,6 +6,7 @@ import android.content.ContentResolver;
 import android.net.Uri;
 import android.util.Log;
 
+import com.example.messagingapp.app.util.AndroidSubscriber;
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.eventDeliverySystem.User;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Post;

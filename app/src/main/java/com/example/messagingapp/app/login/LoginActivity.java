@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.topiclist.TopicListActivity;
+import com.example.messagingapp.app.util.AndroidSubscriber;
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.app.util.strategies.SeriousErrorMessageStrategy;
 import com.example.messagingapp.eventDeliverySystem.User;
@@ -85,9 +86,9 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             if (newUser)
-                return User.createNew(serverIp, serverPort, userDir, username);
+                return User.createNew(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
             else
-                return User.loadExisting(serverIp, serverPort, userDir, username);
+                return User.loadExisting(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
 
         } catch (ServerException e) {
             errorMessageStrategy.showError("Connection interrupted with the server.");

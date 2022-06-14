@@ -12,10 +12,12 @@ import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.messagingapp.app.R;
+import com.example.messagingapp.app.util.AndroidSubscriber;
+import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.app.util.strategies.MinorErrorMessageStrategy;
 import com.example.messagingapp.app.videoplayer.VideoPlayerActivity;
 import com.example.messagingapp.eventDeliverySystem.User;
@@ -37,8 +39,10 @@ public class TopicActivity extends AppCompatActivity {
 
     private TopicPresenter presenter;
     private TopicAdapter adapter;
+    private TopicSubscriber subscriber;
     private EditText messageTextArea;
 
+    private User user;
     private Uri tempFileUri;
     private ActivityResultLauncher<Uri> photoLauncher;
     private ActivityResultLauncher<Uri> videoLauncher;
@@ -49,19 +53,28 @@ public class TopicActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_topic);
 
+        user = (User) getIntent().getSerializableExtra(ARG_USER);
         String topicName = getIntent().getStringExtra(ARG_TOPIC_NAME);
+        IErrorMessageStrategy errorMessageStrategy = new MinorErrorMessageStrategy(this);
+        TopicView view = new TopicView();
 
-        setUpPresenter(topicName);
+        setUpPresenter(user, topicName, view, errorMessageStrategy);
         setUpFields(topicName);
         setUpLaunchers();
         setUpListeners();
-        setUpPostList();
+        setUpPostList(view);
+        setUpNotificationsManager(user, topicName, view, errorMessageStrategy);
     }
 
-    private void setUpPresenter(String topicName) {
-        User user = (User) getIntent().getSerializableExtra(ARG_USER);
-        presenter = new TopicPresenter(new MinorErrorMessageStrategy(getBaseContext()), new TopicView(),
-                getFilesDir(), user, topicName);
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // remove the subscriber for this topic
+        ((AndroidSubscriber) user.getSubscriber()).remove(subscriber);
+    }
+
+    private void setUpPresenter(User user, String topicName, ITopicView view ,IErrorMessageStrategy errorMessageStrategy) {
+        presenter = new TopicPresenter(errorMessageStrategy, view, getFilesDir(), user, topicName);
     }
 
     private void setUpFields(String topicName) {
@@ -164,9 +177,15 @@ public class TopicActivity extends AppCompatActivity {
         sendMessageButton.setOnClickListener(view -> sendTextMessage());
     }
 
-    private void setUpPostList(){
-        adapter = new TopicAdapter(presenter, new TopicView());
+    private void setUpPostList(ITopicView view){
+        adapter = new TopicAdapter(presenter, view);
         ((RecyclerView) findViewById(R.id.topic_recycler_view)).setAdapter(adapter);
+    }
+
+    private void setUpNotificationsManager(User user, String topicName, ITopicView view,
+                                           IErrorMessageStrategy errorMessageStrategy) {
+        subscriber = new TopicSubscriber(topicName, view, errorMessageStrategy);
+        ((AndroidSubscriber) user.getSubscriber()).add(subscriber);
     }
 
     private void sendTextMessage() {
