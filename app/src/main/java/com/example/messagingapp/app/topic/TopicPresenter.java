@@ -1,5 +1,8 @@
 package com.example.messagingapp.app.topic;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
+import android.content.ContentResolver;
 import android.net.Uri;
 import android.util.Log;
 
@@ -11,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * A class handling the logic behind the {@link TopicActivity}'s UI.
@@ -25,7 +29,6 @@ class TopicPresenter {
     private final User user;
     private final String topicName;
 
-    private File tempFile = null;
 
     /**
      * Create a new TopicPresenter.
@@ -60,44 +63,44 @@ class TopicPresenter {
     }
 
     /**
-     * Get a temporary file. The file will be deleted automatically on the next method call or
-     * on VM exit.
+     * Get a temporary file. The file will be deleted automatically on VM exit.
      *
      * @return a new temporary file
      */
-    public synchronized File getTempFileDir(){
-        if(tempFile != null){
-            try {
-                Files.deleteIfExists(tempFile.toPath());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
+    public File getNewTempFile() {
+        File file = null;
         try {
-            tempFile = File.createTempFile("temp","temp_file", baseDir);
-            tempFile.deleteOnExit();
+            file = File.createTempFile("temp_file", UUID.randomUUID().toString(), baseDir);
+            file.deleteOnExit();
         } catch (IOException e) {
             Log.wtf(TAG, e);
             System.exit(-1);
         }
-        return tempFile;
+        return file;
     }
 
     /**
      * Send a file to the topic. Displays an error to the user if any error occurs.
      * @param fileUri the uri of the file
+     * @param resolver the content resolver for that file
      */
-    public void sendFile(Uri fileUri) {
+    public void sendFile(Uri fileUri, ContentResolver resolver) {
+        /*
+         * We can't access the file directly from the Uri,
+         * so we copy its contents to a temporary file
+         * which we will send instead.
+         */
+
         if(fileUri != null){
             try {
-                Post post = Post.fromFile(new File(fileUri.getPath()), user.getCurrentProfile().getName());
+                File postContents = copyContentsToTemp(fileUri, resolver);
+                Post post = Post.fromFile(postContents, user.getCurrentProfile().getName());
                 trySendPost(post);
             } catch (IOException e) {
-                errorMessageStrategy.showError("An error occured while sending the file");
+                errorMessageStrategy.showError("An error occurred while sending the file");
                 Log.e(TAG, "Send file", e);
             }
-            
+
         }
     }
 
@@ -109,6 +112,19 @@ class TopicPresenter {
         Post post = Post.fromText(text, user.getCurrentProfile().getName());
         trySendPost(post);
         Log.i(TAG, "Message " + text + " sent");
+    }
+
+    /**
+     * Copy the contents of the uri file to a temp file and return it.
+     * @param uri the uri of the file to be sent
+     * @param resolver the content provider of the application
+     * @return a new temp file containing the contents of the uri
+     * @throws IOException if the copy procedure fails
+     */
+    private File copyContentsToTemp(Uri uri, ContentResolver resolver) throws IOException {
+        File temp = getNewTempFile();
+        Files.copy(resolver.openInputStream(uri), temp.toPath(), REPLACE_EXISTING);
+        return temp;
     }
 
     /**

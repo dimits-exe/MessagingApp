@@ -70,23 +70,23 @@ public class TopicActivity extends AppCompatActivity {
 
     private void setUpLaunchers() {
         tempFileUri = FileProvider.getUriForFile(this,
-                getApplicationContext().getPackageName() + ".provider", presenter.getTempFileDir());
+                getApplicationContext().getPackageName() + ".provider", presenter.getNewTempFile());
 
         photoLauncher = registerForActivityResult(
                 new ActivityResultContracts.TakePicture(), result -> {
                     if(result)
-                        presenter.sendFile(tempFileUri);
+                        presenter.sendFile(tempFileUri, getContentResolver());
                 });
 
         videoLauncher = registerForActivityResult(
                 new ActivityResultContracts.CaptureVideo(), result -> {
                     if(result)
-                        presenter.sendFile(tempFileUri);
+                        presenter.sendFile(tempFileUri, getContentResolver());
                 });
 
         fileLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
-                presenter::sendFile);
+                uri -> presenter.sendFile(uri, getContentResolver()));
     }
 
     private void setUpListeners() {
