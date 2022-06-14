@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -32,7 +33,10 @@ public class TopicActivity extends AppCompatActivity {
     public static final String ARG_USER = "USER";
     public static final String ARG_TOPIC_NAME = "TOPIC";
 
+    private static final String TAG = "Topic";
+
     private TopicPresenter presenter;
+    private TopicAdapter adapter;
     private EditText messageTextArea;
 
     private Uri tempFileUri;
@@ -51,14 +55,12 @@ public class TopicActivity extends AppCompatActivity {
         setUpFields(topicName);
         setUpLaunchers();
         setUpListeners();
-
-        ((RecyclerView) findViewById(R.id.topic_recycler_view))
-                .setAdapter(new TopicAdapter(presenter, new TopicView()));
+        setUpPostList();
     }
 
     private void setUpPresenter(String topicName) {
         User user = (User) getIntent().getSerializableExtra(ARG_USER);
-        presenter = new TopicPresenter(new MinorErrorMessageStrategy(getBaseContext()),
+        presenter = new TopicPresenter(new MinorErrorMessageStrategy(getBaseContext()), new TopicView(),
                 getFilesDir(), user, topicName);
     }
 
@@ -162,6 +164,11 @@ public class TopicActivity extends AppCompatActivity {
         sendMessageButton.setOnClickListener(view -> sendTextMessage());
     }
 
+    private void setUpPostList(){
+        adapter = new TopicAdapter(presenter, new TopicView());
+        ((RecyclerView) findViewById(R.id.topic_recycler_view)).setAdapter(adapter);
+    }
+
     private void sendTextMessage() {
         presenter.sendText(messageTextArea.getText().toString());
         messageTextArea.setText("");
@@ -180,6 +187,13 @@ public class TopicActivity extends AppCompatActivity {
             Intent intent = new Intent(TopicActivity.this, VideoPlayerActivity.class);
             intent.putExtra(VideoPlayerActivity.ARG_VIDEO, data);
             startActivity(intent);
+        }
+
+        @SuppressLint("NotifyDataSetChanged")
+        @Override
+        public synchronized void refresh() {
+            TopicActivity.this.adapter.notifyDataSetChanged();
+            Log.i(TAG, "Page refreshed");
         }
     }
 

@@ -27,6 +27,7 @@ class TopicPresenter {
     private static final String TAG = "TopicPresenter";
 
     private final IErrorMessageStrategy errorMessageStrategy;
+    private final ITopicView view;
     private final File baseDir;
     private final User user;
     private final String topicName;
@@ -35,12 +36,15 @@ class TopicPresenter {
     /**
      * Create a new TopicPresenter.
      * @param errorMessageStrategy the strategy with which error messages are shown to the user
+     * @param view the view object that communicates with the TopicActivity
      * @param baseDir the base file directory of the application
      * @param user the logged-in user instance
      * @param topicName the name of the current topic
      */
-    public TopicPresenter(IErrorMessageStrategy errorMessageStrategy, File baseDir, User user, String topicName) {
+    public TopicPresenter(IErrorMessageStrategy errorMessageStrategy, ITopicView view,
+                          File baseDir, User user, String topicName) {
         this.errorMessageStrategy = errorMessageStrategy;
+        this.view = view;
         this.baseDir = baseDir;
         this.user = user;
         this.topicName = topicName;
@@ -95,16 +99,20 @@ class TopicPresenter {
          */
 
         Runnable fileSendProc = () -> {
-            if(fileUri != null){
+            if(fileUri != null) {
                 try {
                     File postContents = copyContentsToTemp(fileUri, resolver);
                     Post post = Post.fromFile(postContents, user.getCurrentProfile().getName());
                     trySendPost(post);
+
+                    // refresh to show the user's content
+                    view.refresh();
                 } catch (IOException e) {
                     errorMessageStrategy.showError("An error occurred while sending the file");
                     Log.e(TAG, "Send file", e);
                 }
             }
+
         };
 
         Executor exec = Executors.newSingleThreadExecutor();

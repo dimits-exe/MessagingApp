@@ -12,4 +12,9 @@ interface ITopicView {
      * @param data the video's byte data
      */
     void playVideo(byte[] data);
+
+    /**
+     * Request that the TopicActivity refreshes the contents of it's displayed post feed.
+     */
+    void refresh();
 }
