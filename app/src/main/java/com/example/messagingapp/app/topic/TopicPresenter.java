@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * A class handling the logic behind the {@link TopicActivity}'s UI.
@@ -86,22 +88,27 @@ class TopicPresenter {
      */
     public void sendFile(Uri fileUri, ContentResolver resolver) {
         /*
-         * We can't access the file directly from the Uri,
-         * so we copy its contents to a temporary file
-         * which we will send instead.
+         * We can't access the file directly from the Uri, so we copy its contents to a
+         * temporary file which we will send instead.
+         *
+         * Also this is an EXTREMELY slow procedure so we execute it in a thread.
          */
 
-        if(fileUri != null){
-            try {
-                File postContents = copyContentsToTemp(fileUri, resolver);
-                Post post = Post.fromFile(postContents, user.getCurrentProfile().getName());
-                trySendPost(post);
-            } catch (IOException e) {
-                errorMessageStrategy.showError("An error occurred while sending the file");
-                Log.e(TAG, "Send file", e);
+        Runnable fileSendProc = () -> {
+            if(fileUri != null){
+                try {
+                    File postContents = copyContentsToTemp(fileUri, resolver);
+                    Post post = Post.fromFile(postContents, user.getCurrentProfile().getName());
+                    trySendPost(post);
+                } catch (IOException e) {
+                    errorMessageStrategy.showError("An error occurred while sending the file");
+                    Log.e(TAG, "Send file", e);
+                }
             }
+        };
 
-        }
+        Executor exec = Executors.newSingleThreadExecutor();
+        exec.execute(fileSendProc);
     }
 
     /**
