@@ -1,23 +1,27 @@
 package com.example.messagingapp.app.createtopic;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.topiclist.TopicListActivity;
-import com.example.messagingapp.app.util.ErrorDialogFragment;
+import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
+import com.example.messagingapp.app.util.strategies.SeriousErrorMessageStrategy;
 import com.example.messagingapp.eventDeliverySystem.User;
 import com.example.messagingapp.eventDeliverySystem.filesystem.FileSystemException;
 import com.example.messagingapp.eventDeliverySystem.server.ServerException;
 
 public class CreateTopicActivity extends AppCompatActivity {
+    private static final String TAG = "Create Topic";
+    private final IErrorMessageStrategy errorMessageStrategy = new SeriousErrorMessageStrategy(this, R.string.ok);
 
     private User user;
-
     private EditText topicNameEditText;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +55,8 @@ public class CreateTopicActivity extends AppCompatActivity {
     }
 
     private void closeWithFatalError(Exception e) {
-        ErrorDialogFragment.startFromException(getFragmentManager(), e);
+        //ErrorDialogFragment.startFromException(getFragmentManager(), e); crashes on error lol
+        errorMessageStrategy.showError("Error while creating topic.");
+        Log.e(TAG, "create remote topic error", e);
     }
 }
