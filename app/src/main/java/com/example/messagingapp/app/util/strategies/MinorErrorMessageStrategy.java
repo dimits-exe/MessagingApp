@@ -1,6 +1,6 @@
 package com.example.messagingapp.app.util.strategies;
 
-import android.content.Context;
+import android.app.Activity;
 import android.widget.Toast;
 
 /**
@@ -10,14 +10,14 @@ import android.widget.Toast;
  * @author Dimitris Tsirmpas
  */
 public class MinorErrorMessageStrategy implements IErrorMessageStrategy {
-    private final Context context;
+    private final Activity context;
 
-    public MinorErrorMessageStrategy(Context context) {
+    public MinorErrorMessageStrategy(Activity context) {
         this.context = context;
     }
 
     @Override
     public void showError(String errorMessage) {
-        Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show();
+        context.runOnUiThread(()-> Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show());
     }
 }

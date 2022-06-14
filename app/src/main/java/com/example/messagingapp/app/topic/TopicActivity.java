@@ -211,8 +211,11 @@ public class TopicActivity extends AppCompatActivity {
         @SuppressLint("NotifyDataSetChanged")
         @Override
         public synchronized void refresh() {
-            TopicActivity.this.adapter.notifyDataSetChanged();
-            Log.i(TAG, "Page refreshed");
+            runOnUiThread(()->{
+                TopicActivity.this.adapter.notifyDataSetChanged();
+                Log.i(TAG, "Page refreshed");
+            });
+
         }
     }
 
