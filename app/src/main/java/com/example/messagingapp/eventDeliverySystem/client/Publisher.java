@@ -27,6 +27,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * A client-side process which is responsible for creating Topics and pushing
@@ -114,20 +119,33 @@ public class Publisher extends ClientNode implements Serializable {
 	 */
 	public boolean createTopic(String topicName) throws ServerException {
 
-		final ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+		Callable<Boolean> connectionTask = () -> {
+			final ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
+				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
-			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			oos.flush();
-			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+				oos.writeObject(new Message(CREATE_TOPIC, topicName));
 
-			oos.writeObject(new Message(CREATE_TOPIC, topicName));
+				return ois.readBoolean(); // true or false, successful creation or not
 
-			return ois.readBoolean(); // true or false, successful creation or not
+			} catch (final IOException e) {
+				throw new ServerException(topicName, e);
+			}
+		};
 
-		} catch (final IOException e) {
-			throw new ServerException(topicName, e);
+		Future<Boolean> task = Executors.newSingleThreadExecutor().submit(connectionTask);
+		boolean success = false;
+		try {
+			success = task.get();
+		} catch (ExecutionException e) {
+			throw new ServerException(new IOException(e.getCause()));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
+
+		return success;
 	}
 
 	private class PostThread extends Thread {
