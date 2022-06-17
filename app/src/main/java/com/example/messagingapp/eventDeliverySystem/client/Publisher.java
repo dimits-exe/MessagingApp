@@ -120,7 +120,14 @@ public class Publisher extends ClientNode implements Serializable {
 	public boolean createTopic(String topicName) throws ServerException {
 
 		Callable<Boolean> connectionTask = () -> {
-			final ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+			ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+
+			InetAddress ip = actualBrokerCI.getAddress();
+			int port = actualBrokerCI.getPort();
+
+			if (ip.equals(InetAddress.getByName("0.0.0.0")))
+				actualBrokerCI = new ConnectionInfo(InetAddress.getByName("10.0.2.2"), port);
+
 			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
 				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				oos.flush();
