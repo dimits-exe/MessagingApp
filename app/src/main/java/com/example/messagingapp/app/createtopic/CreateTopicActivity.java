@@ -1,5 +1,6 @@
 package com.example.messagingapp.app.createtopic;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.EditText;
@@ -8,6 +9,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.messagingapp.app.R;
+import com.example.messagingapp.app.topic.TopicActivity;
 import com.example.messagingapp.app.topiclist.TopicListActivity;
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.app.util.strategies.SeriousErrorMessageStrategy;
@@ -48,6 +50,7 @@ public class CreateTopicActivity extends AppCompatActivity {
                         "Topic " + topicName + " created successfully",
                         Toast.LENGTH_SHORT)
                         .show();
+                toNextActivity(topicName);
             }
         } catch (ServerException | FileSystemException e) {
             closeWithFatalError(e);
@@ -58,5 +61,12 @@ public class CreateTopicActivity extends AppCompatActivity {
         //ErrorDialogFragment.startFromException(getFragmentManager(), e); crashes on error lol
         errorMessageStrategy.showError("Error while creating topic.");
         Log.e(TAG, "create remote topic error", e);
+    }
+
+    private void toNextActivity(String topicName) {
+        Intent intent = new Intent(this, TopicActivity.class);
+        intent.putExtra(TopicActivity.ARG_USER, user);
+        intent.putExtra(TopicActivity.ARG_TOPIC_NAME, topicName);
+        startActivity(intent);
     }
 }
