@@ -207,6 +207,7 @@ public class Publisher extends ClientNode implements Serializable {
 				pushThread.run();
 
 			} catch (final IOException e) {
+				e.printStackTrace();
 				callback.onCompletion(false, topicName);
 			}
 		}
