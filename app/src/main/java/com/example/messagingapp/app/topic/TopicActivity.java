@@ -187,7 +187,7 @@ public class TopicActivity extends AppCompatActivity {
 
     private void setUpNotificationsManager(User user, String topicName, ITopicView view,
                                            IErrorMessageStrategy errorMessageStrategy) {
-        subscriber = new TopicSubscriber(topicName, view, errorMessageStrategy);
+        subscriber = new TopicSubscriber(view, errorMessageStrategy);
         ((AndroidSubscriber) user.getSubscriber()).add(subscriber);
     }
 
