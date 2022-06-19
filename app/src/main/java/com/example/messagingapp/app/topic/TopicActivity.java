@@ -17,10 +17,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.util.AndroidSubscriber;
+import com.example.messagingapp.app.util.LoggedInUserHolder;
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.app.util.strategies.MinorErrorMessageStrategy;
 import com.example.messagingapp.app.videoplayer.VideoPlayerActivity;
-import com.example.messagingapp.eventDeliverySystem.User;
+import com.example.messagingapp.eventDeliverySystem.IUser;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 import com.example.messagingapp.eventDeliverySystem.filesystem.FileSystemException;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -32,8 +33,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
  * @author Dimitris Tsirmpas
  */
 public class TopicActivity extends AppCompatActivity {
-
-    public static final String ARG_USER = "USER";
     public static final String ARG_TOPIC_NAME = "TOPIC";
 
     private static final String TAG = "Topic";
@@ -44,7 +43,7 @@ public class TopicActivity extends AppCompatActivity {
     private EditText messageTextArea;
 
     private String topicName;
-    private User user;
+    private IUser user;
 
     private Uri tempFileUri;
     private ActivityResultLauncher<Uri> photoLauncher;
@@ -56,7 +55,7 @@ public class TopicActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_topic);
 
-        user = (User) getIntent().getSerializableExtra(ARG_USER);
+        user = LoggedInUserHolder.getInstance();
         topicName = getIntent().getStringExtra(ARG_TOPIC_NAME);
         IErrorMessageStrategy errorMessageStrategy = new MinorErrorMessageStrategy(this);
         TopicView view = new TopicView();
@@ -76,7 +75,7 @@ public class TopicActivity extends AppCompatActivity {
         ((AndroidSubscriber) user.getSubscriber()).remove(subscriber);
     }
 
-    private void setUpPresenter(User user, String topicName, ITopicView view ,IErrorMessageStrategy errorMessageStrategy) {
+    private void setUpPresenter(IUser user, String topicName, ITopicView view ,IErrorMessageStrategy errorMessageStrategy) {
         presenter = new TopicPresenter(errorMessageStrategy, view, getFilesDir(), user, topicName);
     }
 
@@ -185,7 +184,7 @@ public class TopicActivity extends AppCompatActivity {
         ((RecyclerView) findViewById(R.id.topic_recycler_view)).setAdapter(adapter);
     }
 
-    private void setUpNotificationsManager(User user, ITopicView view,
+    private void setUpNotificationsManager(IUser user, ITopicView view,
                                            IErrorMessageStrategy errorMessageStrategy) {
         subscriber = new TopicSubscriber(view, errorMessageStrategy);
         ((AndroidSubscriber) user.getSubscriber()).add(subscriber);

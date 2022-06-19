@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.example.messagingapp.app.util.AndroidSubscriber;
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
+import com.example.messagingapp.eventDeliverySystem.IUser;
 import com.example.messagingapp.eventDeliverySystem.User;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
 
@@ -30,7 +31,7 @@ class TopicPresenter {
     private final IErrorMessageStrategy errorMessageStrategy;
     private final ITopicView view;
     private final File baseDir;
-    private final User user;
+    private final IUser user;
     private final String topicName;
 
 
@@ -43,7 +44,7 @@ class TopicPresenter {
      * @param topicName the name of the current topic
      */
     public TopicPresenter(IErrorMessageStrategy errorMessageStrategy, ITopicView view,
-                          File baseDir, User user, String topicName) {
+                          File baseDir, IUser user, String topicName) {
         this.errorMessageStrategy = errorMessageStrategy;
         this.view = view;
         this.baseDir = baseDir;

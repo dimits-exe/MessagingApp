@@ -10,10 +10,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.topic.TopicActivity;
-import com.example.messagingapp.app.topiclist.TopicListActivity;
+import com.example.messagingapp.app.util.LoggedInUserHolder;
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.app.util.strategies.SeriousErrorMessageStrategy;
-import com.example.messagingapp.eventDeliverySystem.User;
+import com.example.messagingapp.eventDeliverySystem.IUser;
 import com.example.messagingapp.eventDeliverySystem.filesystem.FileSystemException;
 import com.example.messagingapp.eventDeliverySystem.server.ServerException;
 
@@ -21,7 +21,7 @@ public class CreateTopicActivity extends AppCompatActivity {
     private static final String TAG = "Create Topic";
     private final IErrorMessageStrategy errorMessageStrategy = new SeriousErrorMessageStrategy(this, R.string.ok);
 
-    private User user;
+    private IUser user;
     private EditText topicNameEditText;
 
 
@@ -30,7 +30,7 @@ public class CreateTopicActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_topic);
 
-        user = (User) getIntent().getExtras().getSerializable(TopicListActivity.ARG_USER);
+        user = LoggedInUserHolder.getInstance();
         topicNameEditText = findViewById(R.id.create_topicname);
         findViewById(R.id.create_submit_button).setOnClickListener(e -> onSubmit());
         // findViewById().setOnClickListener(e -> finish()); // TODO: add back button
@@ -65,7 +65,6 @@ public class CreateTopicActivity extends AppCompatActivity {
 
     private void toNextActivity(String topicName) {
         Intent intent = new Intent(this, TopicActivity.class);
-        intent.putExtra(TopicActivity.ARG_USER, user);
         intent.putExtra(TopicActivity.ARG_TOPIC_NAME, topicName);
         startActivity(intent);
     }

@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.messagingapp.app.R;
 import com.example.messagingapp.app.topiclist.TopicListActivity;
 import com.example.messagingapp.app.util.AndroidSubscriber;
+import com.example.messagingapp.app.util.LoggedInUserHolder;
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.app.util.strategies.SeriousErrorMessageStrategy;
 import com.example.messagingapp.eventDeliverySystem.User;
@@ -68,8 +69,8 @@ public class LoginActivity extends AppCompatActivity {
         User user = tryCreateUser(newUser, serverIp, serverPort, username);
 
         if (user != null) {
+            LoggedInUserHolder.getInstance().setUser(user);
             Intent intent = new Intent(this, TopicListActivity.class);
-            intent.putExtra(TopicListActivity.ARG_USER, user);
             startActivity(intent);
         }
     }
