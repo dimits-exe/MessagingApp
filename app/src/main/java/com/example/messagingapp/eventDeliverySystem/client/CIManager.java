@@ -12,6 +12,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -63,6 +64,19 @@ class CIManager implements Serializable {
 			return address;
 
 		address = getCIForTopic(topicName);
+
+		/*
+		 * TODO: fix this in a non hackey way
+		 * Redirect emulator local address to hostname address
+		 * This exists because the server returns loopback instead of the local address.
+		 */
+		try {
+			if (address.getAddress().equals(InetAddress.getByName("0.0.0.0")))
+				address = new ConnectionInfo(InetAddress.getByName("10.0.2.2"), address.getPort());
+		} catch(UnknownHostException e){
+			throw new ServerException(e);
+		}
+
 		cache.put(topicName, address);
 		return address;
 	}
