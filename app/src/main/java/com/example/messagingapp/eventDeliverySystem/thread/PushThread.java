@@ -37,7 +37,7 @@ public class PushThread extends Thread {
 		 * Just send the data, don't send the amount of data. Should be used in
 		 * conjunction with 'KEEP_ALIVE', for pushing after the Pull Thread has started.
 		 */
-		WITHOUT_COUNT;
+		WITHOUT_COUNT
 	}
 
 	private final ObjectOutputStream  oos;
@@ -142,10 +142,10 @@ public class PushThread extends Thread {
 	 * @author Alex Mandelias
 	 */
 	@FunctionalInterface
-	public static interface Callback {
+	public interface Callback {
 
 		/** A Callback that does nothing */
-		static final Callback EMPTY = (success, topicName) -> {};
+		Callback EMPTY = (success, topicName) -> {};
 
 		/**
 		 * The code to call when the PushThread finishes executing.
