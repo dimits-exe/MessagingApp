@@ -1,12 +1,5 @@
 package com.example.messagingapp.eventDeliverySystem;
 
-import java.io.Serializable;
-import java.net.UnknownHostException;
-import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
-
 import com.example.messagingapp.eventDeliverySystem.client.Consumer;
 import com.example.messagingapp.eventDeliverySystem.client.Publisher;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
@@ -16,6 +9,12 @@ import com.example.messagingapp.eventDeliverySystem.filesystem.ProfileFileSystem
 import com.example.messagingapp.eventDeliverySystem.server.ServerException;
 import com.example.messagingapp.eventDeliverySystem.util.LG;
 
+import java.io.Serializable;
+import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
+
 
 /**
  * A class that manages the actions of the user by communicating with the server
@@ -24,7 +23,7 @@ import com.example.messagingapp.eventDeliverySystem.util.LG;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class User implements Serializable {
+public class User implements Serializable, IUser {
 
 	private final ProfileFileSystem profileFileSystem;
 	private final ISubscriber 		userSub;
@@ -42,9 +41,7 @@ public class User implements Serializable {
 	 * @param profilesRootDirectory the root directory of all the Profiles in the
 	 *                              file system
 	 * @param profileName           the name of the existing profile
-	 *
 	 * @return the new User
-	 *
 	 * @throws ServerException      if the connection to the server fails
 	 * @throws FileSystemException  if an I/O error occurs while interacting with
 	 *                              the file system
@@ -53,7 +50,7 @@ public class User implements Serializable {
 	 *                              IPv6address while resolving the defaultServerIP.
 	 */
 	public static User loadExisting(ISubscriber userSub, String serverIP, int serverPort, Path profilesRootDirectory,
-	        String profileName) throws ServerException, FileSystemException, UnknownHostException {
+							 String profileName) throws ServerException, FileSystemException, UnknownHostException {
 		final User user = new User(userSub, serverIP, serverPort, profilesRootDirectory);
 		user.switchToExistingProfile(profileName);
 		return user;
@@ -67,9 +64,7 @@ public class User implements Serializable {
 	 * @param profilesRootDirectory the root directory of all the Profiles in the
 	 *                              file system
 	 * @param name                  the name of the new Profile
-	 *
 	 * @return the new User
-	 *
 	 * @throws ServerException      if the connection to the server fails
 	 * @throws FileSystemException  if an I/O error occurs while interacting with
 	 *                              the file system
@@ -78,11 +73,12 @@ public class User implements Serializable {
 	 *                              IPv6address while resolving the defaultServerIP.
 	 */
 	public static User createNew(ISubscriber userSub, String serverIP, int serverPort, Path profilesRootDirectory,
-	        String name) throws ServerException, FileSystemException, UnknownHostException {
+						  String name) throws ServerException, FileSystemException, UnknownHostException {
 		final User user = new User(userSub, serverIP, serverPort, profilesRootDirectory);
 		user.switchToNewProfile(name);
 		return user;
 	}
+
 
 	private User(ISubscriber userSub, String serverIP, int port, Path profilesRootDirectory)
 	        throws FileSystemException, UnknownHostException {
@@ -94,70 +90,30 @@ public class User implements Serializable {
 
 	}
 
-	/**
-	 * Returns this User's current Profile.
-	 *
-	 * @return the current Profile
-	 */
+	@Override
 	public Profile getCurrentProfile() {
 		return currentProfile;
 	}
 
-	/**
-	 * Switches this User to manage a new Profile.
-	 *
-	 * @param profileName the name of the new Profile
-	 *
-	 * @throws ServerException     if the connection to the server fails
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public void switchToNewProfile(String profileName) throws ServerException, FileSystemException {
 		currentProfile = profileFileSystem.createNewProfile(profileName);
 		consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
 	}
 
-	/**
-	 * Switches this User to manage an existing.
-	 *
-	 * @param profileName the name of an existing Profile
-	 *
-	 * @throws ServerException     if the connection to the server fails
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public void switchToExistingProfile(String profileName)
 	        throws ServerException, FileSystemException {
 		currentProfile = profileFileSystem.loadProfile(profileName);
 		consumer.setTopics(new HashSet<>(currentProfile.getTopics().values()));
 	}
 
-	/**
-	 * Posts a Post to a Topic.
-	 *
-	 * @param post      the Post to post
-	 * @param topicName the name of the Topic to which to post
-	 *
-	 * @see Publisher#push(Post, String)
-	 */
+	@Override
 	public void post(Post post, String topicName) {
 		publisher.push(post, topicName);
 	}
 
-	/**
-	 * Attempts to push a new Topic. If this succeeds,
-	 * {@link #listenForNewTopic(String)} is called.
-	 *
-	 * @param topicName the name of the Topic to create
-	 *
-	 * @return {@code true} if it was successfully created, {@code false} otherwise
-	 *
-	 * @throws ServerException     if the connection to the server fails
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 *
-	 * @throws IllegalArgumentException if a Topic with the same name already exists
-	 */
+	@Override
 	public boolean createTopic(String topicName) throws ServerException, FileSystemException {
 		LG.sout("User#createTopic(%s)", topicName);
 		LG.in();
@@ -170,16 +126,7 @@ public class User implements Serializable {
 		return success;
 	}
 
-	/**
-	 * Pulls all new Posts from a Topic, adds them to the Profile and saves them to
-	 * the file system. Posts that have already been pulled are not pulled again.
-	 *
-	 * @param topicName the name of the Topic from which to pull
-	 *
-	 * @throws FileSystemException    if an I/O error occurs while interacting with
-	 *                                the file system
-	 * @throws NoSuchElementException if no Topic with the given name exists
-	 */
+	@Override
 	public void pull(String topicName) throws FileSystemException {
 		LG.sout("User#pull from Topic '%s'", topicName);
 		LG.in();
@@ -194,29 +141,14 @@ public class User implements Serializable {
 		LG.out();
 	}
 
-	/**
-	 * Registers a new Topic for which new Posts will be pulled and adds it to the
-	 * Profile and file system. The pulled topics will be added to the Profile and
-	 * saved to the file system.
-	 *
-	 * @param topicName the name of the Topic to listen for
-	 *
-	 * @throws ServerException          if the connection to the server fails
-	 * @throws FileSystemException      if an I/O error occurs while interacting
-	 *                                  with the file system
-	 * @throws NullPointerException     if topic == null
-	 * @throws IllegalArgumentException if a Topic with the same name already exists
-	 */
+	@Override
 	public void listenForNewTopic(String topicName) throws ServerException, FileSystemException {
 		consumer.listenForNewTopic(topicName);
 		currentProfile.addTopic(topicName);
 		profileFileSystem.createTopic(topicName);
 	}
 
-	/**
-	 * Return the assigned subscriber for this user instance.
-	 * @return the assigned subscriber instance
-	 */
+	@Override
 	public ISubscriber getSubscriber() {
 		return userSub;
 	}
