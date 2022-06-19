@@ -66,7 +66,7 @@ public class TopicActivity extends AppCompatActivity {
         setUpLaunchers();
         setUpListeners();
         setUpPostList(view);
-        setUpNotificationsManager(user, topicName, view, errorMessageStrategy);
+        setUpNotificationsManager(user, view, errorMessageStrategy);
     }
 
     @Override
@@ -185,7 +185,7 @@ public class TopicActivity extends AppCompatActivity {
         ((RecyclerView) findViewById(R.id.topic_recycler_view)).setAdapter(adapter);
     }
 
-    private void setUpNotificationsManager(User user, String topicName, ITopicView view,
+    private void setUpNotificationsManager(User user, ITopicView view,
                                            IErrorMessageStrategy errorMessageStrategy) {
         subscriber = new TopicSubscriber(view, errorMessageStrategy);
         ((AndroidSubscriber) user.getSubscriber()).add(subscriber);
