@@ -219,6 +219,8 @@ public class TopicActivity extends AppCompatActivity {
                 Log.e(TAG, "Refresh", e);
             }
             runOnUiThread(()->{
+                //TODO: update only new posts
+                TopicActivity.this.adapter.updatePosts(user.getCurrentProfile().getTopic(TopicActivity.this.topicName).getAllPosts());
                 TopicActivity.this.adapter.notifyDataSetChanged();
                 Log.i(TAG, "Page refreshed");
             });

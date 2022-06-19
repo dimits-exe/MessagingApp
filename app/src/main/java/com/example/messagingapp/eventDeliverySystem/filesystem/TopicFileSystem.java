@@ -27,7 +27,7 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 public class TopicFileSystem implements Serializable {
 
 	private static final Pattern PATTERN = Pattern
-	        .compile("(?<postId>\\-?\\d+)\\-(?<posterName>\\-?\\d+)\\.(?<extension>.*)");
+	        .compile("(?<postId>\\-?\\d+)\\-(?<posterName>\\-?\\w+)\\.(?<extension>.*)");
 	private static final String  FORMAT  = "%d-%s.%s";
 
 	private static final String HEAD                 = "HEAD";

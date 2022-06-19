@@ -19,8 +19,6 @@ import com.example.messagingapp.eventDeliverySystem.User;
 import java.util.Objects;
 
 public class TopicListActivity extends AppCompatActivity {
-    public static final String ARG_USER = "USER";
-
     private IUser user;
 
     @Override
@@ -54,8 +52,6 @@ public class TopicListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.i("Sex", getIntent().toString());
-        user = (User) getIntent().getSerializableExtra(ARG_USER);
         Objects.requireNonNull(((RecyclerView) findViewById(R.id.topiclist_recycler_view))
                 .getAdapter()).notifyDataSetChanged();
     }
