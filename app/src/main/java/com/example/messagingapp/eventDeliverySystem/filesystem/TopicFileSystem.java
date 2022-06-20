@@ -27,7 +27,7 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 public class TopicFileSystem implements Serializable {
 
 	private static final Pattern PATTERN = Pattern
-	        .compile("(?<postId>\\-?\\d+)\\-(?<posterName>\\-?\\w+)\\.(?<extension>.*)");
+	        .compile("(?<postId>-?\\d+)-(?<posterName>\\w+)\\.(?<extension>.*)");
 	private static final String  FORMAT  = "%d-%s.%s";
 
 	private static final String HEAD                 = "HEAD";
@@ -236,7 +236,8 @@ public class TopicFileSystem implements Serializable {
 
 	// returns null if there is no next post
 	private Path getNextFile(Path postFile, String topicName) throws FileSystemException {
-		final Path pointerToNextPost = postFile.resolve(TopicFileSystem.TOPIC_META_EXTENSION);
+		final Path pointerToNextPost = new File(
+				postFile.toString() + TopicFileSystem.TOPIC_META_EXTENSION).toPath();
 
 		final byte[] pointerToNextPostContents = TopicFileSystem.read(pointerToNextPost);
 
