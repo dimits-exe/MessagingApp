@@ -250,8 +250,6 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 			LG.sout("newPosts.size()=%d", newPosts.size());
 			td.pointer = td.topic.getLastPostId();
 
-			td.topic.clear();
-
 			LG.out();
 			return newPosts;
 		}
