@@ -5,11 +5,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import android.content.ContentResolver;
 import android.net.Uri;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 
-import com.example.messagingapp.app.util.AndroidSubscriber;
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.eventDeliverySystem.IUser;
-import com.example.messagingapp.eventDeliverySystem.User;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
 
 import java.io.File;
@@ -75,16 +74,21 @@ class TopicPresenter {
      *
      * @return a new temporary file
      */
-    public File getNewTempFile() {
+    public File getNewTempFile(String extension) {
         File file = null;
         try {
-            file = File.createTempFile("temp_file", UUID.randomUUID().toString(), baseDir);
+            file = File.createTempFile("temp_file",
+                    UUID.randomUUID().toString() + extension, baseDir);
             file.deleteOnExit();
         } catch (IOException e) {
             Log.wtf(TAG, e);
             System.exit(-1);
         }
         return file;
+    }
+
+    public File getNewTempFile(){
+        return getNewTempFile("");
     }
 
     /**
@@ -139,7 +143,9 @@ class TopicPresenter {
      * @throws IOException if the copy procedure fails
      */
     private File copyContentsToTemp(Uri uri, ContentResolver resolver) throws IOException {
-        File temp = getNewTempFile();
+        MimeTypeMap mime = MimeTypeMap.getSingleton();
+        String type = mime.getExtensionFromMimeType(resolver.getType(uri));
+        File temp = getNewTempFile("." + type);
         Files.copy(resolver.openInputStream(uri), temp.toPath(), REPLACE_EXISTING);
         return temp;
     }
