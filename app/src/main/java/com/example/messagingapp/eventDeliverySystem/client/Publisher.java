@@ -188,8 +188,10 @@ public class Publisher extends ClientNode implements Serializable {
 				return;
 			}
 
-			try (Socket socket = new Socket(actualBrokerCI.getAddress(),
-			        actualBrokerCI.getPort())) {
+			try {
+				//TODO: figure out how to close this one
+				Socket socket = new Socket(actualBrokerCI.getAddress(),
+						actualBrokerCI.getPort());
 
 				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
