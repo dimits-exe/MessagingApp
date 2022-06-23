@@ -87,10 +87,6 @@ class TopicPresenter {
         return file;
     }
 
-    public File getNewTempFile(){
-        return getNewTempFile("");
-    }
-
     /**
      * Send a file to the topic. Displays an error to the user if any error occurs.
      * @param fileUri the uri of the file
@@ -146,6 +142,8 @@ class TopicPresenter {
         MimeTypeMap mime = MimeTypeMap.getSingleton();
         String type = mime.getExtensionFromMimeType(resolver.getType(uri));
         File temp = getNewTempFile("." + type);
+        Log.i(TAG, "Constructing tag for type " + type);
+
         Files.copy(resolver.openInputStream(uri), temp.toPath(), REPLACE_EXISTING);
         return temp;
     }

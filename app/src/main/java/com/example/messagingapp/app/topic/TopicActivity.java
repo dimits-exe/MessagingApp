@@ -45,7 +45,8 @@ public class TopicActivity extends AppCompatActivity {
     private String topicName;
     private IUser user;
 
-    private Uri tempFileUri;
+    private Uri photoFileUri;
+    private Uri videoFileUri;
     private ActivityResultLauncher<Uri> photoLauncher;
     private ActivityResultLauncher<Uri> videoLauncher;
     private ActivityResultLauncher<String> fileLauncher;
@@ -86,19 +87,22 @@ public class TopicActivity extends AppCompatActivity {
     }
 
     private void setUpLaunchers() {
-        tempFileUri = FileProvider.getUriForFile(this,
-                getApplicationContext().getPackageName() + ".provider", presenter.getNewTempFile());
+        photoFileUri = FileProvider.getUriForFile(this,
+                getApplicationContext().getPackageName() + ".provider", presenter.getNewTempFile(".jpg"));
+
+        videoFileUri = FileProvider.getUriForFile(this,
+                getApplicationContext().getPackageName() + ".provider", presenter.getNewTempFile(".mp4"));
 
         photoLauncher = registerForActivityResult(
                 new ActivityResultContracts.TakePicture(), result -> {
                     if(result)
-                        presenter.sendFile(tempFileUri, getContentResolver());
+                        presenter.sendFile(photoFileUri, getContentResolver());
                 });
 
         videoLauncher = registerForActivityResult(
                 new ActivityResultContracts.CaptureVideo(), result -> {
                     if(result)
-                        presenter.sendFile(tempFileUri, getContentResolver());
+                        presenter.sendFile(videoFileUri, getContentResolver());
                 });
 
         fileLauncher = registerForActivityResult(
@@ -167,11 +171,11 @@ public class TopicActivity extends AppCompatActivity {
     }
 
     private void takePhoto() {
-        photoLauncher.launch(tempFileUri);
+        photoLauncher.launch(photoFileUri);
     }
 
     private void takeVideo() {
-        videoLauncher.launch(tempFileUri);
+        videoLauncher.launch(videoFileUri);
     }
 
     private void setUpMessageListener() {
