@@ -126,9 +126,11 @@ class TopicPresenter {
      * @param text the text message
      */
     public void sendText(String text) {
-        Post post = Post.fromText(text, user.getCurrentProfile().getName());
-        trySendPost(post);
-        Log.i(TAG, "Message " + text + " sent");
+        if(!text.trim().isEmpty()){ // only send non-blank strings
+            Post post = Post.fromText(text, user.getCurrentProfile().getName());
+            trySendPost(post);
+            Log.i(TAG, "Message " + text + " sent");
+        }
     }
 
     /**
