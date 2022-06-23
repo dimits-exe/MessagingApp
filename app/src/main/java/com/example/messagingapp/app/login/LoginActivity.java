@@ -86,14 +86,20 @@ public class LoginActivity extends AppCompatActivity {
                     throw new FileSystemException(userDir, e);
                 }
             }
-            
+
+            // I didnt write this API, I take no responsibility for this shit
             if (newUser){
                 user = User.createNew(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
                 user.createTopic(STORY_TOPIC_NAME); // will only have effects for the first user
             }
             else {
                 user = User.loadExisting(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
-                user.listenForExistingTopic(STORY_TOPIC_NAME);
+                try {
+                    boolean topicExists = !user.createTopic(STORY_TOPIC_NAME);
+                    if(topicExists){
+                        user.listenForExistingTopic(STORY_TOPIC_NAME);
+                    }
+                } catch (IllegalArgumentException ignored){}
             }
 
         } catch (ServerException e) {
