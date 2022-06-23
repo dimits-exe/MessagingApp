@@ -26,6 +26,8 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 import com.example.messagingapp.eventDeliverySystem.filesystem.FileSystemException;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.File;
+
 /**
  * An activity which displays messages from a given {@link Topic}
  * and allows the user to send its own.
@@ -184,7 +186,7 @@ public class TopicActivity extends AppCompatActivity {
     }
 
     private void setUpPostList(ITopicView view){
-        adapter = new TopicAdapter(presenter, view);
+        adapter = new TopicAdapter(presenter, view, new MinorErrorMessageStrategy(this));
         ((RecyclerView) findViewById(R.id.topic_recycler_view)).setAdapter(adapter);
     }
 
@@ -208,9 +210,9 @@ public class TopicActivity extends AppCompatActivity {
     private final class TopicView implements ITopicView {
 
         @Override
-        public void playVideo(byte[] data) {
+        public void playVideo(File temp) {
             Intent intent = new Intent(TopicActivity.this, VideoPlayerActivity.class);
-            intent.putExtra(VideoPlayerActivity.ARG_VIDEO, data);
+            intent.putExtra(VideoPlayerActivity.ARG_VIDEO, temp);
             startActivity(intent);
         }
 

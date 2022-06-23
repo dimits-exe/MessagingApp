@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,8 +18,13 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.messagingapp.app.R;
+import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,14 +51,17 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
         add("wav");
         // ...
     }};
+    private static final String TAG = TopicAdapter.class.getName();
 
+    private final IErrorMessageStrategy errorMessageStrategy;
     private final ITopicView topicView;
     private final TopicPresenter presenter;
     private List<Post> currentPosts;
 
-    public TopicAdapter(TopicPresenter presenter, ITopicView topicView) {
+    public TopicAdapter(TopicPresenter presenter, ITopicView topicView, IErrorMessageStrategy errorMessageStrategy) {
         this.presenter = presenter;
         this.topicView = topicView;
+        this.errorMessageStrategy = errorMessageStrategy;
         currentPosts = presenter.getProfilePosts();
         setHasStableIds(false);
     }
@@ -88,7 +98,7 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
             updatePosts(freshPosts);
         }
 
-        Post post = currentPosts.get(position);
+        final Post post = currentPosts.get(position);
 
         holder.linearLayout.setGravity(
                 post.getPostInfo().getPosterName().equals(presenter.getProfileName())
@@ -111,13 +121,20 @@ public class TopicAdapter extends RecyclerView.Adapter<TopicAdapter.TopicViewHol
                 ImageTopicViewHolder vh = (ImageTopicViewHolder) holder;
 
                 // set thumbnail
-                Bitmap video = BitmapFactory.decodeByteArray(post.getData(), 0, post.getData().length);
-                Bitmap thumbnail = ThumbnailUtils.extractThumbnail(video, vh.imageView.getWidth(),
-                        vh.imageView.getHeight(), 0);
-                vh.imageView.setImageBitmap(thumbnail);
+                File temp = presenter.getNewTempFile(".mp4");
 
-                // on click go to video player activity
-                vh.imageView.setOnClickListener(v -> topicView.playVideo(post.getData()));
+                try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(temp))){
+                    outputStream.write(post.getData());
+                    Bitmap thumbnail = ThumbnailUtils.createVideoThumbnail(temp.toString(), MediaStore.Images.Thumbnails.MINI_KIND);
+
+                    vh.imageView.setImageBitmap(thumbnail);
+
+                    // on click go to video player activity
+                    vh.imageView.setOnClickListener(v -> topicView.playVideo(temp));
+                } catch (IOException e) {
+                    Log.e(TAG, "Render video thumbnail", e);
+                    errorMessageStrategy.showError("Unable to display video");
+                }
                 break;
             }
         }
