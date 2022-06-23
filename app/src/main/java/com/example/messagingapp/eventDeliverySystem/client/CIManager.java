@@ -103,7 +103,7 @@ class CIManager implements Serializable {
 
 		try {
 			Future<ConnectionInfo> task = Executors.newSingleThreadExecutor().submit(socketThread);
-			info = task.get(5L, TimeUnit.SECONDS);
+			info = task.get(10L, TimeUnit.SECONDS);
 		} catch (ExecutionException e) {
 			throw new ServerException(new IOException(e.getCause())); // dont worry about it
 		} catch (InterruptedException ie){
