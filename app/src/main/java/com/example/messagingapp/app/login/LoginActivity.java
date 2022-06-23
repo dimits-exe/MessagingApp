@@ -31,7 +31,7 @@ import java.util.Objects;
  * @author Dimitris Tsirmpas
  */
 public class LoginActivity extends AppCompatActivity {
-
+    private static final String STORY_TOPIC_NAME = "Stories";
     public static final String ARG_IP = "IP";
     public static final String ARG_PORT = "PORT";
 
@@ -76,6 +76,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private User tryCreateUser(boolean newUser, String serverIp, int serverPort, String username) {
+        User user = null;
         try {
             Path userDir = getFilesDir().toPath().resolve("users");
             if (!Files.exists(userDir)) {
@@ -85,25 +86,29 @@ public class LoginActivity extends AppCompatActivity {
                     throw new FileSystemException(userDir, e);
                 }
             }
-
-            if (newUser)
-                return User.createNew(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
-            else
-                return User.loadExisting(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
+            
+            if (newUser){
+                user = User.createNew(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
+                user.createTopic(STORY_TOPIC_NAME); // will only have effects for the first user
+            }
+            else {
+                user = User.loadExisting(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
+                user.listenForExistingTopic(STORY_TOPIC_NAME);
+            }
 
         } catch (ServerException e) {
             errorMessageStrategy.showError("Connection interrupted with the server.");
-            Log.e(TAG, String.valueOf(e), e);
+            Log.e(TAG, "Exception while creating user", e);
         } catch (FileSystemException e) {
             errorMessageStrategy.showError("Can't access the Android File System.");
-            Log.e(TAG, String.valueOf(e), e);
+            Log.e(TAG, "Exception while creating user", e);
         } catch (UnknownHostException e) {
             errorMessageStrategy.showError("Couldn't establish a connection with the server.");
-            Log.e(TAG, String.valueOf(e), e);
+            Log.e(TAG, "Exception while creating user", e);
         } catch (NoSuchElementException e) {
             errorMessageStrategy.showError(e.getMessage());
         }
 
-        return null;
+        return user;
     }
 }

@@ -3,6 +3,7 @@ package com.example.messagingapp.eventDeliverySystem;
 import com.example.messagingapp.eventDeliverySystem.client.Consumer;
 import com.example.messagingapp.eventDeliverySystem.client.Publisher;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 import com.example.messagingapp.eventDeliverySystem.filesystem.FileSystemException;
 import com.example.messagingapp.eventDeliverySystem.filesystem.Profile;
 import com.example.messagingapp.eventDeliverySystem.filesystem.ProfileFileSystem;
@@ -146,6 +147,12 @@ public class User implements Serializable, IUser {
 		consumer.listenForNewTopic(topicName);
 		currentProfile.addTopic(topicName);
 		profileFileSystem.createTopic(topicName);
+	}
+
+	@Override
+	public void listenForExistingTopic(String topicName) throws ServerException {
+		Topic topic = currentProfile.getTopic(topicName);
+		consumer.listenForTopic(topic);
 	}
 
 	@Override

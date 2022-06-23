@@ -16,7 +16,7 @@ import com.example.messagingapp.eventDeliverySystem.server.ServerException;
  * @author Dimitris Tsirmpas
  */
 public class LoggedInUser implements IUser {
-    private User user;
+    private IUser user;
 
     public LoggedInUser() {
         user = null;
@@ -26,7 +26,7 @@ public class LoggedInUser implements IUser {
      * Change which user is being used throughout the application.
      * @param user the user
      */
-    void setUser(User user){
+    void setUser(IUser user){
         this.user = user;
     }
 
@@ -70,6 +70,12 @@ public class LoggedInUser implements IUser {
     public void listenForNewTopic(String topicName) throws ServerException, FileSystemException {
         throwOnNull();
         user.listenForNewTopic(topicName);
+    }
+
+    @Override
+    public void listenForExistingTopic(String topicName) throws ServerException {
+        throwOnNull();
+        user.listenForExistingTopic(topicName);
     }
 
     @Override

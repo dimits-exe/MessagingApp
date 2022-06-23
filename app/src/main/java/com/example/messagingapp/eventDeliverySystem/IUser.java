@@ -86,6 +86,18 @@ public interface IUser {
     void listenForNewTopic(String topicName) throws ServerException, FileSystemException;
 
     /**
+     * Registers an existing Topic from the file system for which new Posts will be pulled.
+     * The pulled topics will be added to the Profile and
+     * saved to the file system.
+     *
+     * @param topicName the name of the Topic to listen for
+     * @throws ServerException          if the connection to the server fails
+     * @throws NullPointerException     if there is no such topic
+     * @throws IllegalArgumentException if a Topic with the same name already exists
+     */
+    void listenForExistingTopic(String topicName) throws ServerException;
+
+    /**
      * Return the assigned subscriber for this user instance.
      *
      * @return the assigned subscriber instance

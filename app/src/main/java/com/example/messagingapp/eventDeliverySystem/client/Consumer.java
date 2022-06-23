@@ -152,7 +152,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber, S
 	 *                                  with the same name
 	 */
 	@SuppressWarnings("resource") // 'socket' closes at close()
-	private void listenForTopic(Topic topic) throws ServerException {
+	public void listenForTopic(Topic topic) throws ServerException {
 		topic.subscribe(this);
 
 		final Socket[] socket = {null};
