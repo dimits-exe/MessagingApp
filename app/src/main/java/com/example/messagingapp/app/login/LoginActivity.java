@@ -99,22 +99,30 @@ public class LoginActivity extends AppCompatActivity {
             if(topicExists){
                 try {
                     user.listenForNewTopic(STORY_TOPIC_NAME);
-                } catch (IllegalArgumentException ignored){
-                    user.listenForExistingTopic(STORY_TOPIC_NAME);
+                } catch (IllegalArgumentException illegalArgumentException){
+                    // if the topic already exists ignore the exception
+                    try {
+                        user.listenForExistingTopic(STORY_TOPIC_NAME);
+                    } catch (ServerException ignored){}
+
                 }
             }
 
         } catch (ServerException e) {
             errorMessageStrategy.showError("Connection interrupted with the server.");
             Log.e(TAG, "Exception while creating user", e);
+            user = null;
         } catch (FileSystemException e) {
-            errorMessageStrategy.showError("Can't access the Android File System.");
+            errorMessageStrategy.showError("Can't retrieve user data");
             Log.e(TAG, "Exception while creating user", e);
+            user = null;
         } catch (UnknownHostException e) {
             errorMessageStrategy.showError("Couldn't establish a connection with the server.");
             Log.e(TAG, "Exception while creating user", e);
+            // user is already null here
         } catch (NoSuchElementException e) {
             errorMessageStrategy.showError(e.getMessage());
+            user = null;
         }
 
         return user;
