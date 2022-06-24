@@ -90,16 +90,18 @@ public class LoginActivity extends AppCompatActivity {
             // I didnt write this API, I take no responsibility for this shit
             if (newUser){
                 user = User.createNew(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
-                user.createTopic(STORY_TOPIC_NAME); // will only have effects for the first user
             }
             else {
                 user = User.loadExisting(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
+            }
+
+            boolean topicExists = !user.createTopic(STORY_TOPIC_NAME);
+            if(topicExists){
                 try {
-                    boolean topicExists = !user.createTopic(STORY_TOPIC_NAME);
-                    if(topicExists){
-                        user.listenForExistingTopic(STORY_TOPIC_NAME);
-                    }
-                } catch (IllegalArgumentException ignored){}
+                    user.listenForNewTopic(STORY_TOPIC_NAME);
+                } catch (IllegalArgumentException ignored){
+                    user.listenForExistingTopic(STORY_TOPIC_NAME);
+                }
             }
 
         } catch (ServerException e) {
