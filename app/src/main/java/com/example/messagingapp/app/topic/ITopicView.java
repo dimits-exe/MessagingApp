@@ -19,4 +19,9 @@ interface ITopicView {
      * Request that the TopicActivity refreshes the contents of it's displayed post feed.
      */
     void refresh();
+
+    /**
+     * Request that the app goes back to the main screen, because of an unrecoverable error.
+     */
+    void restartApp();
 }

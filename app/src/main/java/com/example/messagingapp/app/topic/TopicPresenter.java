@@ -82,7 +82,8 @@ class TopicPresenter {
             file.deleteOnExit();
         } catch (IOException e) {
             Log.wtf(TAG, e);
-            System.exit(-1);
+            errorMessageStrategy.showError("A serious error has occurred");
+            view.restartApp();
         }
         return file;
     }

@@ -16,6 +16,7 @@ import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.messagingapp.app.R;
+import com.example.messagingapp.app.connect.ConnectActivity;
 import com.example.messagingapp.app.util.AndroidSubscriber;
 import com.example.messagingapp.app.util.LoggedInUserHolder;
 import com.example.messagingapp.app.util.strategies.IErrorMessageStrategy;
@@ -231,6 +232,14 @@ public class TopicActivity extends AppCompatActivity {
                 Log.i(TAG, "Page refreshed");
             });
 
+        }
+
+        @Override
+        public void restartApp() {
+            Intent intent = new Intent(TopicActivity.this, ConnectActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+            finish();
         }
     }
 
