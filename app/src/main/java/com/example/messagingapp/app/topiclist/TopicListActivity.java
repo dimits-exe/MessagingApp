@@ -14,19 +14,17 @@ import com.example.messagingapp.app.createtopic.CreateTopicActivity;
 import com.example.messagingapp.app.topic.TopicActivity;
 import com.example.messagingapp.app.util.LoggedInUserHolder;
 import com.example.messagingapp.eventDeliverySystem.IUser;
-import com.example.messagingapp.eventDeliverySystem.User;
 
 import java.util.Objects;
 
 public class TopicListActivity extends AppCompatActivity {
-    private IUser user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_topic_list);
 
-        user = LoggedInUserHolder.getInstance();
+        IUser user = LoggedInUserHolder.getInstance();
 
         ((TextView) findViewById(R.id.topiclist_username)).setText(user.getCurrentProfile().getName());
 

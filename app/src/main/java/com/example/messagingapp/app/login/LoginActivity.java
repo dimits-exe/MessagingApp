@@ -87,7 +87,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
 
-            // I didnt write this API, I take no responsibility for this shit
+            // I didn't write this API, I take no responsibility for this shit
             if (newUser){
                 user = User.createNew(new AndroidSubscriber(), serverIp, serverPort, userDir, username);
             }
