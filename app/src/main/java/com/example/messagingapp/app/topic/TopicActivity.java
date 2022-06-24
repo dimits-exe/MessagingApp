@@ -79,7 +79,7 @@ public class TopicActivity extends AppCompatActivity {
     }
 
     private void setUpPresenter(IUser user, String topicName, ITopicView view ,IErrorMessageStrategy errorMessageStrategy) {
-        presenter = new TopicPresenter(errorMessageStrategy, view, getFilesDir(), user, topicName);
+        presenter = new TopicPresenter(errorMessageStrategy, view, getCacheDir(), user, topicName);
     }
 
     private void setUpFields(String topicName) {
