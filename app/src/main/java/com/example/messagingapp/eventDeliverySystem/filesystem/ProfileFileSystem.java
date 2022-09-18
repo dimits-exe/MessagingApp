@@ -1,6 +1,8 @@
 package com.example.messagingapp.eventDeliverySystem.filesystem;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -16,9 +18,9 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
  *
  * @author Alex Mandelias
  */
-public class ProfileFileSystem {
+public class ProfileFileSystem implements Serializable {
 
-	private final Path                         profilesRootDirectory;
+	private final File profilesRootDirectory;
 	private final Map<String, TopicFileSystem> topicFileSystemMap;
 
 	private String currentProfileName;
@@ -33,7 +35,7 @@ public class ProfileFileSystem {
 	 *                             file system
 	 */
 	public ProfileFileSystem(Path profilesRootDirectory) throws FileSystemException {
-		this.profilesRootDirectory = profilesRootDirectory;
+		this.profilesRootDirectory = profilesRootDirectory.toFile();
 		topicFileSystemMap = new HashMap<>();
 
 		getProfileNames().forEach(profileName -> {
@@ -52,10 +54,10 @@ public class ProfileFileSystem {
 	 */
 	public Stream<String> getProfileNames() throws FileSystemException {
 		try {
-			return Files.list(profilesRootDirectory).filter(Files::isDirectory)
+			return Files.list(getRoot()).filter(Files::isDirectory)
 		        .map(path -> path.getFileName().toString());
 		} catch (IOException e) {
-			throw new FileSystemException(profilesRootDirectory, e);
+			throw new FileSystemException(getRoot(), e);
 		}
 	}
 
@@ -134,6 +136,10 @@ public class ProfileFileSystem {
 
 	// ==================== PRIVATE METHODS ====================
 
+	private Path getRoot() {
+		return profilesRootDirectory.toPath();
+	}
+
 	private void changeProfile(String profileName) throws NoSuchElementException {
 		if (!topicFileSystemMap.containsKey(profileName))
 			throw new NoSuchElementException("Profile " + profileName + " does not exist");
@@ -146,6 +152,6 @@ public class ProfileFileSystem {
 	}
 
 	private Path getTopicsDirectory(String profileName) {
-		return profilesRootDirectory.resolve(profileName);
+		return getRoot().resolve(profileName);
 	}
 }

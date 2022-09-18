@@ -40,7 +40,7 @@ public final class ConnectionInfo implements Serializable {
 		return new ConnectionInfo(connection.getInetAddress(), connection.getLocalPort());
 	}
 
-	private ConnectionInfo(InetAddress address, int port) {
+	public ConnectionInfo(InetAddress address, int port) {
 		this.address = address;
 		this.port = port;
 	}

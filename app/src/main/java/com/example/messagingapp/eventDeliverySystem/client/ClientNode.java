@@ -1,5 +1,6 @@
 package com.example.messagingapp.eventDeliverySystem.client;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -14,7 +15,7 @@ import com.example.messagingapp.eventDeliverySystem.server.Broker;
  *
  * @see Broker
  */
-abstract class ClientNode {
+abstract class ClientNode implements Serializable {
 
 	/**
 	 * This Client Node's Connection Info Manager that manages the information about

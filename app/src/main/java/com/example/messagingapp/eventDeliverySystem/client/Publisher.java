@@ -3,18 +3,7 @@ package com.example.messagingapp.eventDeliverySystem.client;
 import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.CREATE_TOPIC;
 import static com.example.messagingapp.eventDeliverySystem.datastructures.Message.MessageType.DATA_PACKET_SEND;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import com.example.messagingapp.eventDeliverySystem.User.UserSub;
+import com.example.messagingapp.eventDeliverySystem.ISubscriber;
 import com.example.messagingapp.eventDeliverySystem.datastructures.ConnectionInfo;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Message;
 import com.example.messagingapp.eventDeliverySystem.datastructures.Packet;
@@ -27,6 +16,22 @@ import com.example.messagingapp.eventDeliverySystem.thread.PushThread.Callback;
 import com.example.messagingapp.eventDeliverySystem.thread.PushThread.Protocol;
 import com.example.messagingapp.eventDeliverySystem.util.LG;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 /**
  * A client-side process which is responsible for creating Topics and pushing
  * Posts to them by connecting to a remote server.
@@ -36,9 +41,9 @@ import com.example.messagingapp.eventDeliverySystem.util.LG;
  *
  * @see Broker
  */
-public class Publisher extends ClientNode {
+public class Publisher extends ClientNode implements Serializable {
 
-	private final UserSub usersub;
+	private final ISubscriber userSub;
 
 	/**
 	 * Constructs a Publisher.
@@ -53,7 +58,7 @@ public class Publisher extends ClientNode {
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
 	 */
-	public Publisher(String defaultServerIP, int defaultServerPort, UserSub usersub)
+	public Publisher(String defaultServerIP, int defaultServerPort, ISubscriber usersub)
 	        throws UnknownHostException {
 		this(InetAddress.getByName(defaultServerIP), defaultServerPort, usersub);
 	}
@@ -69,7 +74,7 @@ public class Publisher extends ClientNode {
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	public Publisher(byte[] defaultServerIP, int defaultServerPort, UserSub usersub)
+	public Publisher(byte[] defaultServerIP, int defaultServerPort, ISubscriber usersub)
 	        throws UnknownHostException {
 		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, usersub);
 	}
@@ -81,9 +86,9 @@ public class Publisher extends ClientNode {
 	 * @param port    the port of the default broker
 	 * @param usersub the UserSub object that will be notified if a push fails
 	 */
-	private Publisher(InetAddress ip, int port, UserSub usersub) {
+	private Publisher(InetAddress ip, int port, ISubscriber usersub) {
 		super(ip, port);
-		this.usersub = usersub;
+		this.userSub = usersub;
 	}
 
 	/**
@@ -113,20 +118,40 @@ public class Publisher extends ClientNode {
 	 */
 	public boolean createTopic(String topicName) throws ServerException {
 
-		final ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+		Callable<Boolean> connectionTask = () -> {
+			ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
 
-		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
-			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			oos.flush();
-			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+			InetAddress ip = actualBrokerCI.getAddress();
+			int port = actualBrokerCI.getPort();
 
-			oos.writeObject(new Message(CREATE_TOPIC, topicName));
+			if (ip.equals(InetAddress.getByName("0.0.0.0")))
+				actualBrokerCI = new ConnectionInfo(InetAddress.getByName("10.0.2.2"), port);
 
-			return ois.readBoolean(); // true or false, successful creation or not
+			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
+				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-		} catch (final IOException e) {
-			throw new ServerException(topicName, e);
+				oos.writeObject(new Message(CREATE_TOPIC, topicName));
+
+				return ois.readBoolean(); // true or false, successful creation or not
+
+			} catch (final IOException e) {
+				throw new ServerException(topicName, e);
+			}
+		};
+
+		Future<Boolean> task = Executors.newSingleThreadExecutor().submit(connectionTask);
+		boolean success = false;
+		try {
+			success = task.get();
+		} catch (ExecutionException e) {
+			throw new ServerException(new IOException(e.getCause()));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
+
+		return success;
 	}
 
 	private class PostThread extends Thread {
@@ -152,7 +177,7 @@ public class Publisher extends ClientNode {
 
 			final Callback callback = (success, topicName1) -> {
 				if (!success)
-					usersub.failure(topicName1);
+					userSub.failure(topicName1);
 			};
 
 			final ConnectionInfo actualBrokerCI;
@@ -163,8 +188,10 @@ public class Publisher extends ClientNode {
 				return;
 			}
 
-			try (Socket socket = new Socket(actualBrokerCI.getAddress(),
-			        actualBrokerCI.getPort())) {
+			try {
+				//TODO: figure out how to close this one
+				Socket socket = new Socket(actualBrokerCI.getAddress(),
+						actualBrokerCI.getPort());
 
 				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
@@ -181,6 +208,7 @@ public class Publisher extends ClientNode {
 				pushThread.run();
 
 			} catch (final IOException e) {
+				e.printStackTrace();
 				callback.onCompletion(false, topicName);
 			}
 		}

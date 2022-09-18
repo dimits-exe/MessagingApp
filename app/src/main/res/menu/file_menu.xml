@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/topic_menu_file_photo_item"
+        android:title="@string/topic_menu_file_photo" />
+    <item
+        android:id="@+id/topic_menu_file_video_item"
+        android:title="@string/topic_menu_file_video" />
+</menu>

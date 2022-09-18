@@ -37,7 +37,7 @@ public class Topic extends AbstractTopic {
 	private final List<Post>         postList;
 	private final Map<Long, Integer> indexPerPostId;
 
-	private Post lastPost;
+	private Post lastPost; // don't traverse the entire postList
 
 	/**
 	 * Creates a new, empty, Topic.
@@ -90,7 +90,7 @@ public class Topic extends AbstractTopic {
 		currPackets.add(packet);
 
 		if (packet.isFinal()) {
-			final Packet[] data          = currPackets.toArray(new Packet[currPackets.size()]);
+			final Packet[] data          = currPackets.toArray(new Packet[0]);
 			final Post     completedPost = Post.fromPackets(data, currPI);
 			post(completedPost);
 
@@ -117,6 +117,7 @@ public class Topic extends AbstractTopic {
 
 	/** Clears this Topic by removing all Posts */
 	public void clear() {
+		indexPerPostId.clear();
 		postList.clear();
 		post(dummyPost);
 	}
@@ -137,6 +138,7 @@ public class Topic extends AbstractTopic {
 		LG.in();
 
 		final Integer index = indexPerPostId.get(lastPostId);
+
 		if (index == null)
 			throw new NoSuchElementException(
 			        "No post with id " + lastPostId + " found in this Topic");

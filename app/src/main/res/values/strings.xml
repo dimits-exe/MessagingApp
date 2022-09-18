@@ -1,3 +1,34 @@
 <resources>
-    <string name="app_name">MessagingApp</string>
+    <string name="app_name">Yammi</string>
+    <string name="unread">Unread</string>
+    <string name="add_topic">Add Topic</string>
+    <string name="logo_of_the_app">Logo of the app</string>
+    <string name="ok">O.K</string>
+    <string name="empty_string"> </string>
+
+    <string name="connection_hint_IP">e.g. 127.0.0.1</string>
+    <string name="connection_hint_port">e.g. 12345</string>
+
+    <string name="login_hint_username">Username</string>
+    <string name="login_button_login">Sign in</string>
+    <string name="login_button_create">Create New</string>
+
+    <string name="conversation_name">Conversation Name</string>
+    <string name="create_topic">Create Conversation</string>
+    <string name="create">Create</string>
+
+    <string name="topic_description_add_file">Send a file</string>
+    <string name="topic_description_send_message">Send message</string>
+    <string name="topic_description_take_photo">Take a photo!</string>
+
+    <string name="connect">Connect</string>
+    <string name="server_ip">Server IP</string>
+    <string name="server_port">Server Port</string>
+    <string name="username">Username</string>
+
+    <string name="topic_menu_photo">Take a photo</string>
+    <string name="topic_menu_video">Record a video</string>
+
+    <string name="topic_menu_file_photo">Send a photo</string>
+    <string name="topic_menu_file_video">Send a video</string>
 </resources>

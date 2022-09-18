@@ -1,5 +1,6 @@
 package com.example.messagingapp.eventDeliverySystem.datastructures;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -14,7 +15,7 @@ import com.example.messagingapp.eventDeliverySystem.util.Subscriber;
  *
  * @author Alex Mandelias
  */
-public abstract class AbstractTopic {
+public abstract class AbstractTopic implements Serializable {
 
 	/** Constant to be used when no post exists and an ID is needed */
 	public static final long FETCH_ALL_POSTS = -1L;
@@ -128,8 +129,13 @@ public abstract class AbstractTopic {
 				for (int g = 0; g < d; g++)
 					e[f] ^= (b[(d * f) + g]);
 
-			final BigInteger h = new BigInteger(e);
-			return h.intValueExact();
+			// compress to int
+			int value = 0;
+			for (int i = 0; i < 4; i++) {
+				int shift = (4 - 1 - i) * 8;
+				value += (e[i] & 0x000000FF) << shift;
+			}
+			return value;
 
 		} catch (NoSuchAlgorithmException | ArithmeticException e) {
 			throw new RuntimeException(e);

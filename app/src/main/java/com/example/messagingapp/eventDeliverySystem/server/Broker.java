@@ -195,6 +195,7 @@ public class Broker implements Runnable, AutoCloseable {
 					BrokerTopic topic = getTopic(topicName);
 					new PullThread(ois, topic).run();
 
+					oos.flush();
 					socket.close();
 					LG.out();
 					break;
@@ -235,6 +236,7 @@ public class Broker implements Runnable, AutoCloseable {
 					LG.in();
 					new BrokerDiscoveryThread(oos, topicName).run();
 
+					oos.flush();
 					socket.close();
 					LG.out();
 					break;
@@ -253,6 +255,7 @@ public class Broker implements Runnable, AutoCloseable {
 
 					oos.writeBoolean(!topicExists);
 
+					oos.flush();
 					socket.close();
 					LG.out();
 					break;
@@ -263,6 +266,7 @@ public class Broker implements Runnable, AutoCloseable {
 					        "You forgot to put a case for the new Message enum");
 				}
 				LG.out();
+				LG.sout("Thread for message type: %s done", message.getType());
 
 			} catch (final IOException ioe) {
 				// do nothing, ignore this client

@@ -1,15 +1,15 @@
 package com.example.messagingapp.eventDeliverySystem.filesystem;
 
+import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
+import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
+
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
-
-import com.example.messagingapp.eventDeliverySystem.datastructures.Post;
-import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
 
 /**
  * A data structure holding information about a user and their subscribed
@@ -18,7 +18,7 @@ import com.example.messagingapp.eventDeliverySystem.datastructures.Topic;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class Profile {
+public class Profile implements Serializable {
 
 	private final String               name;
 	private final Map<String, Topic>   topics;
@@ -49,12 +49,25 @@ public class Profile {
 	}
 
 	/**
+	 * Returns a Topic of this Profile.
+	 * @param topicName the name of the Topic
+	 *
+	 * @return the Topic with that name
+	 *
+	 * @throws NoSuchElementException if no Topic with the given name exists
+	 */
+	public Topic getTopic(String topicName) {
+		assertTopicExists(topicName);
+		return topics.get(topicName);
+	}
+
+	/**
 	 * Returns this Profile's topics.
 	 *
 	 * @return the topics
 	 */
-	public Set<Topic> getTopics() {
-		return new HashSet<>(topics.values());
+	public Map<String, Topic> getTopics() {
+		return new HashMap<>(topics);
 	}
 
 	/**
@@ -97,11 +110,8 @@ public class Profile {
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public void updateTopic(String topicName, List<Post> posts) {
-		final Topic topic = topics.get(topicName);
-		if (topic == null)
-			throw new NoSuchElementException("No Topic with name " + topicName + " found");
-
-		topic.post(posts);
+		assertTopicExists(topicName);
+		topics.get(topicName).post(posts);
 	}
 
 	/**
@@ -112,8 +122,8 @@ public class Profile {
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public void removeTopic(String topicName) {
-		if (topics.remove(topicName) == null)
-			throw new NoSuchElementException("No Topic with name " + topicName + " found");
+		assertTopicExists(topicName);
+		topics.remove(topicName);
 	}
 
 	/**
@@ -123,6 +133,17 @@ public class Profile {
 	 */
 	public void markUnread(String topicName) {
 		unreadTopics.put(topicName, unreadTopics.get(topicName) + 1);
+	}
+
+	/**
+	 * Returns the number of unread posts in a Topic.
+	 *
+	 * @param topicName the name of the Topic
+	 *
+	 * @return the unread count
+	 */
+	public int getUnread(String topicName) {
+		return unreadTopics.get(topicName);
 	}
 
 	/**
@@ -138,5 +159,10 @@ public class Profile {
 	public String toString() {
 		final List<Object> topicNames = Arrays.asList(topics.keySet().toArray());
 		return String.format("Profile [name=%s, topics=%s]", name, topicNames);
+	}
+
+	private void assertTopicExists(String topicName) {
+		if (!topics.containsKey(topicName))
+			throw new NoSuchElementException("No Topic with name " + topicName + " found");
 	}
 }
